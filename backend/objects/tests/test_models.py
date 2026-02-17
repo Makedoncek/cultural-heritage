@@ -56,6 +56,18 @@ class TagModelTest(TestCase):
         self.assertEqual(tags[1].name, "Museum")
         self.assertEqual(tags[2].name, "Zoo")
 
+    def test_tag_slug_auto_generated(self):
+        """Test that slug is auto-generated from name when not provided."""
+        tag = Tag.objects.create(name="Historical Monument", icon="🏛️")
+
+        self.assertEqual(tag.slug, "historical-monument")
+
+    def test_tag_slug_not_overwritten(self):
+        """Test that explicit slug is preserved, not overwritten."""
+        tag = Tag.objects.create(name="Castle", slug="my-custom-slug", icon="🏰")
+
+        self.assertEqual(tag.slug, "my-custom-slug")
+
 
 class CulturalObjectModelTest(TestCase):
     """Test suite for the CulturalObject model."""
@@ -255,3 +267,34 @@ class CulturalObjectModelTest(TestCase):
         museum_objects = self.tag_museum.cultural_objects.all()
         self.assertIn(obj, museum_objects)
         self.assertIn(obj, castle_objects)
+
+    def test_archive_already_archived_is_noop(self):
+        """Test that archiving an already archived object does nothing."""
+        obj = CulturalObject.objects.create(
+            title="Already Archived",
+            latitude=Decimal('50.0'),
+            longitude=Decimal('30.0'),
+            author=self.user
+        )
+        obj.archive()
+        original_archived_at = obj.archived_at
+
+        obj.archive()
+
+        # archived_at should not be updated
+        self.assertEqual(obj.archived_at, original_archived_at)
+
+    def test_restore_non_archived_is_noop(self):
+        """Test that restoring a non-archived object does nothing."""
+        obj = CulturalObject.objects.create(
+            title="Pending Object",
+            latitude=Decimal('50.0'),
+            longitude=Decimal('30.0'),
+            author=self.user
+        )
+        obj.status = 'approved'
+
+        obj.restore()
+
+        # Status should remain same, without change
+        self.assertEqual(obj.status, 'approved')

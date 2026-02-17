@@ -10,6 +10,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
+from django.utils.text import slugify
 
 
 class Tag(models.Model):
@@ -40,6 +41,12 @@ class Tag(models.Model):
         ordering = ['name']
         verbose_name = 'Tag'
         verbose_name_plural = 'Tags'
+
+    def save(self, *args, **kwargs):
+        """Auto-generate slug from name if not provided."""
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -179,7 +186,10 @@ class CulturalObject(models.Model):
         Soft-delete by changing status to 'archived'.
 
         Preserves data for recovery, unlike hard delete.
+        No-op if already archived.
         """
+        if self.status == 'archived':
+            return
         self.status = 'archived'
         self.archived_at = timezone.now()
         self.save(update_fields=['status', 'archived_at'])
@@ -189,7 +199,10 @@ class CulturalObject(models.Model):
         Restore archived object to 'pending' status.
 
         Requires re-approval (admin review again).
+        No-op if not archived.
         """
+        if self.status != 'archived':
+            return
         self.status = 'pending'
         self.archived_at = None
         self.save(update_fields=['status', 'archived_at'])
