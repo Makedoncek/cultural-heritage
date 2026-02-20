@@ -116,7 +116,7 @@ class CulturalObjectModelTest(TestCase):
             author=self.user
         )
 
-        self.assertEqual(obj.status, 'pending')
+        self.assertEqual(obj.status, CulturalObject.Status.PENDING)
 
     def test_latitude_validation_too_low(self):
         """Test that latitude below 44.0 is rejected (Ukraine boundary)."""
@@ -178,13 +178,13 @@ class CulturalObjectModelTest(TestCase):
 
         obj.archive()
 
-        self.assertEqual(obj.status, 'archived')
+        self.assertEqual(obj.status, CulturalObject.Status.ARCHIVED)
         self.assertIsNotNone(obj.archived_at)
-        self.assertEqual(original_status, 'pending')
+        self.assertEqual(original_status, CulturalObject.Status.PENDING)
 
         # Verify changes were saved
         obj_from_db = CulturalObject.objects.get(id=obj.id)
-        self.assertEqual(obj_from_db.status, 'archived')
+        self.assertEqual(obj_from_db.status, CulturalObject.Status.ARCHIVED)
         self.assertIsNotNone(obj_from_db.archived_at)
 
     def test_restore_method(self):
@@ -199,12 +199,12 @@ class CulturalObjectModelTest(TestCase):
 
         obj.restore()
 
-        self.assertEqual(obj.status, 'pending')
+        self.assertEqual(obj.status, CulturalObject.Status.PENDING)
         self.assertIsNone(obj.archived_at)
 
         # Verify changes were saved
         obj_from_db = CulturalObject.objects.get(id=obj.id)
-        self.assertEqual(obj_from_db.status, 'pending')
+        self.assertEqual(obj_from_db.status, CulturalObject.Status.PENDING)
         self.assertIsNone(obj_from_db.archived_at)
 
     def test_str_method(self):
@@ -214,7 +214,7 @@ class CulturalObjectModelTest(TestCase):
             latitude=Decimal('50.0'),
             longitude=Decimal('30.0'),
             author=self.user,
-            status='approved'
+            status=CulturalObject.Status.APPROVED
         )
 
         obj_str = str(obj)
@@ -292,9 +292,9 @@ class CulturalObjectModelTest(TestCase):
             longitude=Decimal('30.0'),
             author=self.user
         )
-        obj.status = 'approved'
+        obj.status = CulturalObject.Status.APPROVED
 
         obj.restore()
 
         # Status should remain same, without change
-        self.assertEqual(obj.status, 'approved')
+        self.assertEqual(obj.status, CulturalObject.Status.APPROVED)

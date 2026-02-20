@@ -69,11 +69,10 @@ class CulturalObject(models.Model):
     - Delete = archive (soft delete, not hard delete)
     """
 
-    STATUS_CHOICES = [
-        ('pending', 'Pending Review'),
-        ('approved', 'Approved'),
-        ('archived', 'Archived'),
-    ]
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending Review'
+        APPROVED = 'approved', 'Approved'
+        ARCHIVED = 'archived', 'Archived'
 
     title = models.CharField(
         max_length=200,
@@ -125,8 +124,8 @@ class CulturalObject(models.Model):
     # Indexed for frequent filtering by status
     status = models.CharField(
         max_length=20,
-        choices=STATUS_CHOICES,
-        default='pending',
+        choices=Status.choices,
+        default=Status.PENDING,
         db_index=True,
         help_text="Current moderation status"
     )
@@ -188,9 +187,9 @@ class CulturalObject(models.Model):
         Preserves data for recovery, unlike hard delete.
         No-op if already archived.
         """
-        if self.status == 'archived':
+        if self.status == self.Status.ARCHIVED:
             return
-        self.status = 'archived'
+        self.status = self.Status.ARCHIVED
         self.archived_at = timezone.now()
         self.save(update_fields=['status', 'archived_at'])
 
@@ -201,9 +200,9 @@ class CulturalObject(models.Model):
         Requires re-approval (admin review again).
         No-op if not archived.
         """
-        if self.status != 'archived':
+        if self.status != self.Status.ARCHIVED:
             return
-        self.status = 'pending'
+        self.status = self.Status.PENDING
         self.archived_at = None
         self.save(update_fields=['status', 'archived_at'])
 
