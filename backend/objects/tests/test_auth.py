@@ -1,13 +1,11 @@
-from django.test import TestCase
 from django.contrib.auth.models import User
-from rest_framework.test import APIClient
+from rest_framework.test import APITestCase
 from rest_framework import status
 
 
-class RegisterEndpointTest(TestCase):
+class RegisterEndpointTest(APITestCase):
 
     def setUp(self):
-        self.client = APIClient()
         self.url = '/api/auth/register/'
         self.valid_data = {
             'username': 'testuser',
@@ -48,10 +46,9 @@ class RegisterEndpointTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class LoginEndpointTest(TestCase):
+class LoginEndpointTest(APITestCase):
 
     def setUp(self):
-        self.client = APIClient()
         self.url = '/api/auth/login/'
         self.user = User.objects.create_user(
             username='testuser',
@@ -83,10 +80,9 @@ class LoginEndpointTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class TokenRefreshTest(TestCase):
+class TokenRefreshTest(APITestCase):
 
     def setUp(self):
-        self.client = APIClient()
         self.user = User.objects.create_user(
             username='testuser',
             password='SecurePass123!',
