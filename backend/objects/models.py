@@ -6,6 +6,8 @@ Core models:
 - CulturalObject: Ukrainian cultural heritage sites with geographic coordinates
 """
 
+from decimal import Decimal
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -91,8 +93,8 @@ class CulturalObject(models.Model):
         max_digits=9,
         decimal_places=6,
         validators=[
-            MinValueValidator(44.0, message="Latitude must be within Ukraine (44.0-52.5)"),
-            MaxValueValidator(52.5, message="Latitude must be within Ukraine (44.0-52.5)")
+            MinValueValidator(Decimal('44.0'), message="Latitude must be within Ukraine (44.0-52.5)"),
+            MaxValueValidator(Decimal('52.5'), message="Latitude must be within Ukraine (44.0-52.5)")
         ],
         help_text="Latitude coordinate (44.0 to 52.5 for Ukraine)"
     )
@@ -101,8 +103,8 @@ class CulturalObject(models.Model):
         max_digits=9,
         decimal_places=6,
         validators=[
-            MinValueValidator(22.0, message="Longitude must be within Ukraine (22.0-40.5)"),
-            MaxValueValidator(40.5, message="Longitude must be within Ukraine (22.0-40.5)")
+            MinValueValidator(Decimal('22.0'), message="Longitude must be within Ukraine (22.0-40.5)"),
+            MaxValueValidator(Decimal('40.5'), message="Longitude must be within Ukraine (22.0-40.5)")
         ],
         help_text="Longitude coordinate (22.0 to 40.5 for Ukraine)"
     )

@@ -1,9 +1,10 @@
-from rest_framework import status
+from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import RegisterSerializer
+from .serializers import RegisterSerializer, TagSerializer
+from .models import Tag
 
 
 @api_view(['POST'])
@@ -31,3 +32,9 @@ def register(request):
         serializer.errors,
         status=status.HTTP_400_BAD_REQUEST
     )
+
+
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Tag.objects.all().order_by('name')
+    serializer_class = TagSerializer
+    permission_classes = [AllowAny]
