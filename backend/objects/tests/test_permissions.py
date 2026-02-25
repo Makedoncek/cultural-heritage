@@ -55,7 +55,7 @@ class PermissionTest(APITestCase):
     def test_author_can_delete_own_object(self):
         self.client.force_authenticate(user=self.user1)
         response = self.client.delete(f'/api/objects/{self.obj.id}/')
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_non_author_cannot_delete_object(self):
         self.client.force_authenticate(user=self.user2)

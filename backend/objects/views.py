@@ -1,12 +1,12 @@
 from rest_framework import status, viewsets, filters
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .filters import ObjectFilter
 from .serializers import RegisterSerializer, TagSerializer
 from .models import Tag
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from .models import CulturalObject
@@ -74,3 +74,32 @@ class ObjectViewSet(viewsets.ModelViewSet):
             return base_qs.filter(Q(status='approved') | Q(author=user)).distinct()
 
         return base_qs.filter(status='approved')
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+    def perform_update(self, serializer):
+        is_approved = serializer.instance.status == 'approved'
+
+        if not self.request.user.is_staff and is_approved:
+            serializer.save(status='pending')
+        else:
+            serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.archive()
+        return Response({'detail': "Об'єкт архівовано"}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def my(self, request):
+        objects = (CulturalObject.objects.filter(author=request.user)
+                   .exclude(status='archived').order_by('-created_at'))
+
+        page = self.paginate_queryset(objects)
+        if page is not None:
+            serializer = ObjectListSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = ObjectListSerializer(objects, many=True)
+        return Response(serializer.data)
