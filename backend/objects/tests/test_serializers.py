@@ -81,8 +81,6 @@ class ObjectWriteSerializerTest(TestCase):
         self.assertIn('tags', serializer.errors)
 
     def test_more_than_five_tags_rejected(self):
-        """Тест: Більше 5 тегів - помилка"""
-        # Створити ще 3 теги (всього 6)
         tag4 = Tag.objects.create(name="Tag4", slug="tag4")
         tag5 = Tag.objects.create(name="Tag5", slug="tag5")
         tag6 = Tag.objects.create(name="Tag6", slug="tag6")

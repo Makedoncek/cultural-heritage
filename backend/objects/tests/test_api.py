@@ -1,6 +1,7 @@
 from rest_framework.test import APITestCase
-from objects.models import Tag
+from objects.models import Tag, CulturalObject
 from rest_framework import status
+from django.contrib.auth.models import User
 
 
 class TagAPITest(APITestCase):
@@ -26,3 +27,95 @@ class TagAPITest(APITestCase):
             'slug': 'novyy-teg'
         })
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class ObjectVisibilityTest(APITestCase):
+    def setUp(self):
+        self.user1 = User.objects.create_user('user1', 'u1@test.com', 'pass')
+        self.user2 = User.objects.create_user('user2', 'u2@test.com', 'pass')
+        self.admin = User.objects.create_user('admin', 'a@test.com', 'pass', is_staff=True)
+
+        self.tag = Tag.objects.create(name="Замок", slug="zamok")
+
+        self.approved = CulturalObject.objects.create(
+            title="Approved object",
+            latitude=50.0,
+            longitude=30.0,
+            author=self.user1,
+            status='approved'
+        )
+        self.approved.tags.add(self.tag)
+
+        self.pending = CulturalObject.objects.create(
+            title="Pending object",
+            latitude=50.0,
+            longitude=30.0,
+            author=self.user1,
+            status='pending'
+        )
+        self.pending.tags.add(self.tag)
+
+        self.archived = CulturalObject.objects.create(
+            title="Archived object",
+            latitude=50.0,
+            longitude=30.0,
+            author=self.user1,
+            status='archived'
+        )
+        self.archived.tags.add(self.tag)
+
+    def test_guest_sees_only_approved(self):
+        response = self.client.get('/api/objects/')
+        titles = [obj['title'] for obj in response.data.get('results', response.data)]
+
+        self.assertIn('Approved object', titles)
+        self.assertNotIn('Pending object', titles)
+        self.assertNotIn('Archived object', titles)
+
+    def test_user_sees_approved_and_own_pending(self):
+        self.client.force_authenticate(user=self.user1)
+        response = self.client.get('/api/objects/')
+        titles = [obj['title'] for obj in response.data.get('results', response.data)]
+
+        self.assertIn('Approved object', titles)
+        self.assertIn('Pending object', titles)
+        self.assertNotIn('Archived object', titles)
+
+    def test_user_does_not_see_others_pending(self):
+        other_pending = CulturalObject.objects.create(
+            title="Other user pending",
+            latitude=50.0,
+            longitude=30.0,
+            author=self.user2,
+            status='pending'
+        )
+        other_pending.tags.add(self.tag)
+
+        self.client.force_authenticate(user=self.user1)
+        response = self.client.get('/api/objects/')
+        titles = [obj['title'] for obj in response.data.get('results', response.data)]
+        self.assertNotIn('Other user pending', titles)
+
+    def test_admin_sees_all_except_archived(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get('/api/objects/')
+        titles = [obj['title'] for obj in response.data.get('results', response.data)]
+
+        self.assertIn('Approved object', titles)
+        self.assertIn('Pending object', titles)
+        self.assertNotIn('Archived object', titles)
+
+    def test_nobody_sees_archived(self):
+        response = self.client.get('/api/objects/')
+        titles = [obj['title'] for obj in response.data.get('results', response.data)]
+        self.assertNotIn('Archived object', titles)
+
+        self.client.force_authenticate(user=self.user1)
+        response = self.client.get('/api/objects/')
+        titles = [obj['title'] for obj in response.data.get('results', response.data)]
+        self.assertNotIn('Archived object', titles)
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get('/api/objects/')
+        titles = [obj['title'] for obj in response.data.get('results', response.data)]
+        self.assertNotIn('Archived object', titles)
