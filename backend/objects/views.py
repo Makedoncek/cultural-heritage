@@ -65,7 +65,10 @@ class ObjectViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        base_qs = CulturalObject.objects.exclude(status='archived')
+        base_qs = (CulturalObject.objects
+                   .select_related('author')
+                   .prefetch_related('tags')
+                   .exclude(status='archived'))
 
         if user.is_staff:
             return base_qs
@@ -93,8 +96,12 @@ class ObjectViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my(self, request):
-        objects = (CulturalObject.objects.filter(author=request.user)
-                   .exclude(status='archived').order_by('-created_at'))
+        objects = (CulturalObject.objects
+                   .select_related('author')
+                   .prefetch_related('tags')
+                   .filter(author=request.user)
+                   .exclude(status='archived')
+                   .order_by('-created_at'))
 
         page = self.paginate_queryset(objects)
         if page is not None:

@@ -70,4 +70,4 @@ class CulturalObjectAdmin(admin.ModelAdmin):
         self.message_user(request, f"Відновлено {count} об'єкт(ів)")
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related('author')
+        return super().get_queryset(request).select_related('author').prefetch_related('tags')

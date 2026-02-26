@@ -114,6 +114,7 @@ class ObjectWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = CulturalObject
         fields = [
+            'id',
             'title',
             'description',
             'latitude',
@@ -123,6 +124,7 @@ class ObjectWriteSerializer(serializers.ModelSerializer):
             'official_website',
             'google_maps_url'
         ]
+        read_only_fields = ['id']
 
     def validate_tags(self, value):
         if len(value) < 1:

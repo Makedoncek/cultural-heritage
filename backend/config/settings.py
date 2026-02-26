@@ -9,7 +9,6 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-import os
 from pathlib import Path
 from decouple import config
 from datetime import timedelta
@@ -84,13 +83,13 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/day',
-        'user': '1000/day'
+        'anon': '1000/hour',
+        'user': '5000/hour'
     },
 
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
 
-    'DATETIME_FORMAT': '%d-%m-%Y %H:%M:%S',
+    'DATETIME_FORMAT': 'iso-8601',
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
