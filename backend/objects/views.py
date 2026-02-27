@@ -110,3 +110,9 @@ class ObjectViewSet(viewsets.ModelViewSet):
 
         serializer = ObjectListSerializer(objects, many=True)
         return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(request):
+    return Response({'status': 'ok', 'message': 'API is running'})

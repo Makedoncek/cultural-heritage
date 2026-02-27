@@ -9,5 +9,6 @@ router.register('objects', views.ObjectViewSet, basename='object')
 app_name = 'objects'
 
 urlpatterns = [
-    path('auth/register/', views.register, name='register'),
-] + router.urls
+                  path('auth/register/', views.register, name='register'),
+                  path('health/', views.health_check, name='health_check')
+              ] + router.urls
