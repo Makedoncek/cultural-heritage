@@ -37,3 +37,5 @@ yarn-error.log
 .yarn
 dist/
 build/
+/backend/.postman/config.json
+/backend/postman/globals/workspace.postman_globals.json
