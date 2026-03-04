@@ -43,8 +43,15 @@ export interface CulturalObject {
     tags: Tag[];
 }
 
-export interface CulturalObjectDetail extends CulturalObject {
+export interface CulturalObjectDetail {
+    id: number;
+    title: string;
     description: string;
+    latitude: string;
+    longitude: string;
+    status: 'pending' | 'approved' | 'archived';
+    author: string;
+    tags: Tag[];
     wikipedia_url: string | null;
     official_website: string | null;
     google_maps_url: string | null;
