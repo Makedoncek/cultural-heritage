@@ -2,9 +2,8 @@ from rest_framework import status, viewsets, filters
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
 from .filters import ObjectFilter
-from .serializers import RegisterSerializer, TagSerializer
+from .serializers import RegisterSerializer, TagSerializer, CustomTokenObtainPairSerializer
 from .models import Tag
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -21,7 +20,7 @@ def register(request):
     if serializer.is_valid():
         user = serializer.save()
 
-        refresh = RefreshToken.for_user(user)
+        refresh = CustomTokenObtainPairSerializer.get_token(user)
 
         return Response({
             'user': {

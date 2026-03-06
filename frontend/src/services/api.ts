@@ -24,7 +24,8 @@ api.interceptors.response.use(
         const originalRequest = error.config;
 
         // Якщо 401 і ще не пробували refresh
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        const isAuthEndpoint = originalRequest.url?.includes('/auth/');
+        if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
             originalRequest._retry = true;
 
             try {
