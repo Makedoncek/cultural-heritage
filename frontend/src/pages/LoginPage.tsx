@@ -1,5 +1,5 @@
 import {useForm} from 'react-hook-form';
-import {Link, Navigate, useNavigate} from 'react-router';
+import {Link, Navigate, useNavigate, useLocation} from 'react-router';
 import {useAuth} from '../context/AuthContext';
 import type {LoginData} from '../types';
 import {AxiosError} from 'axios';
@@ -8,6 +8,8 @@ import UkraineMapBg from '../components/UkraineMapBg';
 function LoginPage() {
     const {login, isAuthenticated} = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
     const {
         register,
         handleSubmit,
@@ -15,12 +17,12 @@ function LoginPage() {
         formState: {errors, isSubmitting},
     } = useForm<LoginData>();
 
-    if (isAuthenticated) return <Navigate to="/"/>;
+    if (isAuthenticated) return <Navigate to={from} replace/>;
 
     const onSubmit = async (data: LoginData) => {
         try {
             await login(data);
-            navigate('/');
+            navigate(from, {replace: true});
         } catch (err) {
             const axiosError = err as AxiosError;
             if (axiosError.response?.status === 401) {
