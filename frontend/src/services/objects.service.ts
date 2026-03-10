@@ -4,6 +4,7 @@ import type {CulturalObject, CulturalObjectDetail, CulturalObjectWrite, Paginate
 interface ObjectFilters {
     tags?: string;
     search?: string;
+    page?: number;
 }
 
 export const objectsService = {
