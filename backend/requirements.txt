@@ -27,4 +27,5 @@ types-PyYAML==6.0.12.20250915
 typing_extensions==4.15.0
 tzdata==2025.3
 uritemplate==4.2.0
+shapely>=2.0
 whitenoise==6.12.0

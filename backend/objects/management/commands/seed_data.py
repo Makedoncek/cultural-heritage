@@ -1,10 +1,11 @@
+import random
 from decimal import Decimal
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from objects.models import Tag, CulturalObject
-import random
+from objects.validators import is_within_ukraine
 
 TAGS_DATA = [
     {'name': 'Замок', 'slug': 'zamok', 'icon': '🏰'},
@@ -104,8 +105,14 @@ class Command(BaseCommand):
                 SAMPLE_TITLES[i] if i < len(SAMPLE_TITLES)
                 else f"Тестовий об'єкт #{i + 1}"
             )
-            latitude = Decimal(str(round(random.uniform(44.5, 52.0), 6)))
-            longitude = Decimal(str(round(random.uniform(22.5, 40.0), 6)))
+            # Rejection sampling: generate random point until it falls inside Ukraine
+            while True:
+                lat = round(random.uniform(44.5, 52.0), 6)
+                lng = round(random.uniform(22.5, 40.0), 6)
+                if is_within_ukraine(lat, lng):
+                    break
+            latitude = Decimal(str(lat))
+            longitude = Decimal(str(lng))
 
             obj = CulturalObject.objects.create(
                 title=title,

@@ -2,7 +2,9 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from .models import Tag, CulturalObject
+from .validators import validate_coordinates_within_ukraine
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -152,15 +154,18 @@ class ObjectWriteSerializer(serializers.ModelSerializer):
         latitude = data.get('latitude')
         longitude = data.get('longitude')
 
-        if latitude is not None:
-            if latitude < 44.0 or latitude > 52.5:
+        if self.instance:
+            if latitude is None:
+                latitude = self.instance.latitude
+            if longitude is None:
+                longitude = self.instance.longitude
+
+        if latitude is not None and longitude is not None:
+            try:
+                validate_coordinates_within_ukraine(latitude, longitude)
+            except DjangoValidationError as e:
                 raise serializers.ValidationError({
-                    'latitude': 'Координати поза межами України (допустимі значення широти: 44.0 - 52.5)'
+                    'coordinates': e.message
                 })
 
-        if longitude is not None:
-            if longitude < 22.0 or longitude > 40.5:
-                raise serializers.ValidationError({
-                    'longitude': 'Координати поза межами України (допустимі значення довготи: 22.0 - 40.5)'
-                })
         return data

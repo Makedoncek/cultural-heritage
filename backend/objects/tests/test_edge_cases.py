@@ -7,7 +7,7 @@ from objects.serializers import ObjectWriteSerializer
 
 
 class BoundaryCoordinateTest(TestCase):
-    """Test exact Ukraine boundary values pass validation."""
+    """Test coordinates near Ukraine's borders pass/fail polygon validation."""
 
     def setUp(self):
         self.tag = Tag.objects.create(name="Test", slug="test")
@@ -20,21 +20,21 @@ class BoundaryCoordinateTest(TestCase):
             'tags': [self.tag.id],
         }
 
-    def test_exact_min_latitude_accepted(self):
-        s = ObjectWriteSerializer(data=self._make_data(44.0, 30.0))
-        self.assertTrue(s.is_valid(), s.errors)
+    def test_southern_crimea_accepted(self):
+        serializer = ObjectWriteSerializer(data=self._make_data(44.4307, 34.1286))
+        self.assertTrue(serializer.is_valid(), serializer.errors)
 
-    def test_exact_max_latitude_accepted(self):
-        s = ObjectWriteSerializer(data=self._make_data(52.5, 30.0))
-        self.assertTrue(s.is_valid(), s.errors)
+    def test_northern_chernihiv_accepted(self):
+        serializer = ObjectWriteSerializer(data=self._make_data(51.4939, 31.2947))
+        self.assertTrue(serializer.is_valid(), serializer.errors)
 
-    def test_exact_min_longitude_accepted(self):
-        s = ObjectWriteSerializer(data=self._make_data(50.0, 22.0))
-        self.assertTrue(s.is_valid(), s.errors)
+    def test_western_uzhhorod_accepted(self):
+        serializer = ObjectWriteSerializer(data=self._make_data(48.6208, 22.2879))
+        self.assertTrue(serializer.is_valid(), serializer.errors)
 
-    def test_exact_max_longitude_accepted(self):
-        s = ObjectWriteSerializer(data=self._make_data(50.0, 40.5))
-        self.assertTrue(s.is_valid(), s.errors)
+    def test_eastern_luhansk_accepted(self):
+        serializer = ObjectWriteSerializer(data=self._make_data(48.5740, 39.3078))
+        self.assertTrue(serializer.is_valid(), serializer.errors)
 
 
 class SearchFilterTest(APITestCase):

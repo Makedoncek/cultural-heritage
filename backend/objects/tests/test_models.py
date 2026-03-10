@@ -108,7 +108,6 @@ class CulturalObjectModelTest(TestCase):
         self.assertIn(self.tag_museum, obj.tags.all())
 
     def test_default_status_is_pending(self):
-        """Test that new objects default to 'pending' status."""
         obj = CulturalObject.objects.create(
             title="Test Object",
             latitude=Decimal('50.0'),
@@ -119,7 +118,6 @@ class CulturalObjectModelTest(TestCase):
         self.assertEqual(obj.status, CulturalObject.Status.PENDING)
 
     def test_latitude_validation_too_low(self):
-        """Test that latitude below 44.0 is rejected (Ukraine boundary)."""
         obj = CulturalObject(
             title="Invalid South",
             latitude=Decimal('43.0'),
@@ -127,13 +125,10 @@ class CulturalObjectModelTest(TestCase):
             author=self.user
         )
 
-        with self.assertRaises(ValidationError) as context:
+        with self.assertRaises(ValidationError):
             obj.full_clean()
 
-        self.assertIn('latitude', context.exception.message_dict)
-
     def test_latitude_validation_too_high(self):
-        """Test that latitude above 52.5 is rejected (Ukraine boundary)."""
         obj = CulturalObject(
             title="Invalid North",
             latitude=Decimal('53.0'),
@@ -145,8 +140,6 @@ class CulturalObjectModelTest(TestCase):
             obj.full_clean()
 
     def test_longitude_validation(self):
-        """Test that longitude must be between 22.0 and 40.5 (Ukraine)."""
-        # Too far west (< 22.0)
         obj_west = CulturalObject(
             title="Too Far West",
             latitude=Decimal('50.0'),
@@ -156,7 +149,6 @@ class CulturalObjectModelTest(TestCase):
         with self.assertRaises(ValidationError):
             obj_west.full_clean()
 
-        # Too far east (> 40.5)
         obj_east = CulturalObject(
             title="Too Far East",
             latitude=Decimal('50.0'),
@@ -165,6 +157,16 @@ class CulturalObjectModelTest(TestCase):
         )
         with self.assertRaises(ValidationError):
             obj_east.full_clean()
+
+    def test_coordinates_in_bbox_but_outside_ukraine(self):
+        obj = CulturalObject(
+            title="Romania Point",
+            latitude=Decimal('45.0'),
+            longitude=Decimal('23.0'),
+            author=self.user
+        )
+        with self.assertRaises(ValidationError):
+            obj.full_clean()
 
     def test_archive_method(self):
         """Test the archive() method for soft delete."""

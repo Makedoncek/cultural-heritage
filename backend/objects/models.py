@@ -6,13 +6,12 @@ Core models:
 - CulturalObject: Ukrainian cultural heritage sites with geographic coordinates
 """
 
-from decimal import Decimal
-
 from django.db import models
 from django.contrib.auth.models import User
-from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from django.utils.text import slugify
+
+from .validators import validate_coordinates_within_ukraine
 
 
 class Tag(models.Model):
@@ -87,26 +86,16 @@ class CulturalObject(models.Model):
         help_text="Detailed description of the object (optional)"
     )
 
-    # DecimalField for precise coordinates (FloatField has rounding errors)
-    # Ukraine boundaries: lat 44.0-52.5°N, lng 22.0-40.5°E
     latitude = models.DecimalField(
         max_digits=9,
         decimal_places=6,
-        validators=[
-            MinValueValidator(Decimal('44.0'), message="Latitude must be within Ukraine (44.0-52.5)"),
-            MaxValueValidator(Decimal('52.5'), message="Latitude must be within Ukraine (44.0-52.5)")
-        ],
-        help_text="Latitude coordinate (44.0 to 52.5 for Ukraine)"
+        help_text="Latitude coordinate (within Ukraine)"
     )
 
     longitude = models.DecimalField(
         max_digits=9,
         decimal_places=6,
-        validators=[
-            MinValueValidator(Decimal('22.0'), message="Longitude must be within Ukraine (22.0-40.5)"),
-            MaxValueValidator(Decimal('40.5'), message="Longitude must be within Ukraine (22.0-40.5)")
-        ],
-        help_text="Longitude coordinate (22.0 to 40.5 for Ukraine)"
+        help_text="Longitude coordinate (within Ukraine)"
     )
 
     # CASCADE: If user deleted, delete all their objects
@@ -209,5 +198,7 @@ class CulturalObject(models.Model):
         self.save(update_fields=['status', 'archived_at'])
 
     def clean(self):
-        """Custom validation for multi-field business rules."""
+        """Validate coordinates fall within Ukraine's borders."""
         super().clean()
+        if self.latitude is not None and self.longitude is not None:
+            validate_coordinates_within_ukraine(self.latitude, self.longitude)

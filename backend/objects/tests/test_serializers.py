@@ -31,7 +31,7 @@ class ObjectWriteSerializerTest(TestCase):
 
         serializer = ObjectWriteSerializer(data=data)
         self.assertFalse(serializer.is_valid())
-        self.assertIn('latitude', serializer.errors)
+        self.assertIn('coordinates', serializer.errors)
 
     def test_latitude_too_high_rejected(self):
         data = {
@@ -43,7 +43,7 @@ class ObjectWriteSerializerTest(TestCase):
 
         serializer = ObjectWriteSerializer(data=data)
         self.assertFalse(serializer.is_valid())
-        self.assertIn('latitude', serializer.errors)
+        self.assertIn('coordinates', serializer.errors)
 
     def test_longitude_too_low_rejected(self):
         data = {
@@ -55,7 +55,7 @@ class ObjectWriteSerializerTest(TestCase):
 
         serializer = ObjectWriteSerializer(data=data)
         self.assertFalse(serializer.is_valid())
-        self.assertIn('longitude', serializer.errors)
+        self.assertIn('coordinates', serializer.errors)
 
     def test_longitude_too_high_rejected(self):
         data = {
@@ -66,7 +66,18 @@ class ObjectWriteSerializerTest(TestCase):
         }
         serializer = ObjectWriteSerializer(data=data)
         self.assertFalse(serializer.is_valid())
-        self.assertIn('longitude', serializer.errors)
+        self.assertIn('coordinates', serializer.errors)
+
+    def test_coordinates_in_neighboring_country_rejected(self):
+        data = {
+            'title': 'Test',
+            'latitude': 45.0,
+            'longitude': 23.0,
+            'tags': [self.tag1.id]
+        }
+        serializer = ObjectWriteSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('coordinates', serializer.errors)
 
     def test_less_than_one_tag_rejected(self):
         data = {
@@ -101,10 +112,10 @@ class ObjectWriteSerializerTest(TestCase):
 
     def test_valid_coordinates_passes(self):
         test_cases = [
-            {'latitude': 50.4501, 'longitude': 30.5234},
-            {'latitude': 49.8397, 'longitude': 24.0297},
-            {'latitude': 44.5, 'longitude': 33.5},
-            {'latitude': 52.0, 'longitude': 23.0},
+            {'latitude': 50.4501, 'longitude': 30.5234},  # Kyiv
+            {'latitude': 49.8397, 'longitude': 24.0297},  # Lviv
+            {'latitude': 46.4825, 'longitude': 30.7233},  # Odesa
+            {'latitude': 49.9935, 'longitude': 36.2304},  # Kharkiv
         ]
 
         for coordinates in test_cases:
