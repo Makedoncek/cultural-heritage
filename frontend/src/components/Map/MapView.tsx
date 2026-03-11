@@ -29,7 +29,7 @@ export default function MapView({objects}: MapViewProps) {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            <MarkerClusterGroup chunkedLoading>
+            <MarkerClusterGroup chunkedLoading key={objects.map(o => o.id).join(',')}>
                 {objects.map(obj => (
                     <ObjectMarker key={obj.id} object={obj}/>
                 ))}
