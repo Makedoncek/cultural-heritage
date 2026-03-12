@@ -1,5 +1,6 @@
 import '../../utils/leaflet-fix';
-import {MapContainer, TileLayer} from 'react-leaflet';
+import {useEffect} from 'react';
+import {MapContainer, TileLayer, useMap} from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import ObjectMarker from './ObjectMarker';
 import type {CulturalObject} from '../../types';
@@ -10,11 +11,25 @@ const UKRAINE_BOUNDS: LatLngBoundsExpression = [
     [52.4, 40.3],  // northeast
 ];
 
-interface MapViewProps {
-    objects: CulturalObject[];
+export interface FlyToTarget {
+    latitude: number;
+    longitude: number;
 }
 
-export default function MapView({objects}: MapViewProps) {
+function FlyToHandler({target}: {target: FlyToTarget | null}) {
+    const map = useMap();
+    useEffect(() => {
+        if (target) map.flyTo([target.latitude, target.longitude], 14, {duration: 1});
+    }, [target, map]);
+    return null;
+}
+
+interface MapViewProps {
+    objects: CulturalObject[];
+    flyTo?: FlyToTarget | null;
+}
+
+export default function MapView({objects, flyTo = null}: MapViewProps) {
     return (
         <MapContainer
             center={[49.0, 32.0]}
@@ -25,6 +40,7 @@ export default function MapView({objects}: MapViewProps) {
             scrollWheelZoom={true}
             className="absolute inset-0"
         >
+            <FlyToHandler target={flyTo} />
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
