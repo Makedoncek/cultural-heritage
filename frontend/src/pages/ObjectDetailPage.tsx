@@ -106,17 +106,17 @@ export default function ObjectDetailPage() {
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-3xl mx-auto px-4 py-6">
 
-                <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-3">
+                <div className="mb-4">
+                    <div className="flex flex-wrap items-center gap-3 mb-2">
                         <h1 className="text-2xl font-bold text-gray-900">{object.title}</h1>
                         {canEdit && (
-                            <span className={`px-2 py-1 text-xs rounded flex-shrink-0 ${STATUS_COLORS[object.status]}`}>
+                            <span className={`px-3 py-1 text-sm font-medium rounded ${STATUS_COLORS[object.status]}`}>
                                 {STATUS_LABELS[object.status]}
                             </span>
                         )}
                     </div>
                     {canEdit && (
-                        <div className="flex gap-2 flex-shrink-0">
+                        <div className="flex gap-2">
                             <button
                                 onClick={() => navigate(`/objects/${object.id}/edit`)}
                                 className="px-3 py-1.5 text-sm bg-amber-500 text-white rounded hover:bg-amber-600 cursor-pointer"
@@ -155,7 +155,7 @@ export default function ObjectDetailPage() {
                     </div>
                 )}
 
-                <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mb-2">
                     <span>📍 Координати: {latitude.toFixed(6)}, {longitude.toFixed(6)}</span>
                     <button
                         onClick={() => navigator.clipboard.writeText(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`)}
