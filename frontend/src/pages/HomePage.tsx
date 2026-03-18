@@ -159,7 +159,7 @@ export default function HomePage() {
                                 {objects.slice(0, 7).map(obj => (
                                     <div
                                         key={obj.id}
-                                        className="flex items-center gap-2 px-3 py-2 hover:bg-amber-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                                className="flex items-center gap-2 px-3 py-2 hover:bg-amber-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
                                         onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => {
                                             setFlyTo({latitude: Number(obj.latitude), longitude: Number(obj.longitude)});

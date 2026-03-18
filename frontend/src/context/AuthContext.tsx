@@ -15,9 +15,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const parseJwtPayload = (token: string) => JSON.parse(atob(token.split('.')[1]));
 
-const userFromPayload = (payload: { user_id: number; username?: string }): User => ({
+const userFromPayload = (payload: { user_id: number; username?: string, is_staff?: boolean }): User => ({
     id: payload.user_id,
     username: payload.username || 'Користувач',
+    is_staff: payload.is_staff ?? false,
 });
 
 export const AuthProvider = ({children}: { children: ReactNode }) => {
@@ -67,7 +68,9 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
 
         localStorage.setItem('access_token', response.tokens.access);
         localStorage.setItem('refresh_token', response.tokens.refresh);
-        setUser(response.user);
+
+        const payload = parseJwtPayload(response.tokens.access);
+        setUser(userFromPayload(payload));
     };
 
     const logout = () => {
