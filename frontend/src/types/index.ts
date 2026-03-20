@@ -72,6 +72,17 @@ export interface CulturalObjectWrite {
     google_maps_url?: string;
 }
 
+export interface ObjectFormData {
+    title: string;
+    description: string;
+    tags: number[];
+    latitude: number | null;
+    longitude: number | null;
+    wikipedia_url: string;
+    official_website: string;
+    google_maps_url: string;
+}
+
 export interface PaginatedResponse<T> {
     count: number;
     next: string | null;
