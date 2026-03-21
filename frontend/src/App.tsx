@@ -1,4 +1,5 @@
 import {Routes, Route} from 'react-router';
+import {Toaster} from 'react-hot-toast';
 import Layout from './components/Layout/Layout';
 import RequireAuth from './components/RequireAuth';
 import HomePage from './pages/HomePage';
@@ -11,6 +12,11 @@ import EditObjectPage from './pages/EditObjectPage';
 
 function App() {
     return (
+        <>
+        <Toaster position="top-center" toastOptions={{
+            style: {borderRadius: '8px', background: '#fffbeb', color: '#92400e', border: '1px solid #fbbf24'},
+            success: {duration: 3000, iconTheme: {primary: '#d97706', secondary: '#fffbeb'}},
+        }}/>
         <Routes>
             <Route path="/login" element={<LoginPage/>}/>
             <Route path="/register" element={<RegisterPage/>}/>
@@ -24,6 +30,7 @@ function App() {
                 </Route>
             </Route>
         </Routes>
+        </>
     )
 }
 

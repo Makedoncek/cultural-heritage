@@ -1,4 +1,5 @@
 import {useNavigate} from 'react-router';
+import toast from 'react-hot-toast';
 import {objectsService} from '../services/objects.service';
 import ObjectForm from '../components/Objects/ObjectForm';
 import type {CulturalObjectWrite} from '../types';
@@ -7,8 +8,9 @@ export default function AddObjectPage() {
     const navigate = useNavigate();
 
     const handleSubmit = async (data: CulturalObjectWrite) => {
-        const result = await objectsService.create(data);
-        navigate(`/objects/${result.id}`);
+        await objectsService.create(data);
+        toast.success('Об\'єкт надіслано на модерацію');
+        navigate('/my-objects');
     };
 
     return (

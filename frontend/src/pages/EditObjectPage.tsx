@@ -1,5 +1,6 @@
 import {useState, useEffect} from 'react';
 import {useParams, useNavigate, Link} from 'react-router';
+import toast from 'react-hot-toast';
 import {objectsService} from '../services/objects.service';
 import {useAuth} from '../context/AuthContext';
 import ObjectForm from '../components/Objects/ObjectForm';
@@ -46,6 +47,7 @@ export default function EditObjectPage() {
 
     const handleSubmit = async (data: CulturalObjectWrite) => {
         await objectsService.update(Number(id), data);
+        toast.success('Зміни збережено');
         navigate(`/objects/${id}`);
     };
 

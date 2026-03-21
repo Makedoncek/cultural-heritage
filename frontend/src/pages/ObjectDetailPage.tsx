@@ -1,6 +1,7 @@
 import {useState, useEffect} from 'react';
 import {useParams, useNavigate, Link} from 'react-router';
 import {MapContainer, TileLayer, Marker} from 'react-leaflet';
+import toast from 'react-hot-toast';
 import {objectsService} from '../services/objects.service';
 import {useAuth} from '../context/AuthContext';
 import type {CulturalObjectDetail} from '../types';
@@ -46,10 +47,11 @@ export default function ObjectDetailPage() {
     const canEdit = user && object && (user.username === object.author || user.is_staff);
 
     const handleDelete = async () => {
-        if (!object || !confirm('Ви впевнені, що хочете видалити цей об\'єкт?')) return;
+        if (!object || !confirm('Ви впевнені, що хочете видалити цей об\'єкт? Тільки адміністратор зможе його відновити.')) return;
         setDeleting(true);
         try {
             await objectsService.delete(object.id);
+            toast.success('Об\'єкт архівовано');
             navigate('/');
         } catch {
             setError('Не вдалося видалити об\'єкт.');

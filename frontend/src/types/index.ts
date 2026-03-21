@@ -42,6 +42,7 @@ export interface CulturalObject {
     status: 'pending' | 'approved' | 'archived';
     author_name: string;
     tags: Tag[];
+    created_at: string;
 }
 
 export interface CulturalObjectDetail {

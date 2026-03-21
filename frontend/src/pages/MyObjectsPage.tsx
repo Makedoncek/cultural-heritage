@@ -1,5 +1,6 @@
 import {useState, useEffect} from 'react';
 import {Link} from 'react-router';
+import toast from 'react-hot-toast';
 import {objectsService} from '../services/objects.service';
 import type {CulturalObject} from '../types';
 
@@ -19,6 +20,21 @@ export default function MyObjectsPage() {
     const [objects, setObjects] = useState<CulturalObject[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
+
+    const handleDelete = async (id: number) => {
+        if (!confirm('Ви впевнені, що хочете видалити цей об\'єкт? Тільки адміністратор зможе його відновити.')) return;
+        setDeletingId(id);
+        try {
+            await objectsService.delete(id);
+            setObjects(prev => prev.filter(obj => obj.id !== id));
+            toast.success('Об\'єкт архівовано');
+        } catch {
+            setError('Не вдалося видалити об\'єкт.');
+        } finally {
+            setDeletingId(null);
+        }
+    };
 
     useEffect(() => {
         objectsService.getMy()
@@ -74,15 +90,23 @@ export default function MyObjectsPage() {
                         {objects.map(obj => (
                             <div
                                 key={obj.id}
-                                className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3"
+                                className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 border border-gray-200 rounded-lg px-4 py-3"
                             >
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <span className="text-gray-900 font-medium truncate">{obj.title}</span>
-                                    <span className={`shrink-0 px-2.5 py-0.5 text-xs font-medium rounded ${STATUS_COLORS[obj.status]}`}>
-                                        {STATUS_LABELS[obj.status]}
-                                    </span>
+                                <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="text-gray-900 font-medium">{obj.title}</span>
+                                        <span className={`px-2.5 py-0.5 text-xs font-medium rounded ${STATUS_COLORS[obj.status]}`}>
+                                            {STATUS_LABELS[obj.status]}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                                        {obj.tags.length > 0 && (
+                                            <span>{obj.tags.map(t => t.icon).join(' ')}</span>
+                                        )}
+                                        <span>{new Date(obj.created_at).toLocaleDateString('uk-UA')}</span>
+                                    </div>
                                 </div>
-                                <div className="flex gap-2 shrink-0 ml-3">
+                                <div className="flex gap-2 flex-wrap shrink-0">
                                     <Link
                                         to={`/objects/${obj.id}`}
                                         className="px-3 py-1.5 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600"
@@ -95,6 +119,13 @@ export default function MyObjectsPage() {
                                     >
                                         Редагувати
                                     </Link>
+                                    <button
+                                        onClick={() => handleDelete(obj.id)}
+                                        disabled={deletingId === obj.id}
+                                        className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 cursor-pointer disabled:opacity-50"
+                                    >
+                                        {deletingId === obj.id ? 'Видалення...' : 'Видалити'}
+                                    </button>
                                 </div>
                             </div>
                         ))}
