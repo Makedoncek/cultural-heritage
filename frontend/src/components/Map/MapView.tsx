@@ -7,8 +7,8 @@ import type {CulturalObject} from '../../types';
 import type {LatLngBoundsExpression} from 'leaflet';
 
 const UKRAINE_BOUNDS: LatLngBoundsExpression = [
-    [44.2, 22.0],  // southwest
-    [52.4, 40.3],  // northeast
+    [44.2, 22.0],
+    [52.4, 40.3],
 ];
 
 export interface FlyToTarget {

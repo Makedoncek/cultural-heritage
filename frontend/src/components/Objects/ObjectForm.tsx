@@ -82,8 +82,8 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
         const writeData: CulturalObjectWrite = {
             title: data.title.trim(),
             description: data.description.trim(),
-            latitude: data.latitude,
-            longitude: data.longitude,
+            latitude: parseFloat(data.latitude.toFixed(6)),
+            longitude: parseFloat(data.longitude.toFixed(6)),
             tags: data.tags,
         };
         if (data.wikipedia_url.trim()) writeData.wikipedia_url = data.wikipedia_url.trim();
