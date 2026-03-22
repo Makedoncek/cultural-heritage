@@ -129,10 +129,17 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Cultural Heritage API',
-    'DESCRIPTION': "API для мапи культурних об'єктів України",
+    'TITLE': 'CultureMap Ukraine API',
+    'DESCRIPTION': "REST API for an interactive map of Ukrainian cultural heritage sites. "
+                   "Supports registration, JWT authentication, CRUD with moderation workflow, tag filtering, and search.",
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'TAGS': [
+        {'name': 'Authentication', 'description': 'Register, login, token refresh'},
+        {'name': 'Tags', 'description': 'Cultural object categories'},
+        {'name': 'Objects', 'description': 'CRUD operations for cultural objects'},
+        {'name': 'System', 'description': 'Health check and service endpoints'},
+    ],
 }
 
 # Database
