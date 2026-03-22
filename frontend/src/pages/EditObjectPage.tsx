@@ -90,7 +90,7 @@ export default function EditObjectPage() {
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
                 <h1 className="text-2xl font-bold text-gray-900 mb-4">Редагувати об'єкт</h1>
-                {object.status === 'approved' && (
+                {object.status === 'approved' && !user?.is_staff && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 mb-6">
                         <p className="text-yellow-800 text-sm">
                             Після редагування об'єкт буде відправлено на повторну модерацію

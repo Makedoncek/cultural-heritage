@@ -6,16 +6,20 @@ A web platform for mapping Ukrainian cultural heritage sites. Registered users c
 
 - Interactive map of Ukraine with clustered markers (Leaflet.js)
 - Filter objects by category tags
-- Submit and manage your own cultural objects
+- Search by title with debounced dropdown results
+- Submit and manage your own cultural objects (add, edit, archive)
+- Location picker with fullscreen mode and geolocation
 - Three-tier moderation workflow: `pending → approved → archived`
+- Visual distinction for pending objects (grey markers)
 - JWT authentication with role-based access (Guest / User / Admin)
 - Admin panel for moderation and tag management
+- Coordinate validation against Ukraine border polygon (Shapely)
 
 ## Tech Stack
 
 | Layer | Technology |
 | :--- | :--- |
-| Frontend | React 18 + TypeScript + Vite 5 + Leaflet.js |
+| Frontend | React 19 + TypeScript + Vite 7 + Tailwind CSS v4 + Leaflet.js (react-leaflet v5) |
 | Backend | Django 5 + Django REST Framework + SimpleJWT |
 | Database | PostgreSQL 15 (Docker) |
 | Auth | JWT (access + refresh tokens) |
@@ -65,6 +69,7 @@ DB_PORT=5432
 ```bash
 python manage.py migrate
 python manage.py createsuperuser
+python manage.py seed_data  # Optional: load sample data
 python manage.py runserver
 ```
 
@@ -110,12 +115,20 @@ npx tsc --noEmit  # Type check
 ```
 cultural-heritage/
 ├── backend/
-│   ├── config/          # Django settings and URLs
-│   ├── objects/         # Main app: models, views, serializers
+│   ├── config/              # Django settings and URLs
+│   ├── objects/             # Main app: models, views, serializers
+│   │   ├── data/            # Ukraine border GeoJSON
+│   │   └── tests/           # Test suite (88 tests)
 │   └── manage.py
-├── frontend/            # React SPA (in progress)
-├── docker-compose.yml   # PostgreSQL service
-└── docs/                # Project documentation
+├── frontend/
+│   ├── src/
+│   │   ├── components/      # Map, Layout, Objects, RequireAuth
+│   │   ├── pages/           # Home, Login, Register, Add/Edit/Detail/MyObjects
+│   │   ├── services/        # API client, auth/objects/tags services
+│   │   ├── context/         # AuthContext (JWT)
+│   │   └── types/           # TypeScript interfaces
+│   └── package.json
+└── docker-compose.yml       # PostgreSQL service
 ```
 
 ## Access

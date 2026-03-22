@@ -118,7 +118,7 @@ export default function ObjectDetailPage() {
                         )}
                     </div>
                     {canEdit && (
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                             <button
                                 onClick={() => navigate(`/objects/${object.id}/edit`)}
                                 className="px-3 py-1.5 text-sm bg-amber-500 text-white rounded hover:bg-amber-600 cursor-pointer"
