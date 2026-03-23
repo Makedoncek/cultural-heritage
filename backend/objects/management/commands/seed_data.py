@@ -40,12 +40,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        if not settings.DEBUG:
-            self.stderr.write(
-                self.style.ERROR('Seed data can only run with DEBUG=True')
-            )
-            return
-
         count = options['count']
         self.stdout.write(f'Буде створено об\'єктів: {count}')
 
