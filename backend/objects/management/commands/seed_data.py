@@ -50,12 +50,13 @@ class Command(BaseCommand):
         self.stdout.write(f'Буде створено об\'єктів: {count}')
 
         self._create_tags()
+        self._create_admin_user()
         user = self._create_test_user()
         self._create_objects(user, count)
         self._print_stats()
 
     def _create_tags(self):
-        self.stdout.write('Крок 1/4: Створення тегів...')
+        self.stdout.write('Крок 1/5: Створення тегів...')
         tags_created = 0
         for tag_data in TAGS_DATA:
             _, created = Tag.objects.get_or_create(
@@ -68,8 +69,25 @@ class Command(BaseCommand):
             self.style.SUCCESS(f'Створено {tags_created} нових тегів')
         )
 
+    def _create_admin_user(self):
+        self.stdout.write('Крок 2/5: Створення адміністратора...')
+        admin, created = User.objects.get_or_create(
+            username='admin',
+            defaults={
+                'email': 'admin@culturemap.com',
+                'is_staff': True,
+                'is_superuser': True,
+            }
+        )
+        if created:
+            admin.set_password('admin123')
+            admin.save()
+            self.stdout.write('  Створено адміністратора: admin / admin123')
+        else:
+            self.stdout.write('  Адміністратор admin вже існує')
+
     def _create_test_user(self):
-        self.stdout.write('Крок 2/4: Створення тестового користувача...')
+        self.stdout.write('Крок 3/5: Створення тестового користувача...')
         user, created = User.objects.get_or_create(
             username='testuser',
             defaults={
@@ -87,7 +105,7 @@ class Command(BaseCommand):
         return user
 
     def _create_objects(self, user, count):
-        self.stdout.write('Крок 3/4: Створення культурних об\'єктів...')
+        self.stdout.write('Крок 4/5: Створення культурних об\'єктів...')
         all_tags = list(Tag.objects.all())
         if not all_tags:
             self.stderr.write(self.style.ERROR('Помилка: Теги не створені!'))
@@ -133,7 +151,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f'Створено {count} об\'єктів'))
 
     def _print_stats(self):
-        self.stdout.write('\nКрок 4/4: Фінальна статистика...')
+        self.stdout.write('\nКрок 5/5: Фінальна статистика...')
         total = CulturalObject.objects.count()
         approved = CulturalObject.objects.filter(
             status=CulturalObject.Status.APPROVED
