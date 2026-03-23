@@ -169,7 +169,8 @@ docker compose -f docker-compose.prod.yml exec backend python manage.py seed_dat
 
 ```bash
 python manage.py runserver       # Start dev server
-python manage.py test            # Run testspython manage.py makemigrations  # Create migrations
+python manage.py test            # Run tests
+python manage.py makemigrations  # Create migrations
 python manage.py migrate         # Apply migrations
 python manage.py seed_data       # Load sample data (admin/admin123, testuser/testpass123)
 ```
@@ -191,7 +192,8 @@ cultural-heritage/
 │   ├── objects/             # Main app: models, views, serializers
 │   │   ├── data/            # Ukraine border GeoJSON
 │   │   ├── management/      # seed_data command
-│   │   └── tests/           # Test suite│   ├── Dockerfile           # Production image (python:3.14-slim + gunicorn)
+│   │   └── tests/           # Test suite
+│   ├── Dockerfile           # Production image (python:3.14-slim + gunicorn)
 │   └── manage.py
 ├── frontend/
 │   ├── src/
