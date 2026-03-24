@@ -1,13 +1,14 @@
 # CultureMap Ukraine
 
-A web platform for mapping Ukrainian cultural heritage sites. Registered users can submit objects (castles, churches, monuments, etc.), which are reviewed by administrators before appearing on the map.
+A web platform for mapping Ukrainian cultural heritage sites. Registered users can submit objects (castles, churches,
+monuments, etc.), which are reviewed by administrators before appearing on the map.
 
 ## Live Demo
 
-| | URL |
-| :--- | :--- |
-| Frontend | [cultural-heritage.vercel.app](https://cultural-heritage.vercel.app) |
-| Backend API | [cultural-heritage-production.up.railway.app/api/](https://cultural-heritage-production.up.railway.app/api/) |
+|             | URL                                                                                                          |
+|:------------|:-------------------------------------------------------------------------------------------------------------|
+| Frontend    | [cultural-heritage.vercel.app](https://cultural-heritage.vercel.app)                                         |
+| Backend API | [culturemap-backend.onrender.com/api/](https://culturemap-backend.onrender.com/api/) |
 
 ## Features
 
@@ -22,15 +23,50 @@ A web platform for mapping Ukrainian cultural heritage sites. Registered users c
 - Admin panel for moderation and tag management
 - Coordinate validation against Ukraine border polygon (Shapely)
 
+## Screenshots
+
+### Map View
+
+![Map with clustered markers](screenshots/map-view-unzoomed.png)
+*Interactive map of Ukraine with clustered markers and tag filtering sidebar*
+
+![Zoomed map view](screenshots/map-view-zoomed.png)
+*Zoomed-in view showing individual markers*
+
+![Marker popup](screenshots/map-view-object.png)
+*Marker popup with object info and quick navigation*
+
+### Object Detail
+
+![Object detail page](screenshots/detail-page.png)
+*Detailed view with description, tags, location map, and links*
+
+### Add / Edit Object
+
+![Edit object form - top](screenshots/edit-page-1.png)
+![Edit object form - bottom](screenshots/edit-page-2.png)
+*Object form with tag selection, location picker, and URL fields*
+
+### My Objects
+
+![My objects list](screenshots/my-objetcs.png)
+*User's objects with status badges (approved / pending / archived)*
+
+### Authentication
+
+|              Login              |               Register                |
+|:-------------------------------:|:-------------------------------------:|
+| ![Login](screenshots/login.png) | ![Register](screenshots/register.png) |
+
 ## Tech Stack
 
-| Layer | Technology |
-| :--- | :--- |
-| Frontend | React 19 + TypeScript + Vite 7 + Tailwind CSS v4 + Leaflet.js (react-leaflet v5) |
-| Backend | Django 5 + Django REST Framework + SimpleJWT |
-| Database | PostgreSQL 15 (Docker) |
-| Auth | JWT (access + refresh tokens) |
-| Deployment | Vercel (frontend) + Railway (backend) + Docker (self-hosted) |
+| Layer      | Technology                                                                       |
+|:-----------|:---------------------------------------------------------------------------------|
+| Frontend   | React 19 + TypeScript + Vite 7 + Tailwind CSS v4 + Leaflet.js (react-leaflet v5) |
+| Backend    | Django 5 + Django REST Framework + SimpleJWT                                     |
+| Database   | PostgreSQL 15 (Docker)                                                           |
+| Auth       | JWT (access + refresh tokens)                                                    |
+| Deployment | Vercel (frontend) + Render (backend) + Docker (self-hosted)                     |
 
 ## Architecture
 
@@ -43,7 +79,7 @@ A web platform for mapping Ukrainian cultural heritage sites. Registered users c
         ▼                         ▼
 ┌──────────────┐         ┌──────────────┐
 │   Vercel     │         │  nginx :80   │
-│  (frontend)  │         │  (Docker)    │
+│  (React SPA) │         │  (Docker)    │
 └──────┬───────┘         └──────┬───────┘
        │                   ┌────┴────┐
        │                   ▼         ▼
@@ -52,30 +88,31 @@ A web platform for mapping Ukrainian cultural heritage sites. Registered users c
        ▼                   ▼
 ┌──────────────────────────────┐
 │  Django + DRF + Gunicorn     │
-│  (Railway or Docker :8000)   │
+│  (Render or Docker :8000)   │
 └──────────────┬───────────────┘
                ▼
 ┌──────────────────────────────┐
 │  PostgreSQL 15               │
-│  (Railway or Docker :5432)   │
+│  (Render or Docker :5432)   │
 └──────────────────────────────┘
 ```
 
 ## API Endpoints
 
-| Method | Endpoint | Description | Auth |
-| :--- | :--- | :--- | :--- |
-| POST | `/api/auth/register/` | Register new user | No |
-| POST | `/api/auth/login/` | Login (JWT tokens) | No |
-| POST | `/api/auth/refresh/` | Refresh access token | No |
-| GET | `/api/tags/` | List all tags | No |
-| GET | `/api/objects/` | List objects (with filtering, search) | No |
-| GET | `/api/objects/{id}/` | Object detail | No |
-| POST | `/api/objects/` | Create object | Yes |
-| PUT/PATCH | `/api/objects/{id}/` | Update object | Author/Admin |
-| DELETE | `/api/objects/{id}/` | Archive object (soft delete) | Author/Admin |
-| GET | `/api/objects/my/` | Current user's objects | Yes |
-| GET | `/api/health/` | Health check | No |
+| Method    | Endpoint              | Description                           | Auth         |
+|:----------|:----------------------|:--------------------------------------|:-------------|
+| POST      | `/api/auth/register/` | Register new user                     | No           |
+| POST      | `/api/auth/login/`    | Login (JWT tokens)                    | No           |
+| POST      | `/api/auth/refresh/`  | Refresh access token                  | No           |
+| GET       | `/api/tags/`          | List all tags                         | No           |
+| GET       | `/api/objects/`       | List objects (with filtering, search) | No           |
+| GET       | `/api/objects/{id}/`  | Object detail                         | No           |
+| POST      | `/api/objects/`       | Create object                         | Yes          |
+| PUT/PATCH | `/api/objects/{id}/`  | Update object                         | Author/Admin |
+| DELETE    | `/api/objects/{id}/`  | Archive object (soft delete)          | Author/Admin |
+| GET       | `/api/objects/my/`    | Current user's objects                | Yes          |
+| GET       | `/api/health/`        | Health check                          | No           |
+| GET       | `/api/docs/`          | Swagger API documentation             | No           |
 
 ## Prerequisites
 
@@ -88,7 +125,7 @@ A web platform for mapping Ukrainian cultural heritage sites. Registered users c
 ### 1. Clone the repository
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Makedoncek/cultural-heritage.git
 cd cultural-heritage
 ```
 
@@ -152,6 +189,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 This starts:
+
 - **PostgreSQL** — database with health checks
 - **Backend** — Django + Gunicorn, auto-migrates on startup
 - **Frontend** — React SPA served by nginx reverse proxy
@@ -159,6 +197,7 @@ This starts:
 The app is available at `http://localhost`.
 
 To seed data:
+
 ```bash
 docker compose -f docker-compose.prod.yml exec backend python manage.py seed_data
 ```
@@ -213,7 +252,7 @@ cultural-heritage/
 
 ## Test Accounts (seed_data)
 
-| Role | Username | Password |
-| :--- | :--- | :--- |
-| Admin | `admin` | `admin123` |
-| User | `testuser` | `testpass123` |
+| Role  | Username   | Password      |
+|:------|:-----------|:--------------|
+| Admin | `admin`    | `admin123`    |
+| User  | `testuser` | `testpass123` |
