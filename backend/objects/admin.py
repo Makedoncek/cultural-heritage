@@ -14,10 +14,16 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(CulturalObject)
 class CulturalObjectAdmin(admin.ModelAdmin):
+    STATUS_COLORS = {
+        'pending': '#f59e0b',
+        'approved': '#10b981',
+        'archived': '#ef4444',
+    }
+
     list_display = [
         'title',
-        'author',
-        'status',
+        'author_link',
+        'colored_status',
         'created_at',
         'archived_at',
     ]
@@ -108,6 +114,22 @@ class CulturalObjectAdmin(admin.ModelAdmin):
             f'<path d="M1 5V1h4M9 1h4v4M13 9v4h-4M5 13H1V9"/>'
             f'</svg></button></div>'
         )
+
+    @admin.display(description='Статус', ordering='status')
+    def colored_status(self, obj):
+        color = self.STATUS_COLORS.get(obj.status, '#6b7280')
+        label = obj.get_status_display()
+        return format_html(
+            '<span style="background:{};color:#fff;padding:3px 10px;'
+            'border-radius:12px;font-size:11px;font-weight:600;">{}</span>',
+            color, label,
+        )
+
+    @admin.display(description='Автор', ordering='author__username')
+    def author_link(self, obj):
+        from django.urls import reverse
+        url = reverse('admin:objects_culturalobject_changelist') + f'?author__id__exact={obj.author_id}'
+        return format_html('<a href="{}">{}</a>', url, obj.author)
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('author').prefetch_related('tags')

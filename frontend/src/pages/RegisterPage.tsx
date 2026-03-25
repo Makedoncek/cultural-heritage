@@ -117,6 +117,7 @@ function RegisterPage() {
                                 className={inputClass('password')}
                                 {...register('password', {required: 'Це поле обов\'язкове'})}
                             />
+                            <p className="text-gray-500 text-xs mt-1">Мінімум 8 символів, не лише цифри</p>
                             {errors.password && (
                                 <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
                             )}
