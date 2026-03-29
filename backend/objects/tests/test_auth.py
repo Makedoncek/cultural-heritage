@@ -1,8 +1,13 @@
+from django.test import override_settings
 from django.contrib.auth.models import User
 from rest_framework.test import APITestCase
 from rest_framework import status
 
 
+@override_settings(
+    CELERY_TASK_ALWAYS_EAGER=True,
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+)
 class RegisterEndpointTest(APITestCase):
 
     def setUp(self):
@@ -17,11 +22,10 @@ class RegisterEndpointTest(APITestCase):
     def test_register_success(self):
         response = self.client.post(self.url, self.valid_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn('tokens', response.data)
-        self.assertIn('access', response.data['tokens'])
-        self.assertIn('refresh', response.data['tokens'])
-        self.assertEqual(response.data['user']['username'], 'testuser')
-        self.assertTrue(User.objects.filter(username='testuser').exists())
+        self.assertIn('message', response.data)
+        self.assertNotIn('tokens', response.data)
+        user = User.objects.get(username='testuser')
+        self.assertFalse(user.is_active)
 
     def test_register_password_mismatch(self):
         data = {**self.valid_data, 'password2': 'WrongPass123!'}

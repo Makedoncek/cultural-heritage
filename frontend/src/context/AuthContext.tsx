@@ -64,13 +64,7 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
     };
 
     const register = async (userData: RegisterData) => {
-        const response = await authService.register(userData);
-
-        localStorage.setItem('access_token', response.tokens.access);
-        localStorage.setItem('refresh_token', response.tokens.refresh);
-
-        const payload = parseJwtPayload(response.tokens.access);
-        setUser(userFromPayload(payload));
+        await authService.register(userData);
     };
 
     const logout = () => {

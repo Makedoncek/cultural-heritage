@@ -1,5 +1,6 @@
+import {useState} from 'react';
 import {useForm} from 'react-hook-form';
-import {Link, Navigate, useNavigate} from 'react-router';
+import {Link, Navigate} from 'react-router';
 import {useAuth} from '../context/AuthContext';
 import type {RegisterData} from '../types';
 import {AxiosError} from 'axios';
@@ -9,7 +10,8 @@ type ServerErrors = Record<string, string[]>;
 
 function RegisterPage() {
     const {register: registerUser, isAuthenticated} = useAuth();
-    const navigate = useNavigate();
+    const [success, setSuccess] = useState(false);
+    const [registeredEmail, setRegisteredEmail] = useState('');
     const {
         register,
         handleSubmit,
@@ -23,7 +25,8 @@ function RegisterPage() {
     const onSubmit = async (data: RegisterData) => {
         try {
             await registerUser(data);
-            navigate('/');
+            setRegisteredEmail(data.email);
+            setSuccess(true);
         } catch (err) {
             const axiosError = err as AxiosError<ServerErrors>;
             if (axiosError.response?.status === 400 && axiosError.response.data) {
@@ -47,6 +50,40 @@ function RegisterPage() {
             errors[field] ? 'border-red-400' : 'border-gray-200'
         }`;
 
+    if (success) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 px-4">
+                <div className="w-full max-w-md">
+                    <div className="relative flex flex-col items-center mb-6">
+                        <UkraineMapBg/>
+                        <div className="absolute top-2 left-[52%] -translate-x-1/2 inline-flex items-center justify-center w-16 h-16">
+                            <svg className="w-10 h-10 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
+                            </svg>
+                        </div>
+                        <div className="mt-2">
+                            <h1 className="text-2xl font-bold text-amber-900 text-center">CultureMap</h1>
+                            <p className="text-sm text-amber-700/70 mt-1 text-center">Культурна спадщина України</p>
+                        </div>
+                    </div>
+                    <div className="bg-white/80 backdrop-blur rounded-2xl shadow-lg shadow-amber-900/5 border border-amber-100 p-8 text-center">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-3">Перевірте вашу пошту</h2>
+                        <p className="text-gray-600 mb-4">
+                            Ми надіслали лист на <strong>{registeredEmail}</strong>.
+                            Натисніть на посилання в листі, щоб підтвердити акаунт.
+                        </p>
+                        <p className="text-sm text-gray-500 mb-6">
+                            Не отримали листа? Перевірте папку «Спам».
+                        </p>
+                        <Link to="/login" className="text-amber-700 font-medium hover:text-amber-800 hover:underline">
+                            Перейти до входу
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div
             className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 px-4">
@@ -68,7 +105,7 @@ function RegisterPage() {
                         <p className="text-sm text-amber-700/70 mt-1 text-center">Культурна спадщина України</p>
                     </div>
                 </div>
-                
+
                 <div
                     className="bg-white/80 backdrop-blur rounded-2xl shadow-lg shadow-amber-900/5 border border-amber-100 p-8">
                     <h2 className="text-xl font-semibold text-gray-800 text-center mb-5">Реєстрація</h2>

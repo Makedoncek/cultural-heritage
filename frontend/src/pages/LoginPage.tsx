@@ -26,7 +26,7 @@ function LoginPage() {
         } catch (err) {
             const axiosError = err as AxiosError;
             if (axiosError.response?.status === 401) {
-                setError('root', {message: 'Невірне ім\'я користувача або пароль'});
+                setError('root', {message: 'Невірне ім\'я користувача або пароль. Якщо ви щойно зареєструвалися, перевірте пошту для підтвердження акаунту.'});
             } else {
                 setError('root', {message: 'Не вдалося з\'єднатися з сервером'});
             }
@@ -95,6 +95,11 @@ function LoginPage() {
                             {errors.password && (
                                 <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
                             )}
+                            <div className="flex justify-end">
+                                <Link to="/forgot-password" className="text-sm text-amber-700 hover:text-amber-800 hover:underline">
+                                    Забули пароль?
+                                </Link>
+                            </div>
                         </div>
 
                         {errors.root && (

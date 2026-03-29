@@ -65,9 +65,14 @@ class CulturalObjectAdmin(admin.ModelAdmin):
 
     @admin.action(description="Затвердити обрані")
     def approve_objects(self, request, queryset):
-        count = queryset.filter(
-            status=CulturalObject.Status.PENDING
-        ).update(status=CulturalObject.Status.APPROVED)
+        from .email import send_status_notification
+        count = 0
+        for obj in queryset.filter(status=CulturalObject.Status.PENDING).select_related('author'):
+            obj.status = CulturalObject.Status.APPROVED
+            obj.save(update_fields=['status'])
+            if obj.author.email:
+                send_status_notification.delay(obj.id, 'approved')
+            count += 1
         self.message_user(request, f'Затверджено {count} об\'єкт(ів)')
 
     @admin.action(description="Відновити archived")

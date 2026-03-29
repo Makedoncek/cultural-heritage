@@ -6,7 +6,9 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from rest_framework import serializers as s
 from .filters import ObjectFilter
 from .serializers import RegisterSerializer, TagSerializer, CustomTokenObtainPairSerializer
+from .email import send_verification_email, send_password_reset_email, verify_email_token, verify_password_reset_token
 from .models import Tag
+from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
@@ -20,19 +22,11 @@ ErrorResponse = inline_serializer('ErrorResponse', fields={'detail': s.CharField
 @extend_schema(
     tags=['Authentication'],
     summary='Register a new user',
-    description='Creates a new user account and returns JWT tokens. Username and email must be unique.',
+    description='Creates a new user account (inactive) and sends a verification email.',
     request=RegisterSerializer,
     responses={
-        201: inline_serializer('RegisterResponse', fields={
-            'user': inline_serializer('UserInfo', fields={
-                'id': s.IntegerField(),
-                'username': s.CharField(),
-                'email': s.EmailField(),
-            }),
-            'tokens': inline_serializer('TokenPair', fields={
-                'access': s.CharField(),
-                'refresh': s.CharField(),
-            }),
+        201: inline_serializer('RegisterSuccess', fields={
+            'message': s.CharField(),
         }),
         400: inline_serializer('RegisterError', fields={
             'username': s.ListField(child=s.CharField(), required=False),
@@ -50,10 +44,7 @@ ErrorResponse = inline_serializer('ErrorResponse', fields={'detail': s.CharField
         ),
         OpenApiExample(
             'Success response',
-            value={
-                'user': {'id': 1, 'username': 'alecs7turbo', 'email': 'alecs7turbo@example.com'},
-                'tokens': {'access': 'eyJ...', 'refresh': 'eyJ...'}
-            },
+            value={'message': 'Реєстрація успішна! Перевірте вашу електронну пошту для підтвердження.'},
             response_only=True,
             status_codes=['201'],
         ),
@@ -74,25 +65,131 @@ def register(request):
     serializer = RegisterSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
-
-        refresh = CustomTokenObtainPairSerializer.get_token(user)
+        send_verification_email.delay(user.id)
 
         return Response({
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-            },
-            'tokens': {
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-            }
+            'message': 'Реєстрація успішна! Перевірте вашу електронну пошту для підтвердження.',
         }, status=status.HTTP_201_CREATED)
 
     return Response(
         serializer.errors,
         status=status.HTTP_400_BAD_REQUEST
     )
+
+
+@extend_schema(
+    tags=['Authentication'],
+    summary='Verify email address',
+    description='Activates user account via token from verification email.',
+    parameters=[OpenApiParameter(name='token', type=str, location=OpenApiParameter.QUERY, required=True)],
+    responses={
+        200: inline_serializer('VerifyEmailSuccess', fields={'message': s.CharField()}),
+        400: inline_serializer('VerifyEmailError', fields={'error': s.CharField()}),
+    },
+)
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def verify_email(request):
+    token = request.query_params.get('token')
+    if not token:
+        return Response({'error': 'Токен не надано.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user_pk = verify_email_token(token)
+    if user_pk is None:
+        return Response({'error': 'Недійсне або прострочене посилання.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(pk=user_pk)
+    except User.DoesNotExist:
+        return Response({'error': 'Користувача не знайдено.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if user.is_active:
+        return Response({'message': 'Пошту вже підтверджено.'})
+
+    user.is_active = True
+    user.save(update_fields=['is_active'])
+    return Response({'message': 'Пошту успішно підтверджено! Тепер ви можете увійти у свій аккаунт.'})
+
+
+@extend_schema(
+    tags=['Authentication'],
+    summary='Request password reset',
+    description='Sends a password reset email. Always returns 200 to prevent email enumeration.',
+    request=inline_serializer('PasswordResetRequest', fields={'email': s.EmailField()}),
+    responses={200: inline_serializer('PasswordResetResponse', fields={'message': s.CharField()})},
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_request(request):
+    email = request.data.get('email', '').strip()
+    if email:
+        try:
+            user = User.objects.get(email=email, is_active=True)
+            send_password_reset_email.delay(user.id)
+        except User.DoesNotExist:
+            pass
+    return Response({'message': 'Якщо цю адресу зареєстровано, ми надіслали лист із інструкціями.'})
+
+
+@extend_schema(
+    tags=['Authentication'],
+    summary='Confirm password reset',
+    description='Sets a new password using uid and token from the reset email.',
+    request=inline_serializer('PasswordResetConfirm', fields={
+        'uid': s.CharField(),
+        'token': s.CharField(),
+        'password': s.CharField(),
+        'password2': s.CharField(),
+    }),
+    responses={
+        200: inline_serializer('PasswordResetConfirmSuccess', fields={'message': s.CharField()}),
+        400: inline_serializer('PasswordResetConfirmError', fields={'error': s.CharField()}),
+    },
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_confirm(request):
+    uid = request.data.get('uid', '')
+    token = request.data.get('token', '')
+    password = request.data.get('password', '')
+    password2 = request.data.get('password2', '')
+
+    if not all([uid, token, password, password2]):
+        return Response({'error': 'Усі поля є обов\'язковими.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if password != password2:
+        return Response({'error': 'Паролі не збігаються.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if len(password) < 8:
+        return Response({'error': 'Пароль має містити щонайменше 8 символів.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = verify_password_reset_token(uid, token)
+    if user is None:
+        return Response({'error': 'Недійсне або прострочене посилання.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.set_password(password)
+    user.save(update_fields=['password'])
+    return Response({'message': 'Пароль успішно змінено!'})
+
+
+@extend_schema(
+    tags=['Authentication'],
+    summary='Resend verification email',
+    description='Resends verification email for inactive accounts. Always returns 200.',
+    request=inline_serializer('ResendVerification', fields={'email': s.EmailField()}),
+    responses={200: inline_serializer('ResendVerificationResponse', fields={'message': s.CharField()})},
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def resend_verification(request):
+    email = request.data.get('email', '').strip()
+    if email:
+        try:
+            user = User.objects.get(email=email, is_active=False)
+            send_verification_email.delay(user.id)
+        except User.DoesNotExist:
+            pass
+    return Response({'message': 'Якщо цю адресу електронної пошти зареєстровано, ми надіслали лист для підтвердження.'})
 
 
 @extend_schema_view(

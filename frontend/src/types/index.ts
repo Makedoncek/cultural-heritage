@@ -22,9 +22,19 @@ export interface LoginData {
     password: string;
 }
 
-export interface RegisterResponse {
-    user: User;
-    tokens: AuthTokens;
+export interface MessageResponse {
+    message: string;
+}
+
+export interface PasswordResetData {
+    email: string;
+}
+
+export interface PasswordResetConfirmData {
+    uid: string;
+    token: string;
+    password: string;
+    password2: string;
 }
 
 export interface Tag {

@@ -9,6 +9,9 @@ import ObjectDetailPage from './pages/ObjectDetailPage';
 import MyObjectsPage from './pages/MyObjectsPage';
 import AddObjectPage from './pages/AddObjectPage';
 import EditObjectPage from './pages/EditObjectPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 function App() {
     return (
@@ -20,6 +23,9 @@ function App() {
         <Routes>
             <Route path="/login" element={<LoginPage/>}/>
             <Route path="/register" element={<RegisterPage/>}/>
+            <Route path="/verify-email" element={<VerifyEmailPage/>}/>
+            <Route path="/forgot-password" element={<ForgotPasswordPage/>}/>
+            <Route path="/reset-password" element={<ResetPasswordPage/>}/>
             <Route element={<Layout/>}>
                 <Route path="/" element={<HomePage/>}/>
                 <Route path="/objects/:id" element={<ObjectDetailPage/>}/>
