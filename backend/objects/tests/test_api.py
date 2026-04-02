@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from rest_framework.test import APITestCase
 from objects.models import Tag, CulturalObject
 from rest_framework import status
@@ -275,3 +278,77 @@ class ObjectCRUDTest(APITestCase):
         self.client.force_authenticate(user=None)
         response = self.client.get('/api/objects/my/')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class EventObjectTest(APITestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user('user', 'u@test.com', 'pass')
+        self.tag = Tag.objects.create(name='Замок', slug='zamok')
+        self.client.force_authenticate(user=self.user)
+        self.base_data = {
+            'title': 'Фестиваль',
+            'latitude': 50.45,
+            'longitude': 30.52,
+            'tags': [self.tag.id],
+        }
+
+    def test_create_event_object(self):
+        data = {
+            **self.base_data,
+            'object_type': 'event',
+            'event_start_date': str(timezone.now() + timedelta(days=5)),
+            'event_end_date': str(timezone.now() + timedelta(days=10)),
+        }
+        response = self.client.post('/api/objects/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['object_type'], 'event')
+
+    def test_create_event_missing_dates(self):
+        data = {**self.base_data, 'object_type': 'event'}
+        response = self.client.post('/api/objects/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_event_end_before_start(self):
+        data = {
+            **self.base_data,
+            'object_type': 'event',
+            'event_start_date': str(timezone.now() + timedelta(days=10)),
+            'event_end_date': str(timezone.now() + timedelta(days=5)),
+        }
+        response = self.client.post('/api/objects/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_event_start_in_past(self):
+        data = {
+            **self.base_data,
+            'object_type': 'event',
+            'event_start_date': str(timezone.now() - timedelta(days=5)),
+            'event_end_date': str(timezone.now() + timedelta(days=5)),
+        }
+        response = self.client.post('/api/objects/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_filter_by_object_type(self):
+        CulturalObject.objects.create(
+            title='Permanent', latitude=50.0, longitude=30.0,
+            author=self.user, status='approved', object_type='permanent',
+        )
+        event = CulturalObject.objects.create(
+            title='Event', latitude=50.0, longitude=30.0,
+            author=self.user, status='approved', object_type='event',
+            event_start_date=timezone.now(), event_end_date=timezone.now() + timedelta(days=5),
+        )
+        event.tags.add(self.tag)
+
+        response = self.client.get('/api/objects/?object_type=event')
+        titles = [obj['title'] for obj in response.data['results']]
+        self.assertIn('Event', titles)
+        self.assertNotIn('Permanent', titles)
+
+    def test_permanent_object_no_dates(self):
+        data = {**self.base_data, 'object_type': 'permanent'}
+        response = self.client.post('/api/objects/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNone(response.data['event_start_date'])
+        self.assertIsNone(response.data['event_end_date'])

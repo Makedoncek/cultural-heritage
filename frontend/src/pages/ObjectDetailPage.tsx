@@ -151,6 +151,24 @@ export default function ObjectDetailPage() {
                 )}
 
 
+                {object.object_type === 'event' && (
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+                            🎉 Подія
+                        </span>
+                        {object.event_start_date && object.event_end_date && (
+                            <span className="text-sm text-gray-600">
+                                📅 {new Date(object.event_start_date).toLocaleDateString('uk-UA')} — {new Date(object.event_end_date).toLocaleDateString('uk-UA')}
+                            </span>
+                        )}
+                        {object.event_end_date && new Date(object.event_end_date) < new Date() && (
+                            <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-xs">
+                                Подія завершена
+                            </span>
+                        )}
+                    </div>
+                )}
+
                 {object.description && (
                     <div className="mb-6">
                         <p className="text-gray-700 whitespace-pre-line leading-relaxed">{object.description}</p>

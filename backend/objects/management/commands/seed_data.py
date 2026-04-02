@@ -1,23 +1,30 @@
 import random
+from datetime import timedelta
 from decimal import Decimal
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
+from django.utils import timezone
 from objects.models import Tag, CulturalObject
 from objects.validators import is_within_ukraine
 
 TAGS_DATA = [
-    {'name': 'Замок', 'slug': 'zamok', 'icon': '🏰'},
-    {'name': 'Церква', 'slug': 'tserkva', 'icon': '⛪'},
-    {'name': 'Музей', 'slug': 'muzey', 'icon': '🏛️'},
-    {'name': 'Пам\'ятник', 'slug': 'pamyatnyk', 'icon': '🗿'},
-    {'name': 'Парк', 'slug': 'park', 'icon': '🌳'},
-    {'name': 'Палац', 'slug': 'palats', 'icon': '👑'},
-    {'name': 'Фортеця', 'slug': 'fortetsya', 'icon': '🛡️'},
-    {'name': 'Театр', 'slug': 'teatr', 'icon': '🎭'},
-    {'name': 'Собор', 'slug': 'sobor', 'icon': '⛪'},
-    {'name': 'UNESCO', 'slug': 'unesco', 'icon': '🌍'},
+    {'name': 'Замок', 'slug': 'zamok', 'icon': '🏰', 'tag_type': 'object'},
+    {'name': 'Церква', 'slug': 'tserkva', 'icon': '⛪', 'tag_type': 'object'},
+    {'name': 'Музей', 'slug': 'muzey', 'icon': '🏛️', 'tag_type': 'object'},
+    {'name': 'Пам\'ятник', 'slug': 'pamyatnyk', 'icon': '🗿', 'tag_type': 'object'},
+    {'name': 'Парк', 'slug': 'park', 'icon': '🌳', 'tag_type': 'object'},
+    {'name': 'Палац', 'slug': 'palats', 'icon': '👑', 'tag_type': 'object'},
+    {'name': 'Фортеця', 'slug': 'fortetsya', 'icon': '🛡️', 'tag_type': 'object'},
+    {'name': 'Театр', 'slug': 'teatr', 'icon': '🎭', 'tag_type': 'object'},
+    {'name': 'Собор', 'slug': 'sobor', 'icon': '⛪', 'tag_type': 'object'},
+    {'name': 'UNESCO', 'slug': 'unesco', 'icon': '🌍', 'tag_type': 'object'},
+    {'name': 'Фестиваль', 'slug': 'festyval', 'icon': '🎉', 'tag_type': 'event'},
+    {'name': 'Виставка', 'slug': 'vystavka', 'icon': '🖼️', 'tag_type': 'event'},
+    {'name': 'Ярмарок', 'slug': 'yarmarok', 'icon': '🎪', 'tag_type': 'event'},
+    {'name': 'Концерт', 'slug': 'kontsert', 'icon': '🎵', 'tag_type': 'event'},
+    {'name': 'Конференція', 'slug': 'konferentsiya', 'icon': '🎤', 'tag_type': 'event'},
 ]
 
 SAMPLE_TITLES = [
@@ -47,6 +54,7 @@ class Command(BaseCommand):
         self._create_admin_user()
         user = self._create_test_user()
         self._create_objects(user, count)
+        self._create_events(user)
         self._print_stats()
 
     def _create_tags(self):
@@ -55,7 +63,7 @@ class Command(BaseCommand):
         for tag_data in TAGS_DATA:
             _, created = Tag.objects.get_or_create(
                 slug=tag_data['slug'],
-                defaults={'name': tag_data['name'], 'icon': tag_data['icon']}
+                defaults={'name': tag_data['name'], 'icon': tag_data['icon'], 'tag_type': tag_data.get('tag_type', 'object')}
             )
             if created:
                 tags_created += 1
@@ -100,7 +108,7 @@ class Command(BaseCommand):
 
     def _create_objects(self, user, count):
         self.stdout.write('Крок 4/5: Створення культурних об\'єктів...')
-        all_tags = list(Tag.objects.all())
+        all_tags = list(Tag.objects.filter(tag_type='object'))
         if not all_tags:
             self.stderr.write(self.style.ERROR('Помилка: Теги не створені!'))
             return
@@ -144,8 +152,48 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'Створено {count} об\'єктів'))
 
+    def _create_events(self, user):
+        self.stdout.write('Крок 5/6: Створення тестових подій...')
+        event_tags = list(Tag.objects.filter(tag_type='event'))
+        today = timezone.now()
+
+        events = [
+            ('Фестиваль вишиванки', 5, 3),
+            ('Виставка народного мистецтва', 10, 7),
+            ('Ярмарок кераміки', 20, 5),
+            ('Фестиваль вуличної музики', 1, 4),
+            ('Виставка сучасного мистецтва', 15, 10),
+            ('Фестиваль минулого (expired)', -30, 7),
+            ('Ярмарок минулого (expired)', -10, 5),
+        ]
+
+        for title, start_offset, duration in events:
+            while True:
+                lat = round(random.uniform(44.5, 52.0), 6)
+                lng = round(random.uniform(22.5, 40.0), 6)
+                if is_within_ukraine(lat, lng):
+                    break
+
+            start = today + timedelta(days=start_offset)
+            end = start + timedelta(days=duration)
+
+            obj = CulturalObject.objects.create(
+                title=title,
+                description=f'Тестова подія: {title}',
+                latitude=Decimal(str(lat)),
+                longitude=Decimal(str(lng)),
+                author=user,
+                status=CulturalObject.Status.APPROVED,
+                object_type=CulturalObject.ObjectType.EVENT,
+                event_start_date=start,
+                event_end_date=end,
+            )
+            obj.tags.set(random.sample(event_tags, min(random.randint(1, 2), len(event_tags))))
+
+        self.stdout.write(self.style.SUCCESS(f'Створено {len(events)} подій'))
+
     def _print_stats(self):
-        self.stdout.write('\nКрок 5/5: Фінальна статистика...')
+        self.stdout.write('\nКрок 6/6: Фінальна статистика...')
         total = CulturalObject.objects.count()
         approved = CulturalObject.objects.filter(
             status=CulturalObject.Status.APPROVED
@@ -164,5 +212,9 @@ class Command(BaseCommand):
         self.stdout.write(f'    - Approved: {approved}')
         self.stdout.write(f'    - Pending: {pending}')
         self.stdout.write(f'    - Archived: {archived}')
+        events = CulturalObject.objects.filter(object_type=CulturalObject.ObjectType.EVENT).count()
+        permanent = CulturalObject.objects.filter(object_type=CulturalObject.ObjectType.PERMANENT).count()
+        self.stdout.write(f'    - Permanent: {permanent}')
+        self.stdout.write(f'    - Events: {events}')
         self.stdout.write(f'{"=" * 50}')
         self.stdout.write(self.style.SUCCESS('База даних успішно заповнена!'))

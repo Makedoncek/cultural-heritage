@@ -8,6 +8,7 @@ Core models:
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -20,6 +21,10 @@ class Tag(models.Model):
 
     Admin-only creation, users select from existing tags.
     """
+
+    class TagType(models.TextChoices):
+        OBJECT = 'object', 'Об\'єкт'
+        EVENT = 'event', 'Подія'
 
     name = models.CharField(
         max_length=100,
@@ -36,6 +41,13 @@ class Tag(models.Model):
     icon = models.CharField(
         max_length=10,
         help_text="Emoji icon for visual representation (e.g., '🏰' for Castle)"
+    )
+
+    tag_type = models.CharField(
+        max_length=10,
+        choices=TagType.choices,
+        default=TagType.OBJECT,
+        db_index=True,
     )
 
     class Meta:
@@ -69,6 +81,10 @@ class CulturalObject(models.Model):
     - Editing an 'approved' object resets it to 'pending'
     - Delete = archive (soft delete, not hard delete)
     """
+
+    class ObjectType(models.TextChoices):
+        PERMANENT = 'permanent', 'Пам\'ятка'
+        EVENT = 'event', 'Подія'
 
     class Status(models.TextChoices):
         PENDING = 'pending', 'Pending Review'
@@ -121,6 +137,23 @@ class CulturalObject(models.Model):
         help_text="Current moderation status"
     )
 
+    object_type = models.CharField(
+        max_length=20,
+        choices=ObjectType.choices,
+        default=ObjectType.PERMANENT,
+        db_index=True,
+    )
+
+    event_start_date = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    event_end_date = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
     wikipedia_url = models.URLField(
         blank=True,
         null=True,
@@ -166,6 +199,7 @@ class CulturalObject(models.Model):
             models.Index(fields=['status']),
             models.Index(fields=['author']),
             models.Index(fields=['status', '-created_at']),
+            models.Index(fields=['object_type', 'event_end_date']),
         ]
 
     def __str__(self):
@@ -198,7 +232,12 @@ class CulturalObject(models.Model):
         self.save(update_fields=['status', 'archived_at'])
 
     def clean(self):
-        """Validate coordinates fall within Ukraine's borders."""
         super().clean()
         if self.latitude is not None and self.longitude is not None:
             validate_coordinates_within_ukraine(self.latitude, self.longitude)
+
+        if self.object_type == self.ObjectType.EVENT:
+            if not self.event_start_date or not self.event_end_date:
+                raise ValidationError('Для подій потрібно вказати дату початку та завершення.')
+            if self.event_end_date < self.event_start_date:
+                raise ValidationError('Дата завершення не може бути раніше дати початку.')

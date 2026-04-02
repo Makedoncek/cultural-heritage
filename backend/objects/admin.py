@@ -6,7 +6,8 @@ from .models import Tag, CulturalObject
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ['name', 'slug', 'icon']
+    list_display = ['name', 'slug', 'icon', 'tag_type']
+    list_filter = ['tag_type']
     prepopulated_fields = {'slug': ('name',)}
     search_fields = ['name', 'slug']
     ordering = ['name']
@@ -24,11 +25,12 @@ class CulturalObjectAdmin(admin.ModelAdmin):
         'title',
         'author_link',
         'colored_status',
+        'object_type',
         'created_at',
         'archived_at',
     ]
 
-    list_filter = ['status', 'tags', 'created_at']
+    list_filter = ['status', 'object_type', 'tags', 'created_at']
     search_fields = ['title', 'description']
     date_hierarchy = 'created_at'
 
@@ -43,6 +45,10 @@ class CulturalObjectAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Основна інформація', {
             'fields': ('title', 'description', 'status')
+        }),
+        ('Подія', {
+            'fields': ('object_type', 'event_start_date', 'event_end_date'),
+            'classes': ('collapse',),
         }),
         ('Геолокація', {
             'fields': ('latitude', 'longitude', 'map_link', 'map_preview')

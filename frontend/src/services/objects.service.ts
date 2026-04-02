@@ -5,6 +5,8 @@ interface ObjectFilters {
     tags?: string;
     search?: string;
     page?: number;
+    object_type?: string;
+    event_status?: string;
 }
 
 export const objectsService = {

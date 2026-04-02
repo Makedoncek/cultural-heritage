@@ -36,6 +36,9 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
             title: '',
             description: '',
             tags: [],
+            object_type: 'permanent',
+            event_start_date: '',
+            event_end_date: '',
             latitude: null,
             longitude: null,
             wikipedia_url: '',
@@ -46,15 +49,21 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
 
 
     const selectedTags = watch('tags');
+    const objectType = watch('object_type');
     const latitude = watch('latitude');
     const longitude = watch('longitude');
 
     useEffect(() => {
-        tagsService.getAll()
-            .then(data => setTags(data.results))
+        setTagsLoading(true);
+        const tagType = objectType === 'event' ? 'event' : 'object';
+        tagsService.getAll(tagType)
+            .then(data => {
+                setTags(data.results);
+                setValue('tags', []);
+            })
             .catch(() => {})
             .finally(() => setTagsLoading(false));
-    }, []);
+    }, [objectType, setValue]);
 
     const toggleTag = (tagId: number) => {
         const current = selectedTags || [];
@@ -85,7 +94,15 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
             latitude: parseFloat(data.latitude.toFixed(6)),
             longitude: parseFloat(data.longitude.toFixed(6)),
             tags: data.tags,
+            object_type: data.object_type,
         };
+        if (data.object_type === 'event') {
+            writeData.event_start_date = data.event_start_date || null;
+            writeData.event_end_date = data.event_end_date || null;
+        } else {
+            writeData.event_start_date = null;
+            writeData.event_end_date = null;
+        }
         if (data.wikipedia_url.trim()) writeData.wikipedia_url = data.wikipedia_url.trim();
         if (data.official_website.trim()) writeData.official_website = data.official_website.trim();
         if (data.google_maps_url.trim()) writeData.google_maps_url = data.google_maps_url.trim();
@@ -123,6 +140,67 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
                 />
                 {errors.title && <p className="text-red-600 text-sm mt-1">{errors.title.message}</p>}
             </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Тип об'єкта</label>
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setValue('object_type', 'permanent')}
+                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
+                            objectType === 'permanent'
+                                ? 'bg-amber-100 border-amber-400 text-amber-800'
+                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400'
+                        }`}
+                    >
+                        📍 Пам'ятка
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setValue('object_type', 'event')}
+                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
+                            objectType === 'event'
+                                ? 'bg-purple-100 border-purple-400 text-purple-800'
+                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400'
+                        }`}
+                    >
+                        🎉 Подія
+                    </button>
+                </div>
+            </div>
+
+            {objectType === 'event' && (
+                <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <label htmlFor="event_start_date" className="block text-sm font-medium text-gray-700 mb-1">
+                            Дата початку *
+                        </label>
+                        <input
+                            id="event_start_date"
+                            type="datetime-local"
+                            className={inputClass(!!errors.event_start_date)}
+                            {...register('event_start_date', {
+                                required: objectType === 'event' ? 'Вкажіть дату початку' : false,
+                            })}
+                        />
+                        {errors.event_start_date && <p className="text-red-600 text-sm mt-1">{errors.event_start_date.message}</p>}
+                    </div>
+                    <div>
+                        <label htmlFor="event_end_date" className="block text-sm font-medium text-gray-700 mb-1">
+                            Дата завершення *
+                        </label>
+                        <input
+                            id="event_end_date"
+                            type="datetime-local"
+                            className={inputClass(!!errors.event_end_date)}
+                            {...register('event_end_date', {
+                                required: objectType === 'event' ? 'Вкажіть дату завершення' : false,
+                            })}
+                        />
+                        {errors.event_end_date && <p className="text-red-600 text-sm mt-1">{errors.event_end_date.message}</p>}
+                    </div>
+                </div>
+            )}
 
             <div>
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">

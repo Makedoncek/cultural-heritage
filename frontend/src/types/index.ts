@@ -42,6 +42,7 @@ export interface Tag {
     name: string;
     slug: string;
     icon: string;
+    tag_type: 'object' | 'event';
 }
 
 export interface CulturalObject {
@@ -50,6 +51,9 @@ export interface CulturalObject {
     latitude: string;
     longitude: string;
     status: 'pending' | 'approved' | 'archived';
+    object_type: 'permanent' | 'event';
+    event_start_date: string | null;
+    event_end_date: string | null;
     author_name: string;
     tags: Tag[];
     created_at: string;
@@ -62,6 +66,9 @@ export interface CulturalObjectDetail {
     latitude: string;
     longitude: string;
     status: 'pending' | 'approved' | 'archived';
+    object_type: 'permanent' | 'event';
+    event_start_date: string | null;
+    event_end_date: string | null;
     author: string;
     tags: Tag[];
     wikipedia_url: string | null;
@@ -78,6 +85,9 @@ export interface CulturalObjectWrite {
     latitude: number;
     longitude: number;
     tags: number[];
+    object_type?: 'permanent' | 'event';
+    event_start_date?: string | null;
+    event_end_date?: string | null;
     wikipedia_url?: string;
     official_website?: string;
     google_maps_url?: string;
@@ -87,6 +97,9 @@ export interface ObjectFormData {
     title: string;
     description: string;
     tags: number[];
+    object_type: 'permanent' | 'event';
+    event_start_date: string;
+    event_end_date: string;
     latitude: number | null;
     longitude: number | null;
     wikipedia_url: string;

@@ -5,6 +5,8 @@ import {tagsService} from '../services/tags.service';
 import MapView from '../components/Map/MapView';
 import type {FlyToTarget} from '../components/Map/MapView';
 import TagFilter from '../components/Map/TagFilter';
+import TypeFilter from '../components/Map/TypeFilter';
+import EventStatusFilter from '../components/Map/EventStatusFilter';
 import ErrorBoundary from '../components/Layout/ErrorBoundary';
 import type {CulturalObject, Tag} from '../types';
 
@@ -12,6 +14,8 @@ export default function HomePage() {
     const [objects, setObjects] = useState<CulturalObject[]>([]);
     const [tags, setTags] = useState<Tag[]>([]);
     const [selectedTags, setSelectedTags] = useState<number[]>([]);
+    const [objectType, setObjectType] = useState('all');
+    const [eventStatus, setEventStatus] = useState('all');
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [loading, setLoading] = useState(true);
@@ -24,15 +28,20 @@ export default function HomePage() {
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        tagsService.getAll().then(res => setTags(res.results)).catch(() => {});
-    }, []);
+        const tagType = objectType === 'all' ? undefined : objectType;
+        tagsService.getAll(tagType).then(res => {
+            setTags(res.results);
+            setSelectedTags([]);
+        }).catch(() => {});
+        if (objectType !== 'event') setEventStatus('all');
+    }, [objectType]);
 
     useEffect(() => {
         debounceRef.current = setTimeout(() => setDebouncedSearch(search.length >= 3 ? search : ''), 1000);
         return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
     }, [search]);
 
-    const fetchObjects = useCallback(async (tagIds: number[], searchQuery: string) => {
+    const fetchObjects = useCallback(async (tagIds: number[], searchQuery: string, type: string, evStatus: string) => {
         setLoading(true);
         setError(null);
 
@@ -43,6 +52,8 @@ export default function HomePage() {
             const params: Record<string, string | number> = {};
             if (tagIds.length > 0) params.tags = tagIds.join(',');
             if (searchQuery) params.search = searchQuery;
+            if (type !== 'all') params.object_type = type;
+            if (type === 'event' && evStatus !== 'all') params.event_status = evStatus;
 
             while (hasNext) {
                 const response = await objectsService.getAll({...params, page});
@@ -60,8 +71,8 @@ export default function HomePage() {
     }, []);
 
     useEffect(() => {
-        fetchObjects(selectedTags, debouncedSearch);
-    }, [selectedTags, debouncedSearch, fetchObjects]);
+        fetchObjects(selectedTags, debouncedSearch, objectType, eventStatus);
+    }, [selectedTags, debouncedSearch, objectType, eventStatus, fetchObjects]);
 
     const handleTagToggle = (tagId: number) => {
         setSelectedTags(prev =>
@@ -90,7 +101,7 @@ export default function HomePage() {
                 <div className="flex flex-col items-center gap-4">
                     <p className="text-red-600">{error}</p>
                     <button
-                        onClick={() => fetchObjects(selectedTags, debouncedSearch)}
+                        onClick={() => fetchObjects(selectedTags, debouncedSearch, objectType, eventStatus)}
                         className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 cursor-pointer"
                     >
                         Спробувати знову
@@ -185,6 +196,14 @@ export default function HomePage() {
                             </div>
                         )}
                     </div>
+                    <TypeFilter value={objectType} onChange={setObjectType}/>
+                    {objectType === 'event' && (
+                        <>
+                            <hr className="my-3 border-gray-200"/>
+                            <EventStatusFilter value={eventStatus} onChange={setEventStatus}/>
+                        </>
+                    )}
+                    <hr className="my-3 border-gray-200"/>
                     <TagFilter
                         tags={tags}
                         selectedTags={selectedTags}

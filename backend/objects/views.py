@@ -227,9 +227,15 @@ def resend_verification(request):
     ),
 )
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Tag.objects.all().order_by('name')
     serializer_class = TagSerializer
     permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        qs = Tag.objects.all().order_by('name')
+        tag_type = self.request.query_params.get('tag_type')
+        if tag_type in ('object', 'event'):
+            qs = qs.filter(tag_type=tag_type)
+        return qs
 
 
 @extend_schema_view(

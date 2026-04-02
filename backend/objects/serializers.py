@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
@@ -76,8 +77,8 @@ class RegisterSerializer(serializers.ModelSerializer):
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ['id', 'name', 'slug', 'icon']
-        read_only_fields = ['id', 'name', 'slug', 'icon']
+        fields = ['id', 'name', 'slug', 'icon', 'tag_type']
+        read_only_fields = ['id', 'name', 'slug', 'icon', 'tag_type']
 
 
 class ObjectListSerializer(serializers.ModelSerializer):
@@ -96,6 +97,9 @@ class ObjectListSerializer(serializers.ModelSerializer):
             'latitude',
             'longitude',
             'status',
+            'object_type',
+            'event_start_date',
+            'event_end_date',
             'author_name',
             'tags',
             'created_at'
@@ -134,6 +138,9 @@ class ObjectWriteSerializer(serializers.ModelSerializer):
             'latitude',
             'longitude',
             'tags',
+            'object_type',
+            'event_start_date',
+            'event_end_date',
             'wikipedia_url',
             'official_website',
             'google_maps_url'
@@ -170,5 +177,25 @@ class ObjectWriteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     'coordinates': e.message
                 })
+
+        object_type = data.get('object_type', getattr(self.instance, 'object_type', 'permanent'))
+        if object_type == CulturalObject.ObjectType.EVENT:
+            start = data.get('event_start_date')
+            end = data.get('event_end_date')
+            if not start or not end:
+                raise serializers.ValidationError({
+                    'event_start_date': 'Для подій потрібно вказати дату початку та завершення.'
+                })
+            if end < start:
+                raise serializers.ValidationError({
+                    'event_end_date': 'Дата завершення не може бути раніше дати початку.'
+                })
+            if not self.instance and start < timezone.now():
+                raise serializers.ValidationError({
+                    'event_start_date': 'Дата початку не може бути в минулому.'
+                })
+        else:
+            data['event_start_date'] = None
+            data['event_end_date'] = None
 
         return data
