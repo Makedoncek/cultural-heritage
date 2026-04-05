@@ -116,6 +116,20 @@ export interface ObjectFormData {
     google_maps_url: string;
 }
 
+export interface AuthorProfile {
+    username: string;
+    date_joined: string;
+    approved_objects_count: number;
+    total_favorites_received: number;
+    followers_count: number;
+    is_followed: boolean;
+}
+
+export interface FollowToggleResponse {
+    is_followed: boolean;
+    followers_count: number;
+}
+
 export interface PaginatedResponse<T> {
     count: number;
     next: string | null;

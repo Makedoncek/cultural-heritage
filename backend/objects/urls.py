@@ -5,6 +5,7 @@ from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 router.register('tags', views.TagViewSet, basename='tag')
 router.register('objects', views.ObjectViewSet, basename='object')
+router.register('users', views.UserProfileViewSet, basename='user-profile')
 
 app_name = 'objects'
 

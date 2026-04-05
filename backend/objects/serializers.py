@@ -4,7 +4,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from .models import Tag, CulturalObject, Favorite
+from .models import Tag, CulturalObject, Favorite, FavoriteAuthor
 from .validators import validate_coordinates_within_ukraine
 
 
@@ -135,6 +135,15 @@ class ObjectDetailSerializer(FavoriteMixin, serializers.ModelSerializer):
         for field in fields.values():
             field.read_only = True
         return fields
+
+
+class UserProfileSerializer(serializers.Serializer):
+    username = serializers.CharField(read_only=True)
+    date_joined = serializers.DateTimeField(read_only=True)
+    approved_objects_count = serializers.IntegerField(read_only=True, default=0)
+    total_favorites_received = serializers.IntegerField(read_only=True, default=0)
+    followers_count = serializers.IntegerField(read_only=True, default=0)
+    is_followed = serializers.BooleanField(read_only=True, default=False)
 
 
 class ObjectWriteSerializer(serializers.ModelSerializer):

@@ -241,7 +241,7 @@ export default function ObjectDetailPage() {
 
                 {/* Meta info */}
                 <div className="border-t border-gray-200 pt-4 text-sm text-gray-500">
-                    <p>Автор: {object.author}</p>
+                    <p>Автор: <Link to={`/authors/${object.author}`} className="text-amber-600 hover:text-amber-800 underline">{object.author}</Link></p>
                     <p>Створено: {new Date(object.created_at).toLocaleDateString('uk-UA')}</p>
                     {new Date(object.updated_at).getTime() - new Date(object.created_at).getTime() > 60000 && (
                         <p>Оновлено: {new Date(object.updated_at).toLocaleDateString('uk-UA')}</p>

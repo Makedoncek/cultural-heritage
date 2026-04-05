@@ -31,8 +31,9 @@ export default function Header() {
                                     <NavLink to="/popular" className={linkClass}>Популярне</NavLink>
                                     <NavLink to="/my-objects" className={linkClass}>Мої об'єкти</NavLink>
                                     <NavLink to="/favorites" className={linkClass}>Обране</NavLink>
+                                    <NavLink to="/favorite-authors" className={linkClass}>Підписки</NavLink>
                                     <NavLink to="/objects/add" className={linkClass}>Додати об'єкт</NavLink>
-                                    <span className="text-amber-800 font-medium">{user?.username}</span>
+                                    <Link to={`/authors/${user?.username}`} className="text-amber-800 font-medium hover:text-amber-600">{user?.username}</Link>
                                     <button
                                         onClick={logout}
                                         className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors"
@@ -83,10 +84,12 @@ export default function Header() {
                                      onClick={() => setMenuOpen(false)}>Мої об'єкти</NavLink>
                             <NavLink to="/favorites" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>Обране</NavLink>
+                            <NavLink to="/favorite-authors" className={linkClass}
+                                     onClick={() => setMenuOpen(false)}>Підписки</NavLink>
                             <NavLink to="/objects/add" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>Додати об'єкт</NavLink>
                             <div className="border-t border-gray-100 pt-3 flex items-center justify-between">
-                                <span className="text-amber-800 font-medium">{user?.username}</span>
+                                <Link to={`/authors/${user?.username}`} className="text-amber-800 font-medium hover:text-amber-600" onClick={() => setMenuOpen(false)}>{user?.username}</Link>
                                 <button
                                     onClick={() => {
                                         logout();

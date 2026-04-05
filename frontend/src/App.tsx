@@ -11,6 +11,8 @@ import AddObjectPage from './pages/AddObjectPage';
 import EditObjectPage from './pages/EditObjectPage';
 import FavoritesPage from './pages/FavoritesPage';
 import PopularPage from './pages/PopularPage';
+import AuthorProfilePage from './pages/AuthorProfilePage';
+import FavoriteAuthorsPage from './pages/FavoriteAuthorsPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -32,7 +34,9 @@ function App() {
                 <Route path="/" element={<HomePage/>}/>
                 <Route path="/objects/:id" element={<ObjectDetailPage/>}/>
                 <Route path="/popular" element={<PopularPage/>}/>
+                <Route path="/authors/:username" element={<AuthorProfilePage/>}/>
                 <Route element={<RequireAuth/>}>
+                    <Route path="/favorite-authors" element={<FavoriteAuthorsPage/>}/>
                     <Route path="/objects/add" element={<AddObjectPage/>}/>
                     <Route path="/objects/:id/edit" element={<EditObjectPage/>}/>
                     <Route path="/my-objects" element={<MyObjectsPage/>}/>
