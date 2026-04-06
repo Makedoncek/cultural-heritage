@@ -11,8 +11,8 @@ from .models import Tag
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q
-from .models import CulturalObject
+from django.db.models import Q, Count, Exists, OuterRef
+from .models import CulturalObject, Favorite
 from .serializers import ObjectListSerializer, ObjectDetailSerializer, ObjectWriteSerializer
 from .permissions import IsAuthorOrReadOnly
 
@@ -521,13 +521,20 @@ class ObjectViewSet(viewsets.ModelViewSet):
         base_qs = (CulturalObject.objects
                    .select_related('author')
                    .prefetch_related('tags')
-                   .exclude(status='archived'))
+                   .exclude(status='archived')
+                   .annotate(favorites_count=Count('favorited_by', distinct=True))
+                   .order_by('-created_at'))
+
+        if user.is_authenticated:
+            base_qs = base_qs.annotate(
+                _is_favorited=Exists(Favorite.objects.filter(user=user, cultural_object=OuterRef('pk')))
+            )
 
         if user.is_staff:
             return base_qs
 
         if user.is_authenticated:
-            return base_qs.filter(Q(status='approved') | Q(author=user)).distinct()
+            return base_qs.filter(Q(status='approved') | Q(author=user)).distinct().order_by('-created_at')
 
         return base_qs.filter(status='approved')
 
@@ -591,6 +598,58 @@ class ObjectViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
 
         serializer = ObjectListSerializer(objects, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=['Objects'],
+        summary='Toggle favorite',
+        description='Add or remove object from favorites. Returns new state.',
+        responses={200: inline_serializer('FavoriteToggle', fields={
+            'is_favorited': s.BooleanField(),
+            'favorites_count': s.IntegerField(),
+        })},
+    )
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def favorite(self, request, pk=None):
+        obj = self.get_object()
+        fav, created = Favorite.objects.get_or_create(user=request.user, cultural_object=obj)
+        if not created:
+            fav.delete()
+        return Response({
+            'is_favorited': created,
+            'favorites_count': obj.favorited_by.count(),
+        })
+
+    @extend_schema(
+        tags=['Objects'],
+        summary='List favorites',
+        description='Returns objects favorited by the current user.',
+    )
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def favorites(self, request):
+        favorite_ids = Favorite.objects.filter(user=request.user).values_list('cultural_object_id', flat=True)
+        objects = self.get_queryset().filter(id__in=favorite_ids).order_by('-created_at')
+
+        page = self.paginate_queryset(objects)
+        if page is not None:
+            serializer = ObjectListSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
+        serializer = ObjectListSerializer(objects, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=['Objects'],
+        summary='Popular objects',
+        description='Returns top objects sorted by favorites count. Public endpoint.',
+    )
+    @action(detail=False, methods=['get'])
+    def popular(self, request):
+        objects = (self.get_queryset()
+                   .filter(status='approved', favorites_count__gt=0)
+                   .order_by('-favorites_count', '-created_at')[:20])
+
+        serializer = ObjectListSerializer(objects, many=True, context={'request': request})
         return Response(serializer.data)
 
 

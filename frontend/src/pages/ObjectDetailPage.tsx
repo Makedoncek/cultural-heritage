@@ -4,6 +4,7 @@ import {MapContainer, TileLayer, Marker} from 'react-leaflet';
 import toast from 'react-hot-toast';
 import {objectsService} from '../services/objects.service';
 import {useAuth} from '../context/AuthContext';
+import FavoriteButton from '../components/Objects/FavoriteButton';
 import type {CulturalObjectDetail} from '../types';
 import '../utils/leaflet-fix';
 
@@ -22,7 +23,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function ObjectDetailPage() {
     const {id} = useParams();
     const navigate = useNavigate();
-    const {user} = useAuth();
+    const {user, isAuthenticated} = useAuth();
     const [object, setObject] = useState<CulturalObjectDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
@@ -117,23 +118,32 @@ export default function ObjectDetailPage() {
                             </span>
                         )}
                     </div>
-                    {canEdit && (
-                        <div className="flex flex-wrap gap-2">
-                            <button
-                                onClick={() => navigate(`/objects/${object.id}/edit`)}
-                                className="px-3 py-1.5 text-sm bg-amber-500 text-white rounded hover:bg-amber-600 cursor-pointer"
-                            >
-                                Редагувати
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                disabled={deleting}
-                                className="px-3 py-1.5 text-sm bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer disabled:opacity-50"
-                            >
-                                {deleting ? 'Видалення...' : 'Видалити'}
-                            </button>
-                        </div>
-                    )}
+                    <div className="flex flex-wrap gap-2">
+                        {isAuthenticated && (
+                            <FavoriteButton
+                                objectId={object.id}
+                                initialFavorited={object.is_favorited ?? false}
+                                initialCount={object.favorites_count ?? 0}
+                            />
+                        )}
+                        {canEdit && (
+                            <>
+                                <button
+                                    onClick={() => navigate(`/objects/${object.id}/edit`)}
+                                    className="px-3 py-1.5 text-sm bg-amber-500 text-white rounded hover:bg-amber-600 cursor-pointer"
+                                >
+                                    Редагувати
+                                </button>
+                                <button
+                                    onClick={handleDelete}
+                                    disabled={deleting}
+                                    className="px-3 py-1.5 text-sm bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer disabled:opacity-50"
+                                >
+                                    {deleting ? 'Видалення...' : 'Видалити'}
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
 
 
@@ -158,7 +168,7 @@ export default function ObjectDetailPage() {
                         </span>
                         {object.event_start_date && object.event_end_date && (
                             <span className="text-sm text-gray-600">
-                                📅 {new Date(object.event_start_date).toLocaleDateString('uk-UA')} — {new Date(object.event_end_date).toLocaleDateString('uk-UA')}
+                                📅 {new Date(object.event_start_date).toLocaleString('uk-UA', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'})} — {new Date(object.event_end_date).toLocaleString('uk-UA', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'})}
                             </span>
                         )}
                         {object.event_end_date && new Date(object.event_end_date) < new Date() && (

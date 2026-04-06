@@ -241,3 +241,16 @@ class CulturalObject(models.Model):
                 raise ValidationError('Для подій потрібно вказати дату початку та завершення.')
             if self.event_end_date < self.event_start_date:
                 raise ValidationError('Дата завершення не може бути раніше дати початку.')
+
+
+class Favorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
+    cultural_object = models.ForeignKey(CulturalObject, on_delete=models.CASCADE, related_name='favorited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'cultural_object')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.user.username} → {self.cultural_object.title}'

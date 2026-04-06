@@ -6,14 +6,19 @@ import {useAuth} from '../context/AuthContext';
 import ObjectForm from '../components/Objects/ObjectForm';
 import type {CulturalObjectDetail, CulturalObjectWrite, ObjectFormData} from '../types';
 
+function toDatetimeLocal(iso: string | null): string {
+    if (!iso) return '';
+    return iso.slice(0, 16);
+}
+
 function detailToFormData(obj: CulturalObjectDetail): ObjectFormData {
     return {
         title: obj.title,
         description: obj.description,
         tags: obj.tags.map(t => t.id),
         object_type: obj.object_type,
-        event_start_date: obj.event_start_date || '',
-        event_end_date: obj.event_end_date || '',
+        event_start_date: toDatetimeLocal(obj.event_start_date),
+        event_end_date: toDatetimeLocal(obj.event_end_date),
         latitude: parseFloat(obj.latitude),
         longitude: parseFloat(obj.longitude),
         wikipedia_url: obj.wikipedia_url || '',

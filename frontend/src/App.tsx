@@ -9,6 +9,8 @@ import ObjectDetailPage from './pages/ObjectDetailPage';
 import MyObjectsPage from './pages/MyObjectsPage';
 import AddObjectPage from './pages/AddObjectPage';
 import EditObjectPage from './pages/EditObjectPage';
+import FavoritesPage from './pages/FavoritesPage';
+import PopularPage from './pages/PopularPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -29,10 +31,12 @@ function App() {
             <Route element={<Layout/>}>
                 <Route path="/" element={<HomePage/>}/>
                 <Route path="/objects/:id" element={<ObjectDetailPage/>}/>
+                <Route path="/popular" element={<PopularPage/>}/>
                 <Route element={<RequireAuth/>}>
                     <Route path="/objects/add" element={<AddObjectPage/>}/>
                     <Route path="/objects/:id/edit" element={<EditObjectPage/>}/>
                     <Route path="/my-objects" element={<MyObjectsPage/>}/>
+                    <Route path="/favorites" element={<FavoritesPage/>}/>
                 </Route>
             </Route>
         </Routes>

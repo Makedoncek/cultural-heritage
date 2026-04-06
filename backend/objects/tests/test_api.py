@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from django.utils import timezone
 from rest_framework.test import APITestCase
-from objects.models import Tag, CulturalObject
+from objects.models import Tag, CulturalObject, Favorite
 from rest_framework import status
 from django.contrib.auth.models import User
 
@@ -319,12 +319,24 @@ class EventObjectTest(APITestCase):
         response = self.client.post('/api/objects/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_create_event_start_in_past(self):
+    def test_create_event_start_in_past_allowed(self):
+        """Events that started in the past but haven't ended are valid (ongoing events)."""
         data = {
             **self.base_data,
             'object_type': 'event',
             'event_start_date': str(timezone.now() - timedelta(days=5)),
             'event_end_date': str(timezone.now() + timedelta(days=5)),
+        }
+        response = self.client.post('/api/objects/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_create_event_already_ended(self):
+        """Events that have already ended cannot be created."""
+        data = {
+            **self.base_data,
+            'object_type': 'event',
+            'event_start_date': str(timezone.now() - timedelta(days=10)),
+            'event_end_date': str(timezone.now() - timedelta(days=2)),
         }
         response = self.client.post('/api/objects/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -352,3 +364,56 @@ class EventObjectTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIsNone(response.data['event_start_date'])
         self.assertIsNone(response.data['event_end_date'])
+
+
+class FavoriteTest(APITestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user('user', 'u@test.com', 'pass')
+        self.user2 = User.objects.create_user('user2', 'u2@test.com', 'pass')
+        self.tag = Tag.objects.create(name='Замок', slug='zamok')
+        self.obj = CulturalObject.objects.create(
+            title='Test', latitude=50.0, longitude=30.0,
+            author=self.user, status='approved',
+        )
+        self.obj.tags.add(self.tag)
+
+    def test_toggle_favorite_on(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(f'/api/objects/{self.obj.id}/favorite/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['is_favorited'])
+        self.assertEqual(response.data['favorites_count'], 1)
+
+    def test_toggle_favorite_off(self):
+        Favorite.objects.create(user=self.user, cultural_object=self.obj)
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(f'/api/objects/{self.obj.id}/favorite/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['is_favorited'])
+        self.assertEqual(response.data['favorites_count'], 0)
+
+    def test_favorites_list(self):
+        Favorite.objects.create(user=self.user, cultural_object=self.obj)
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get('/api/objects/favorites/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['title'], 'Test')
+
+    def test_favorites_list_only_own(self):
+        Favorite.objects.create(user=self.user2, cultural_object=self.obj)
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get('/api/objects/favorites/')
+        self.assertEqual(len(response.data['results']), 0)
+
+    def test_favorite_requires_auth(self):
+        response = self.client.post(f'/api/objects/{self.obj.id}/favorite/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_is_favorited_on_detail(self):
+        Favorite.objects.create(user=self.user, cultural_object=self.obj)
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(f'/api/objects/{self.obj.id}/')
+        self.assertTrue(response.data['is_favorited'])
+        self.assertEqual(response.data['favorites_count'], 1)

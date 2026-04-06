@@ -57,6 +57,13 @@ export interface CulturalObject {
     author_name: string;
     tags: Tag[];
     created_at: string;
+    is_favorited?: boolean;
+    favorites_count?: number;
+}
+
+export interface FavoriteToggleResponse {
+    is_favorited: boolean;
+    favorites_count: number;
 }
 
 export interface CulturalObjectDetail {
@@ -77,6 +84,8 @@ export interface CulturalObjectDetail {
     created_at: string;
     updated_at: string;
     archived_at: string | null;
+    is_favorited?: boolean;
+    favorites_count?: number;
 }
 
 export interface CulturalObjectWrite {

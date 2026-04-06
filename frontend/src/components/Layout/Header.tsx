@@ -28,7 +28,9 @@ export default function Header() {
                             {isAuthenticated ? (
                                 <>
                                     <NavLink to="/" end className={linkClass}>Карта</NavLink>
+                                    <NavLink to="/popular" className={linkClass}>Популярне</NavLink>
                                     <NavLink to="/my-objects" className={linkClass}>Мої об'єкти</NavLink>
+                                    <NavLink to="/favorites" className={linkClass}>Обране</NavLink>
                                     <NavLink to="/objects/add" className={linkClass}>Додати об'єкт</NavLink>
                                     <span className="text-amber-800 font-medium">{user?.username}</span>
                                     <button
@@ -40,6 +42,7 @@ export default function Header() {
                                 </>
                             ) : (
                                 <>
+                                    <NavLink to="/popular" className={linkClass}>Популярне</NavLink>
                                     <Link to="/login" className="border border-amber-600 text-amber-700 px-4 py-2 rounded-lg hover:bg-amber-50 transition-colors">Увійти</Link>
                                     <Link to="/register"
                                           className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors">
@@ -74,8 +77,12 @@ export default function Header() {
                         <>
                             <NavLink to="/" end className={linkClass}
                                      onClick={() => setMenuOpen(false)}>Карта</NavLink>
+                            <NavLink to="/popular" className={linkClass}
+                                     onClick={() => setMenuOpen(false)}>Популярне</NavLink>
                             <NavLink to="/my-objects" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>Мої об'єкти</NavLink>
+                            <NavLink to="/favorites" className={linkClass}
+                                     onClick={() => setMenuOpen(false)}>Обране</NavLink>
                             <NavLink to="/objects/add" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>Додати об'єкт</NavLink>
                             <div className="border-t border-gray-100 pt-3 flex items-center justify-between">
@@ -93,6 +100,8 @@ export default function Header() {
                         </>
                     ) : (
                         <>
+                            <NavLink to="/popular" className={linkClass}
+                                     onClick={() => setMenuOpen(false)}>Популярне</NavLink>
                             <Link to="/login" className="border border-amber-600 text-amber-700 px-4 py-2 rounded-lg hover:bg-amber-50 transition-colors text-center"
                                   onClick={() => setMenuOpen(false)}>Увійти</Link>
                             <Link to="/register"

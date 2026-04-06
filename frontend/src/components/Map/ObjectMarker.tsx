@@ -43,7 +43,7 @@ const eventIcon = new L.Icon({
 
 function formatDateRange(start: string | null, end: string | null): string | null {
     if (!start || !end) return null;
-    const fmt = (d: string) => new Date(d).toLocaleDateString('uk-UA', {day: '2-digit', month: '2-digit', year: 'numeric'});
+    const fmt = (d: string) => new Date(d).toLocaleString('uk-UA', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'});
     return `${fmt(start)} — ${fmt(end)}`;
 }
 

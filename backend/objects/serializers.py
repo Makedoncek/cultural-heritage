@@ -4,7 +4,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from .models import Tag, CulturalObject
+from .models import Tag, CulturalObject, Favorite
 from .validators import validate_coordinates_within_ukraine
 
 
@@ -81,7 +81,20 @@ class TagSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'name', 'slug', 'icon', 'tag_type']
 
 
-class ObjectListSerializer(serializers.ModelSerializer):
+class FavoriteMixin(serializers.Serializer):
+    is_favorited = serializers.SerializerMethodField()
+    favorites_count = serializers.IntegerField(read_only=True, default=0)
+
+    def get_is_favorited(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            if hasattr(obj, '_is_favorited'):
+                return obj._is_favorited
+            return Favorite.objects.filter(user=request.user, cultural_object=obj).exists()
+        return False
+
+
+class ObjectListSerializer(FavoriteMixin, serializers.ModelSerializer):
     author_name = serializers.CharField(
         source='author.username',
         read_only=True
@@ -102,12 +115,14 @@ class ObjectListSerializer(serializers.ModelSerializer):
             'event_end_date',
             'author_name',
             'tags',
-            'created_at'
+            'created_at',
+            'is_favorited',
+            'favorites_count',
         ]
         read_only_fields = fields
 
 
-class ObjectDetailSerializer(serializers.ModelSerializer):
+class ObjectDetailSerializer(FavoriteMixin, serializers.ModelSerializer):
     author = serializers.StringRelatedField(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
 
@@ -190,9 +205,9 @@ class ObjectWriteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     'event_end_date': 'Дата завершення не може бути раніше дати початку.'
                 })
-            if not self.instance and start < timezone.now():
+            if not self.instance and end < timezone.now():
                 raise serializers.ValidationError({
-                    'event_start_date': 'Дата початку не може бути в минулому.'
+                    'event_end_date': 'Подія вже завершилась.'
                 })
         else:
             data['event_start_date'] = None
