@@ -4,7 +4,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from .models import Tag, CulturalObject, Favorite, FavoriteAuthor
+from .models import Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto
 from .validators import validate_coordinates_within_ukraine
 
 
@@ -223,3 +223,31 @@ class ObjectWriteSerializer(serializers.ModelSerializer):
             data['event_end_date'] = None
 
         return data
+
+
+class UploadedByNestedSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    username = serializers.CharField()
+
+
+class ObjectPhotoSerializer(serializers.ModelSerializer):
+    uploaded_by = UploadedByNestedSerializer(read_only=True)
+
+    class Meta:
+        model = ObjectPhoto
+        fields = [
+            'id',
+            'cultural_object',
+            'uploaded_by',
+            'image_url',
+            'thumbnail_url',
+            'caption',
+            'status',
+            'order',
+            'is_author_photo',
+            'created_at',
+        ]
+        read_only_fields = [
+            'id', 'cultural_object', 'uploaded_by', 'image_url',
+            'thumbnail_url', 'status', 'order', 'is_author_photo', 'created_at',
+        ]
