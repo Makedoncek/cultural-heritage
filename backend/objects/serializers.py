@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -101,6 +102,7 @@ class ObjectListSerializer(FavoriteMixin, serializers.ModelSerializer):
     )
 
     tags = TagSerializer(many=True, read_only=True)
+    cover_url = serializers.CharField(read_only=True, allow_null=True)
 
     class Meta:
         model = CulturalObject
@@ -118,6 +120,7 @@ class ObjectListSerializer(FavoriteMixin, serializers.ModelSerializer):
             'created_at',
             'is_favorited',
             'favorites_count',
+            'cover_url',
         ]
         read_only_fields = fields
 
@@ -125,16 +128,42 @@ class ObjectListSerializer(FavoriteMixin, serializers.ModelSerializer):
 class ObjectDetailSerializer(FavoriteMixin, serializers.ModelSerializer):
     author = serializers.StringRelatedField(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
+    photos = serializers.SerializerMethodField()
+    photo_count = serializers.SerializerMethodField()
+    cover_url = serializers.CharField(read_only=True, allow_null=True)
 
     class Meta:
         model = CulturalObject
-        fields = '__all__'
+        fields = [
+            'id', 'title', 'description',
+            'latitude', 'longitude',
+            'author', 'tags',
+            'status', 'object_type',
+            'event_start_date', 'event_end_date',
+            'wikipedia_url', 'official_website', 'google_maps_url',
+            'created_at', 'updated_at', 'archived_at',
+            'is_favorited', 'favorites_count',
+            'photos', 'photo_count', 'cover_url',
+        ]
 
     def get_fields(self):
         fields = super().get_fields()
         for field in fields.values():
             field.read_only = True
         return fields
+
+    def get_photos(self, obj):
+        request = self.context.get('request')
+        qs = obj.photos.all()
+        if request and request.user.is_authenticated:
+            if not request.user.is_staff:
+                qs = qs.filter(Q(status='approved') | Q(uploaded_by=request.user))
+        else:
+            qs = qs.filter(status='approved')
+        return ObjectPhotoSerializer(qs, many=True, context=self.context).data
+
+    def get_photo_count(self, obj):
+        return obj.photos.filter(status='approved').count()
 
 
 class UserProfileSerializer(serializers.Serializer):
