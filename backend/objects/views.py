@@ -14,7 +14,17 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Count, Exists, OuterRef
 from .models import CulturalObject, Favorite, FavoriteAuthor
 from .serializers import ObjectListSerializer, ObjectDetailSerializer, ObjectWriteSerializer, UserProfileSerializer
-from .permissions import IsAuthorOrReadOnly
+from .permissions import IsAuthorOrReadOnly, IsPhotoUploaderOrAdmin, IsObjectAuthor
+from .throttles import PhotoUploadThrottle
+from .validators import validate_image_size, validate_image_format
+from . import cloudinary_service
+from .models import ObjectPhoto
+from .serializers import ObjectPhotoSerializer
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.shortcuts import get_object_or_404
+from django.core.exceptions import ValidationError
+from django.conf import settings
+from django.db.models import Q
 
 ErrorResponse = inline_serializer('ErrorResponse', fields={'detail': s.CharField()})
 
@@ -797,3 +807,99 @@ class UserProfileViewSet(viewsets.GenericViewSet):
 @permission_classes([AllowAny])
 def health_check(request):
     return Response({'status': 'ok', 'message': 'API is running'})
+
+
+class ObjectPhotoViewSet(viewsets.GenericViewSet):
+    """Управління фото культурного об'єкта (nested під /api/objects/<object_pk>/photos/)."""
+    serializer_class = ObjectPhotoSerializer
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [IsAuthenticated()]
+        if self.action == 'reorder':
+            return [IsObjectAuthor()]
+        if self.action in ('destroy', 'partial_update'):
+            return [IsAuthenticated(), IsPhotoUploaderOrAdmin()]
+        return [AllowAny()]
+
+    def get_throttles(self):
+        if self.action == 'create':
+            return [PhotoUploadThrottle()]
+        return super().get_throttles()
+
+    def _get_object(self):
+        return get_object_or_404(
+            CulturalObject.objects.exclude(status='archived'),
+            pk=self.kwargs['object_pk'],
+        )
+
+    def create(self, request, *args, **kwargs):
+        cultural_object = self._get_object()
+        is_author = cultural_object.author_id == request.user.id
+
+        if not is_author and cultural_object.status != 'approved':
+            return Response(
+                {'detail': 'Можна додавати фото лише до затверджених об\'єктів.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        image = request.FILES.get('image')
+        if not image:
+            return Response({'detail': 'Поле image є обов\'язковим.'}, status=400)
+
+        try:
+            validate_image_size(image)
+            validate_image_format(image)
+        except ValidationError as e:
+            return Response({'detail': e.message if hasattr(e, 'message') else str(e)}, status=400)
+
+        user_count = ObjectPhoto.objects.filter(
+            cultural_object=cultural_object,
+            uploaded_by=request.user,
+        ).exclude(status='rejected').count()
+        max_user = (
+            settings.PHOTO_MAX_PER_AUTHOR if is_author
+            else settings.PHOTO_MAX_PER_CONTRIBUTOR
+        )
+        if user_count >= max_user:
+            return Response(
+                {'detail': f'Ліміт {max_user} фото на цей об\'єкт вичерпано.', 'code': 'user_limit_exceeded'},
+                status=400,
+            )
+
+        total = ObjectPhoto.objects.filter(
+            cultural_object=cultural_object,
+        ).exclude(status='rejected').count()
+        if total >= settings.PHOTO_MAX_PER_OBJECT:
+            return Response(
+                {'detail': f'Об\'єкт уже містить максимум {settings.PHOTO_MAX_PER_OBJECT} фото.', 'code': 'object_full'},
+                status=400,
+            )
+
+        try:
+            uploaded = cloudinary_service.upload_photo(image)
+        except Exception as e:
+            return Response({'detail': f'Помилка завантаження: {e}'}, status=500)
+
+        order = 0
+        if is_author:
+            existing_orders = list(
+                ObjectPhoto.objects.filter(
+                    cultural_object=cultural_object,
+                    is_author_photo=True,
+                ).values_list('order', flat=True)
+            )
+            order = max(existing_orders, default=-1) + 1
+
+        photo = ObjectPhoto.objects.create(
+            cultural_object=cultural_object,
+            uploaded_by=request.user,
+            cloudinary_public_id=uploaded['public_id'],
+            image_url=uploaded['image_url'],
+            thumbnail_url=uploaded['thumbnail_url'],
+            caption=request.data.get('caption', '')[:200],
+            is_author_photo=is_author,
+            order=order,
+        )
+        return Response(ObjectPhotoSerializer(photo).data, status=201)
