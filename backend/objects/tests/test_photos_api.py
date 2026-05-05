@@ -226,3 +226,142 @@ class ObjectPhotoListTests(APITestCase):
             self.author_approved.id, self.author_pending.id,
             self.contrib_approved.id, self.contrib_pending.id,
         })
+
+
+class ObjectPhotoDeleteTests(APITestCase):
+    def setUp(self):
+        cache.clear()
+        self.author = User.objects.create_user('a', 'a@t.com', 'p')
+        self.contrib = User.objects.create_user('b', 'b@t.com', 'p')
+        self.admin = User.objects.create_user('ad', 'ad@t.com', 'p', is_staff=True)
+        self.other = User.objects.create_user('c', 'c@t.com', 'p')
+        self.tag = Tag.objects.create(name='T', slug='t', icon='X')
+        self.obj = CulturalObject.objects.create(
+            title='T', latitude=50.0, longitude=30.0,
+            author=self.author, status='approved',
+        )
+        self.obj.tags.add(self.tag)
+        self.contrib_photo = ObjectPhoto.objects.create(
+            cultural_object=self.obj, uploaded_by=self.contrib,
+            cloudinary_public_id='cp', image_url='x', thumbnail_url='y',
+            is_author_photo=False, status='approved',
+        )
+
+    @patch('objects.views.cloudinary_service.delete_photo')
+    def test_uploader_can_delete_own(self, mock_delete):
+        self.client.force_authenticate(user=self.contrib)
+        resp = self.client.delete(f'/api/objects/{self.obj.id}/photos/{self.contrib_photo.id}/')
+        self.assertEqual(resp.status_code, 204)
+        self.assertFalse(ObjectPhoto.objects.filter(id=self.contrib_photo.id).exists())
+        mock_delete.assert_called_once_with('cp')
+
+    def test_object_author_cannot_delete_contributor_photo(self):
+        self.client.force_authenticate(user=self.author)
+        resp = self.client.delete(f'/api/objects/{self.obj.id}/photos/{self.contrib_photo.id}/')
+        self.assertEqual(resp.status_code, 403)
+
+    def test_other_user_cannot_delete(self):
+        self.client.force_authenticate(user=self.other)
+        resp = self.client.delete(f'/api/objects/{self.obj.id}/photos/{self.contrib_photo.id}/')
+        self.assertEqual(resp.status_code, 403)
+
+    @patch('objects.views.cloudinary_service.delete_photo')
+    def test_admin_can_delete_any(self, _mock):
+        self.client.force_authenticate(user=self.admin)
+        resp = self.client.delete(f'/api/objects/{self.obj.id}/photos/{self.contrib_photo.id}/')
+        self.assertEqual(resp.status_code, 204)
+
+
+class ObjectPhotoPatchCaptionTests(APITestCase):
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user('a', 'a@t.com', 'p')
+        self.other = User.objects.create_user('b', 'b@t.com', 'p')
+        self.tag = Tag.objects.create(name='T', slug='t', icon='X')
+        self.obj = CulturalObject.objects.create(
+            title='T', latitude=50.0, longitude=30.0,
+            author=self.user, status='approved',
+        )
+        self.obj.tags.add(self.tag)
+        self.photo = ObjectPhoto.objects.create(
+            cultural_object=self.obj, uploaded_by=self.user,
+            cloudinary_public_id='p', image_url='x', thumbnail_url='y',
+            caption='old', status='approved',
+        )
+
+    def test_uploader_updates_caption(self):
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.patch(
+            f'/api/objects/{self.obj.id}/photos/{self.photo.id}/',
+            {'caption': 'new caption'},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.photo.refresh_from_db()
+        self.assertEqual(self.photo.caption, 'new caption')
+
+    def test_other_user_cannot_patch_caption(self):
+        self.client.force_authenticate(user=self.other)
+        resp = self.client.patch(
+            f'/api/objects/{self.obj.id}/photos/{self.photo.id}/',
+            {'caption': 'hack'},
+        )
+        self.assertEqual(resp.status_code, 403)
+
+
+class ObjectPhotoReorderTests(APITestCase):
+    def setUp(self):
+        cache.clear()
+        self.author = User.objects.create_user('a', 'a@t.com', 'p')
+        self.contrib = User.objects.create_user('b', 'b@t.com', 'p')
+        self.tag = Tag.objects.create(name='T', slug='t', icon='X')
+        self.obj = CulturalObject.objects.create(
+            title='T', latitude=50.0, longitude=30.0,
+            author=self.author, status='approved',
+        )
+        self.obj.tags.add(self.tag)
+        self.p1 = ObjectPhoto.objects.create(
+            cultural_object=self.obj, uploaded_by=self.author,
+            cloudinary_public_id='p1', image_url='x', thumbnail_url='y',
+            is_author_photo=True, order=0,
+        )
+        self.p2 = ObjectPhoto.objects.create(
+            cultural_object=self.obj, uploaded_by=self.author,
+            cloudinary_public_id='p2', image_url='x', thumbnail_url='y',
+            is_author_photo=True, order=1,
+        )
+        self.contrib_photo = ObjectPhoto.objects.create(
+            cultural_object=self.obj, uploaded_by=self.contrib,
+            cloudinary_public_id='c1', image_url='x', thumbnail_url='y',
+            is_author_photo=False, order=0,
+        )
+
+    def test_author_reorders_own_photos(self):
+        self.client.force_authenticate(user=self.author)
+        resp = self.client.post(
+            f'/api/objects/{self.obj.id}/photos/reorder/',
+            {'order': [{'id': self.p2.id, 'order': 0}, {'id': self.p1.id, 'order': 1}]},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.p1.refresh_from_db()
+        self.p2.refresh_from_db()
+        self.assertEqual(self.p1.order, 1)
+        self.assertEqual(self.p2.order, 0)
+
+    def test_contributor_cannot_reorder(self):
+        self.client.force_authenticate(user=self.contrib)
+        resp = self.client.post(
+            f'/api/objects/{self.obj.id}/photos/reorder/',
+            {'order': [{'id': self.p1.id, 'order': 0}]},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, 403)
+
+    def test_reorder_with_non_author_photo_id_returns_400(self):
+        self.client.force_authenticate(user=self.author)
+        resp = self.client.post(
+            f'/api/objects/{self.obj.id}/photos/reorder/',
+            {'order': [{'id': self.contrib_photo.id, 'order': 0}]},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, 400)

@@ -20,7 +20,7 @@ from .validators import validate_image_size, validate_image_format
 from . import cloudinary_service
 from .models import ObjectPhoto
 from .serializers import ObjectPhotoSerializer
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from django.conf import settings
@@ -812,7 +812,7 @@ def health_check(request):
 class ObjectPhotoViewSet(viewsets.GenericViewSet):
     """Управління фото культурного об'єкта (nested під /api/objects/<object_pk>/photos/)."""
     serializer_class = ObjectPhotoSerializer
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_permissions(self):
         if self.action == 'create':
@@ -916,3 +916,53 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
             order=order,
         )
         return Response(ObjectPhotoSerializer(photo).data, status=201)
+
+    def destroy(self, request, *args, **kwargs):
+        cultural_object = self._get_object()
+        photo = get_object_or_404(ObjectPhoto, pk=kwargs['pk'], cultural_object=cultural_object)
+        self.check_object_permissions(request, photo)
+
+        try:
+            cloudinary_service.delete_photo(photo.cloudinary_public_id)
+        except Exception:
+            pass
+        photo.delete()
+        return Response(status=204)
+
+    def partial_update(self, request, *args, **kwargs):
+        cultural_object = self._get_object()
+        photo = get_object_or_404(ObjectPhoto, pk=kwargs['pk'], cultural_object=cultural_object)
+        self.check_object_permissions(request, photo)
+
+        caption = request.data.get('caption')
+        if caption is not None:
+            if len(caption) > 200:
+                return Response({'detail': 'Caption перевищує 200 символів.'}, status=400)
+            photo.caption = caption
+            photo.save(update_fields=['caption'])
+
+        return Response(ObjectPhotoSerializer(photo).data)
+
+    @action(detail=False, methods=['post'], url_path='reorder')
+    def reorder(self, request, *args, **kwargs):
+        cultural_object = self._get_object()
+        items = request.data.get('order', [])
+        if not isinstance(items, list):
+            return Response({'detail': 'order must be a list'}, status=400)
+
+        photo_ids = [item.get('id') for item in items]
+        photos = list(ObjectPhoto.objects.filter(
+            id__in=photo_ids,
+            cultural_object=cultural_object,
+        ))
+        if len(photos) != len(photo_ids):
+            return Response({'detail': 'Деякі фото не знайдено в цьому об\'єкті.'}, status=400)
+        if any(not p.is_author_photo for p in photos):
+            return Response({'detail': 'Можна перевпорядковувати лише свої фото.'}, status=400)
+
+        by_id = {p.id: p for p in photos}
+        for item in items:
+            p = by_id[item['id']]
+            p.order = int(item['order'])
+        ObjectPhoto.objects.bulk_update(photos, ['order'])
+        return Response({'detail': 'ok'})
