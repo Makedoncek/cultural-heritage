@@ -834,6 +834,19 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
             pk=self.kwargs['object_pk'],
         )
 
+    def list(self, request, *args, **kwargs):
+        cultural_object = self._get_object()
+        qs = ObjectPhoto.objects.filter(cultural_object=cultural_object)
+
+        user = request.user
+        if not user.is_authenticated:
+            qs = qs.filter(status='approved')
+        elif not user.is_staff:
+            qs = qs.filter(Q(uploaded_by=user) | Q(status='approved'))
+
+        serializer = ObjectPhotoSerializer(qs, many=True, context={'request': request})
+        return Response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         cultural_object = self._get_object()
         is_author = cultural_object.author_id == request.user.id

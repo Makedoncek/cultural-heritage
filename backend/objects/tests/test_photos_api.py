@@ -156,3 +156,73 @@ class ObjectPhotoUploadTests(APITestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(resp.data.get('code'), 'object_full')
+
+
+class ObjectPhotoListTests(APITestCase):
+    def setUp(self):
+        cache.clear()
+        self.author = User.objects.create_user('alice', 'a@t.com', 'p')
+        self.contrib = User.objects.create_user('bob', 'b@t.com', 'p')
+        self.other = User.objects.create_user('carol', 'c@t.com', 'p')
+        self.admin = User.objects.create_user('admin', 'ad@t.com', 'p', is_staff=True)
+        self.tag = Tag.objects.create(name='T', slug='t', icon='X')
+        self.obj = CulturalObject.objects.create(
+            title='T', latitude=50.0, longitude=30.0,
+            author=self.author, status='approved',
+        )
+        self.obj.tags.add(self.tag)
+        self.author_approved = ObjectPhoto.objects.create(
+            cultural_object=self.obj, uploaded_by=self.author,
+            cloudinary_public_id='aa', image_url='x', thumbnail_url='y',
+            is_author_photo=True, order=0, status='approved',
+        )
+        self.author_pending = ObjectPhoto.objects.create(
+            cultural_object=self.obj, uploaded_by=self.author,
+            cloudinary_public_id='ap', image_url='x', thumbnail_url='y',
+            is_author_photo=True, order=1, status='pending',
+        )
+        self.contrib_approved = ObjectPhoto.objects.create(
+            cultural_object=self.obj, uploaded_by=self.contrib,
+            cloudinary_public_id='ca', image_url='x', thumbnail_url='y',
+            is_author_photo=False, order=0, status='approved',
+        )
+        self.contrib_pending = ObjectPhoto.objects.create(
+            cultural_object=self.obj, uploaded_by=self.contrib,
+            cloudinary_public_id='cp', image_url='x', thumbnail_url='y',
+            is_author_photo=False, order=0, status='pending',
+        )
+
+    def _ids(self, resp):
+        return {p['id'] for p in resp.data}
+
+    def test_anonymous_sees_only_approved(self):
+        resp = self.client.get(f'/api/objects/{self.obj.id}/photos/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(self._ids(resp), {self.author_approved.id, self.contrib_approved.id})
+
+    def test_author_sees_own_pending_and_approved(self):
+        self.client.force_authenticate(user=self.author)
+        resp = self.client.get(f'/api/objects/{self.obj.id}/photos/')
+        self.assertEqual(self._ids(resp), {
+            self.author_approved.id, self.author_pending.id, self.contrib_approved.id,
+        })
+
+    def test_contrib_sees_own_pending(self):
+        self.client.force_authenticate(user=self.contrib)
+        resp = self.client.get(f'/api/objects/{self.obj.id}/photos/')
+        self.assertEqual(self._ids(resp), {
+            self.author_approved.id, self.contrib_approved.id, self.contrib_pending.id,
+        })
+
+    def test_other_user_does_not_see_others_pending(self):
+        self.client.force_authenticate(user=self.other)
+        resp = self.client.get(f'/api/objects/{self.obj.id}/photos/')
+        self.assertEqual(self._ids(resp), {self.author_approved.id, self.contrib_approved.id})
+
+    def test_admin_sees_all(self):
+        self.client.force_authenticate(user=self.admin)
+        resp = self.client.get(f'/api/objects/{self.obj.id}/photos/')
+        self.assertEqual(self._ids(resp), {
+            self.author_approved.id, self.author_pending.id,
+            self.contrib_approved.id, self.contrib_pending.id,
+        })
