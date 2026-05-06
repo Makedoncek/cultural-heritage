@@ -1,7 +1,10 @@
+from datetime import timedelta
+from django.conf import settings
 from django.contrib import admin
+from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from .models import Tag, CulturalObject, Favorite
+from .models import Tag, CulturalObject, Favorite, ObjectPhoto
 
 
 @admin.register(Tag)
@@ -13,8 +16,23 @@ class TagAdmin(admin.ModelAdmin):
     ordering = ['name']
 
 
+class ObjectPhotoInline(admin.TabularInline):
+    model = ObjectPhoto
+    extra = 0
+    readonly_fields = ['thumbnail_preview_inline', 'uploaded_by', 'is_author_photo', 'created_at']
+    fields = ['thumbnail_preview_inline', 'uploaded_by', 'caption', 'status', 'is_author_photo', 'order', 'created_at']
+    can_delete = False
+
+    @admin.display(description='Превью')
+    def thumbnail_preview_inline(self, obj):
+        if not obj.id:
+            return '-'
+        return format_html('<img src="{}" style="height:60px;" />', obj.thumbnail_url)
+
+
 @admin.register(CulturalObject)
 class CulturalObjectAdmin(admin.ModelAdmin):
+    inlines = [ObjectPhotoInline]
     STATUS_COLORS = {
         'pending': '#f59e0b',
         'approved': '#10b981',
@@ -67,7 +85,7 @@ class CulturalObjectAdmin(admin.ModelAdmin):
     )
 
     filter_horizontal = ['tags']
-    actions = ['approve_objects', 'restore_objects']
+    actions = ['approve_objects', 'archive_objects', 'restore_objects']
 
     @admin.action(description="Затвердити обрані")
     def approve_objects(self, request, queryset):
@@ -80,6 +98,14 @@ class CulturalObjectAdmin(admin.ModelAdmin):
                 send_status_notification.delay(obj.id, 'approved')
             count += 1
         self.message_user(request, f'Затверджено {count} об\'єкт(ів)')
+
+    @admin.action(description="Архівувати обрані")
+    def archive_objects(self, request, queryset):
+        count = 0
+        for obj in queryset.exclude(status=CulturalObject.Status.ARCHIVED):
+            obj.archive()
+            count += 1
+        self.message_user(request, f"Архівовано {count} об'єкт(ів)")
 
     @admin.action(description="Відновити archived")
     def restore_objects(self, request, queryset):
@@ -152,3 +178,70 @@ class FavoriteAdmin(admin.ModelAdmin):
     list_filter = ['created_at']
     readonly_fields = ['created_at']
     raw_id_fields = ['user', 'cultural_object']
+
+
+@admin.register(ObjectPhoto)
+class ObjectPhotoAdmin(admin.ModelAdmin):
+    STATUS_COLORS = {
+        'pending': '#f59e0b',
+        'approved': '#10b981',
+        'rejected': '#ef4444',
+    }
+
+    list_display = [
+        'thumbnail_preview',
+        'cultural_object',
+        'uploaded_by',
+        'colored_status',
+        'is_author_photo',
+        'created_at',
+    ]
+    list_filter = ['status', 'is_author_photo', 'created_at']
+    search_fields = ['cultural_object__title', 'uploaded_by__username', 'caption']
+    readonly_fields = [
+        'cultural_object', 'uploaded_by',
+        'cloudinary_public_id', 'image_url', 'thumbnail_url',
+        'created_at', 'moderated_at', 'rejected_cleanup_at',
+        'large_preview',
+    ]
+    actions = ['approve_photos', 'reject_photos']
+
+    @admin.display(description='Превью')
+    def thumbnail_preview(self, obj):
+        return format_html(
+            '<img src="{}" style="height:60px;border-radius:4px;" />', obj.thumbnail_url,
+        )
+
+    @admin.display(description='Зображення')
+    def large_preview(self, obj):
+        return format_html(
+            '<img src="{}" style="max-width:600px;border-radius:8px;" />', obj.image_url,
+        )
+
+    @admin.display(description='Статус', ordering='status')
+    def colored_status(self, obj):
+        color = self.STATUS_COLORS.get(obj.status, '#6b7280')
+        return format_html(
+            '<span style="background:{};color:#fff;padding:3px 10px;'
+            'border-radius:12px;font-size:11px;font-weight:600;">{}</span>',
+            color, obj.get_status_display(),
+        )
+
+    @admin.action(description='Затвердити обрані фото')
+    def approve_photos(self, request, queryset):
+        count = queryset.filter(status=ObjectPhoto.Status.PENDING).update(
+            status=ObjectPhoto.Status.APPROVED,
+            moderated_at=timezone.now(),
+            rejected_cleanup_at=None,
+        )
+        self.message_user(request, f'Затверджено {count} фото.')
+
+    @admin.action(description='Відхилити обрані фото')
+    def reject_photos(self, request, queryset):
+        cleanup_at = timezone.now() + timedelta(days=settings.PHOTO_REJECTED_RETENTION_DAYS)
+        count = queryset.filter(status=ObjectPhoto.Status.PENDING).update(
+            status=ObjectPhoto.Status.REJECTED,
+            moderated_at=timezone.now(),
+            rejected_cleanup_at=cleanup_at,
+        )
+        self.message_user(request, f'Відхилено {count} фото. Видалення з Cloudinary через {settings.PHOTO_REJECTED_RETENTION_DAYS} днів.')
