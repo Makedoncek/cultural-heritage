@@ -1,23 +1,73 @@
+import {useState} from 'react';
 import {useNavigate} from 'react-router';
 import toast from 'react-hot-toast';
 import {objectsService} from '../services/objects.service';
+import {photosService} from '../services/photos.service';
 import ObjectForm from '../components/Objects/ObjectForm';
+import PhotoUploader, {type PendingPhoto} from '../components/Objects/PhotoUploader';
 import type {CulturalObjectWrite} from '../types';
+
+const MAX_AUTHOR_PHOTOS = 5;
 
 export default function AddObjectPage() {
     const navigate = useNavigate();
+    const [photos, setPhotos] = useState<PendingPhoto[]>([]);
+    const [uploading, setUploading] = useState(false);
+    const [progress, setProgress] = useState({done: 0, total: 0});
 
     const handleSubmit = async (data: CulturalObjectWrite) => {
-        await objectsService.create(data);
-        toast.success('Об\'єкт надіслано на модерацію');
-        navigate('/my-objects');
+        const obj = await objectsService.create(data);
+
+        if (photos.length === 0) {
+            toast.success('Об\'єкт надіслано на модерацію');
+            navigate('/my-objects');
+            return;
+        }
+
+        setUploading(true);
+        setProgress({done: 0, total: photos.length});
+        const failures: string[] = [];
+
+        await Promise.allSettled(
+            photos.map(async (p) => {
+                try {
+                    await photosService.upload(obj.id, p.file, p.caption);
+                    setProgress(prev => ({...prev, done: prev.done + 1}));
+                } catch {
+                    failures.push(p.file.name);
+                }
+            })
+        );
+        setUploading(false);
+
+        if (failures.length === 0) {
+            toast.success('Об\'єкт і фото надіслано на модерацію');
+            navigate('/my-objects');
+        } else {
+            toast.error(`Не завантажено: ${failures.join(', ')}`);
+            navigate(`/objects/${obj.id}`);
+        }
     };
 
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
                 <h1 className="text-2xl font-bold text-gray-900 mb-6">Додати культурний об'єкт</h1>
-                <ObjectForm onSubmit={handleSubmit} submitLabel="Додати" submittingLabel="Додавання..."/>
+                <ObjectForm onSubmit={handleSubmit} submitLabel="Додати" submittingLabel="Додавання...">
+                    <div className="my-4">
+                        <PhotoUploader
+                            photos={photos}
+                            onChange={setPhotos}
+                            maxCount={MAX_AUTHOR_PHOTOS}
+                            label="Фото об'єкта (опційно)"
+                        />
+                    </div>
+                </ObjectForm>
+                {uploading && (
+                    <div className="mt-3 text-sm text-gray-700">
+                        Завантаження фото… {progress.done}/{progress.total}
+                    </div>
+                )}
             </div>
         </div>
     );

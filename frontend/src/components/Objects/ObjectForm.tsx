@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react';
+import {useState, useEffect, type ReactNode} from 'react';
 import {useForm} from 'react-hook-form';
 import {AxiosError} from 'axios';
 import {tagsService} from '../../services/tags.service';
@@ -10,6 +10,7 @@ interface ObjectFormProps {
     onSubmit: (data: CulturalObjectWrite) => Promise<void>;
     submitLabel: string;
     submittingLabel: string;
+    children?: ReactNode;
 }
 
 const URL_PATTERN = /^https?:\/\/.+/;
@@ -19,7 +20,7 @@ const inputClass = (hasError: boolean) =>
         hasError ? 'border-red-400' : 'border-gray-200'
     }`;
 
-export default function ObjectForm({initialData, onSubmit, submitLabel, submittingLabel}: ObjectFormProps) {
+export default function ObjectForm({initialData, onSubmit, submitLabel, submittingLabel, children}: ObjectFormProps) {
     const [tags, setTags] = useState<Tag[]>([]);
     const [tagsLoading, setTagsLoading] = useState(true);
 
@@ -310,6 +311,8 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
                     </div>
                 </div>
             </div>
+
+            {children}
 
             {errors.root && (
                 <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2">
