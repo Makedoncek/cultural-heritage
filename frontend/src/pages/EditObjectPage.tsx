@@ -2,9 +2,14 @@ import {useState, useEffect} from 'react';
 import {useParams, useNavigate, Link} from 'react-router';
 import toast from 'react-hot-toast';
 import {objectsService} from '../services/objects.service';
+import {photosService} from '../services/photos.service';
 import {useAuth} from '../context/AuthContext';
 import ObjectForm from '../components/Objects/ObjectForm';
-import type {CulturalObjectDetail, CulturalObjectWrite, ObjectFormData} from '../types';
+import ExistingPhotosManager from '../components/Objects/ExistingPhotosManager';
+import PhotoUploader, {type PendingPhoto} from '../components/Objects/PhotoUploader';
+import type {CulturalObjectDetail, CulturalObjectWrite, ObjectFormData, ObjectPhoto} from '../types';
+
+const MAX_AUTHOR_PHOTOS = 5;
 
 function toDatetimeLocal(iso: string | null): string {
     if (!iso) return '';
@@ -32,6 +37,8 @@ export default function EditObjectPage() {
     const navigate = useNavigate();
     const {user} = useAuth();
     const [object, setObject] = useState<CulturalObjectDetail | null>(null);
+    const [photos, setPhotos] = useState<ObjectPhoto[]>([]);
+    const [newPhotos, setNewPhotos] = useState<PendingPhoto[]>([]);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -42,6 +49,7 @@ export default function EditObjectPage() {
             .then(data => {
                 if (user && (user.username === data.author || user.is_staff)) {
                     setObject(data);
+                    setPhotos(data.photos || []);
                 } else {
                     setError('У вас немає прав для редагування цього об\'єкта.');
                 }
@@ -55,6 +63,13 @@ export default function EditObjectPage() {
 
     const handleSubmit = async (data: CulturalObjectWrite) => {
         await objectsService.update(Number(id), data);
+
+        if (newPhotos.length > 0 && object) {
+            await Promise.allSettled(
+                newPhotos.map(p => photosService.upload(object.id, p.file, p.caption))
+            );
+        }
+
         toast.success('Зміни збережено');
         navigate(`/objects/${id}`);
     };
@@ -94,6 +109,9 @@ export default function EditObjectPage() {
 
     if (!object) return null;
 
+    const authorPhotosCount = photos.filter(p => p.is_author_photo).length;
+    const remainingSlots = Math.max(0, MAX_AUTHOR_PHOTOS - authorPhotosCount);
+
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
@@ -110,7 +128,24 @@ export default function EditObjectPage() {
                     onSubmit={handleSubmit}
                     submitLabel="Зберегти"
                     submittingLabel="Збереження..."
-                />
+                >
+                    <ExistingPhotosManager
+                        objectId={object.id}
+                        photos={photos}
+                        onPhotosChange={setPhotos}
+                    />
+
+                    {remainingSlots > 0 && (
+                        <div className="my-4">
+                            <h3 className="font-semibold text-sm mb-2">Додати ще фото</h3>
+                            <PhotoUploader
+                                photos={newPhotos}
+                                onChange={setNewPhotos}
+                                maxCount={remainingSlots}
+                            />
+                        </div>
+                    )}
+                </ObjectForm>
             </div>
         </div>
     );
