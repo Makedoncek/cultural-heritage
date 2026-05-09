@@ -3,6 +3,7 @@ import {Link} from 'react-router';
 import {objectsService} from '../services/objects.service';
 import {useAuth} from '../context/AuthContext';
 import FavoriteButton from '../components/Objects/FavoriteButton';
+import CoverImage from '../components/Objects/CoverImage';
 import type {CulturalObject} from '../types';
 
 export default function PopularPage() {
@@ -58,6 +59,12 @@ export default function PopularPage() {
                                     <span className="text-lg font-bold text-amber-600 w-8 text-center shrink-0">
                                         {index + 1}
                                     </span>
+                                    <CoverImage
+                                        coverUrl={obj.cover_url}
+                                        tags={obj.tags}
+                                        alt={obj.title}
+                                        className="w-16 h-16 rounded shrink-0"
+                                    />
                                     <div className="min-w-0">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <span className="text-gray-900 font-medium">{obj.title}</span>
