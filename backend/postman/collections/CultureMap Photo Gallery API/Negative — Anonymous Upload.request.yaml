@@ -1,0 +1,17 @@
+$kind: http-request
+description: Upload without auth header. Expect 401.
+url: "{{baseUrl}}/api/objects/{{objectId}}/photos/"
+method: POST
+auth:
+  type: noauth
+body:
+  mode: formdata
+  formdata:
+    - key: image
+      type: file
+events:
+  - listen: test
+    script:
+      exec: |
+        pm.test("Status 401", () => pm.response.to.have.status(401));
+order: 6000

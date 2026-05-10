@@ -1,0 +1,14 @@
+$kind: http-request
+description: Delete photo (uploader or admin only).
+url: "{{baseUrl}}/api/objects/{{objectId}}/photos/{{photoId}}/"
+method: DELETE
+auth:
+  type: bearer
+  bearer:
+    token: "{{accessToken}}"
+events:
+  - listen: test
+    script:
+      exec: |
+        pm.test("Status 204", () => pm.response.to.have.status(204));
+order: 5000

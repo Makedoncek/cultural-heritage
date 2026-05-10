@@ -1,0 +1,19 @@
+$kind: http-request
+description: Upload file larger than 5MB. Expect 400.
+url: "{{baseUrl}}/api/objects/{{objectId}}/photos/"
+method: POST
+auth:
+  type: bearer
+  bearer:
+    token: "{{accessToken}}"
+body:
+  mode: formdata
+  formdata:
+    - key: image
+      type: file
+events:
+  - listen: test
+    script:
+      exec: |
+        pm.test("Status 400", () => pm.response.to.have.status(400));
+order: 7000

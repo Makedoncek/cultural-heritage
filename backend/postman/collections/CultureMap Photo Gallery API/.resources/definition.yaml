@@ -1,0 +1,13 @@
+$kind: collection
+description: |
+  Photo gallery endpoints for CultureMap Ukraine.
+  Variables required: baseUrl (e.g. http://localhost:8000), accessToken (JWT), objectId (target object), photoId (set after upload).
+variables:
+  - key: baseUrl
+    value: http://localhost:8000
+  - key: accessToken
+    value: ""
+  - key: objectId
+    value: "1"
+  - key: photoId
+    value: ""
