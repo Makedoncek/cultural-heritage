@@ -365,3 +365,57 @@ class UserPreference(models.Model):
 
     def __str__(self):
         return f'{self.user.username}: lang={self.language}, theme={self.theme}'
+
+
+class InaccuracyReport(models.Model):
+    """User-submitted report of an issue with a cultural object (wrong data, duplicate, etc.)."""
+
+    class ReasonType(models.TextChoices):
+        WRONG_COORDS = 'wrong_coords', 'Невірні координати'
+        WRONG_NAME = 'wrong_name', 'Неточна назва'
+        WRONG_DESCRIPTION = 'wrong_description', 'Помилки в описі'
+        WRONG_TAGS = 'wrong_tags', 'Невірні теги'
+        DUPLICATE = 'duplicate', 'Дублікат іншого об\'єкта'
+        OTHER = 'other', 'Інше'
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'На розгляді'
+        RESOLVED = 'resolved', 'Підтверджено'
+        DISMISSED = 'dismissed', 'Відхилено'
+
+    cultural_object = models.ForeignKey(
+        CulturalObject,
+        related_name='inaccuracy_reports',
+        on_delete=models.CASCADE,
+    )
+    reporter = models.ForeignKey(
+        User,
+        related_name='reports_made',
+        on_delete=models.CASCADE,
+    )
+    reason_type = models.CharField(max_length=20, choices=ReasonType.choices)
+    note = models.TextField(max_length=500, blank=True)
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    admin_response = models.TextField(blank=True)
+    resolved_by = models.ForeignKey(
+        User,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='reports_resolved',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['status', 'created_at']),
+            models.Index(fields=['cultural_object', 'status']),
+        ]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Report #{self.pk} on "{self.cultural_object.title}" by {self.reporter.username} ({self.status})'

@@ -1099,3 +1099,159 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
             p.order = int(item['order'])
         ObjectPhoto.objects.bulk_update(photos, ['order'])
         return Response({'detail': 'ok'})
+
+
+class InaccuracyReportViewSet(viewsets.GenericViewSet):
+    """Crowd-sourced reports about issues with cultural objects.
+
+    Endpoints:
+      POST   /api/objects/<object_pk>/report/      — create report (auth, 1/day per object)
+      DELETE /api/reports/<id>/                    — delete own pending report
+      GET    /api/users/me/reports/                — list reports created by me
+      GET    /api/users/me/objects/reports/        — list reports on objects I authored
+      GET    /api/admin/reports/                   — admin queue (with status filter)
+      POST   /api/admin/reports/<id>/resolve/      — admin: resolve
+      POST   /api/admin/reports/<id>/dismiss/      — admin: dismiss
+    """
+    serializer_class = None  # set per-action
+
+    def get_serializer_class(self):
+        from .serializers import InaccuracyReportSerializer
+        return InaccuracyReportSerializer
+
+    def get_permissions(self):
+        if self.action in ('admin_list', 'admin_resolve', 'admin_dismiss'):
+            from rest_framework.permissions import IsAdminUser
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def report_object(request, object_pk):
+    from .models import InaccuracyReport
+    from .serializers import InaccuracyReportSerializer
+    from datetime import timedelta
+    from django.utils import timezone
+
+    try:
+        obj = CulturalObject.objects.get(pk=object_pk)
+    except CulturalObject.DoesNotExist:
+        return Response({'detail': _('Об\'єкт не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+
+    # Throttle: 1 report per (user, object) per 24h
+    recent = InaccuracyReport.objects.filter(
+        reporter=request.user,
+        cultural_object=obj,
+        created_at__gte=timezone.now() - timedelta(days=1),
+    ).exists()
+    if recent:
+        return Response(
+            {'detail': _('Ви вже надсилали репорт на цей об\'єкт нещодавно. Спробуйте через 24 години.')},
+            status=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
+    reason_type = request.data.get('reason_type')
+    if reason_type not in dict(InaccuracyReport.ReasonType.choices):
+        return Response({'reason_type': [_('Невірна причина.')]}, status=status.HTTP_400_BAD_REQUEST)
+
+    report = InaccuracyReport.objects.create(
+        cultural_object=obj,
+        reporter=request.user,
+        reason_type=reason_type,
+        note=request.data.get('note', '')[:500],
+    )
+    return Response(
+        InaccuracyReportSerializer(report).data,
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_own_report(request, report_pk):
+    from .models import InaccuracyReport
+    try:
+        report = InaccuracyReport.objects.get(pk=report_pk)
+    except InaccuracyReport.DoesNotExist:
+        return Response({'detail': _('Репорт не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+    if report.reporter_id != request.user.id:
+        return Response({'detail': _('Не можна видалити чужий репорт.')}, status=status.HTTP_403_FORBIDDEN)
+    if report.status != InaccuracyReport.Status.PENDING:
+        return Response(
+            {'detail': _('Можна видалити лише репорт зі статусом «На розгляді».')},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    report.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_reports(request):
+    from .models import InaccuracyReport
+    from .serializers import InaccuracyReportSerializer
+    qs = InaccuracyReport.objects.filter(reporter=request.user).select_related('cultural_object')
+    return Response(InaccuracyReportSerializer(qs, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def reports_on_my_objects(request):
+    from .models import InaccuracyReport
+    from .serializers import InaccuracyReportSerializer
+    qs = (InaccuracyReport.objects
+          .filter(cultural_object__author=request.user)
+          .select_related('cultural_object', 'reporter'))
+    return Response(InaccuracyReportSerializer(qs, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_reports_list(request):
+    from .models import InaccuracyReport
+    from .serializers import InaccuracyReportSerializer
+    if not request.user.is_staff:
+        return Response({'detail': _('Тільки для адміністратора.')}, status=status.HTTP_403_FORBIDDEN)
+    status_filter = request.query_params.get('status', 'pending')
+    qs = InaccuracyReport.objects.select_related('cultural_object', 'reporter')
+    if status_filter in dict(InaccuracyReport.Status.choices):
+        qs = qs.filter(status=status_filter)
+    return Response(InaccuracyReportSerializer(qs, many=True).data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_resolve_report(request, report_pk):
+    return _admin_close_report(request, report_pk, resolved=True)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_dismiss_report(request, report_pk):
+    return _admin_close_report(request, report_pk, resolved=False)
+
+
+def _admin_close_report(request, report_pk, resolved: bool):
+    from .models import InaccuracyReport
+    from .serializers import InaccuracyReportSerializer
+    from django.utils import timezone
+    if not request.user.is_staff:
+        return Response({'detail': _('Тільки для адміністратора.')}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        report = InaccuracyReport.objects.get(pk=report_pk)
+    except InaccuracyReport.DoesNotExist:
+        return Response({'detail': _('Репорт не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+    if report.status != InaccuracyReport.Status.PENDING:
+        return Response(
+            {'detail': _('Репорт уже опрацьовано.')},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    report.status = (
+        InaccuracyReport.Status.RESOLVED if resolved else InaccuracyReport.Status.DISMISSED
+    )
+    report.admin_response = request.data.get('admin_response', '')[:500]
+    report.resolved_by = request.user
+    report.resolved_at = timezone.now()
+    report.save(update_fields=['status', 'admin_response', 'resolved_by', 'resolved_at'])
+    return Response(InaccuracyReportSerializer(report).data)

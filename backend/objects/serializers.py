@@ -5,7 +5,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from .models import Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto
+from .models import Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, InaccuracyReport
 from .validators import validate_coordinates_within_ukraine
 
 
@@ -325,4 +325,26 @@ class ObjectPhotoSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id', 'cultural_object', 'uploaded_by', 'image_url',
             'thumbnail_url', 'status', 'order', 'is_author_photo', 'created_at',
+        ]
+
+
+class InaccuracyReportSerializer(serializers.ModelSerializer):
+    reporter_username = serializers.CharField(source='reporter.username', read_only=True)
+    object_title = serializers.CharField(source='cultural_object.title', read_only=True)
+    object_id = serializers.IntegerField(source='cultural_object.id', read_only=True)
+    reason_label = serializers.CharField(source='get_reason_type_display', read_only=True)
+    status_label = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = InaccuracyReport
+        fields = [
+            'id', 'object_id', 'object_title',
+            'reporter_username', 'reason_type', 'reason_label',
+            'note', 'status', 'status_label', 'admin_response',
+            'created_at', 'resolved_at',
+        ]
+        read_only_fields = [
+            'id', 'reporter_username', 'object_id', 'object_title',
+            'reason_label', 'status', 'status_label', 'admin_response',
+            'created_at', 'resolved_at',
         ]

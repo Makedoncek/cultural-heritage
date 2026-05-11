@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from .models import Tag, CulturalObject, Favorite, ObjectPhoto
+from .models import Tag, CulturalObject, Favorite, ObjectPhoto, InaccuracyReport
 
 
 @admin.register(Tag)
@@ -293,3 +293,46 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
             rejected_cleanup_at=cleanup_at,
         )
         self.message_user(request, f'Відхилено {count} фото. Видалення з Cloudinary через {settings.PHOTO_REJECTED_RETENTION_DAYS} днів.')
+
+
+@admin.register(InaccuracyReport)
+class InaccuracyReportAdmin(admin.ModelAdmin):
+    list_display = ['id', 'cultural_object', 'reporter', 'reason_type', 'status', 'created_at']
+    list_filter = ['status', 'reason_type', 'created_at']
+    search_fields = ['cultural_object__title', 'reporter__username', 'note']
+    readonly_fields = ['reporter', 'cultural_object', 'reason_type', 'note', 'created_at', 'resolved_at', 'resolved_by']
+    fieldsets = (
+        ('Report', {
+            'fields': ('cultural_object', 'reporter', 'reason_type', 'note', 'created_at'),
+        }),
+        ('Moderation', {
+            'fields': ('status', 'admin_response', 'resolved_by', 'resolved_at'),
+        }),
+    )
+    actions = ['resolve_reports', 'dismiss_reports']
+
+    def save_model(self, request, obj, form, change):
+        if change and obj.status in (InaccuracyReport.Status.RESOLVED, InaccuracyReport.Status.DISMISSED):
+            if not obj.resolved_by:
+                obj.resolved_by = request.user
+            if not obj.resolved_at:
+                obj.resolved_at = timezone.now()
+        super().save_model(request, obj, form, change)
+
+    @admin.action(description='Підтвердити репорт (resolved)')
+    def resolve_reports(self, request, queryset):
+        count = queryset.filter(status=InaccuracyReport.Status.PENDING).update(
+            status=InaccuracyReport.Status.RESOLVED,
+            resolved_by=request.user,
+            resolved_at=timezone.now(),
+        )
+        self.message_user(request, f'Підтверджено {count} репортів.')
+
+    @admin.action(description='Відхилити репорт (dismissed)')
+    def dismiss_reports(self, request, queryset):
+        count = queryset.filter(status=InaccuracyReport.Status.PENDING).update(
+            status=InaccuracyReport.Status.DISMISSED,
+            resolved_by=request.user,
+            resolved_at=timezone.now(),
+        )
+        self.message_user(request, f'Відхилено {count} репортів.')
