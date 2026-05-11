@@ -29,7 +29,8 @@ function SortablePhoto({photo, onDelete}: {photo: ObjectPhoto; onDelete: () => v
             <button
                 type="button"
                 onClick={onDelete}
-                className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs cursor-pointer"
+                aria-label="Видалити"
             >✕</button>
         </div>
     );
