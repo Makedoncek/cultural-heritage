@@ -62,13 +62,21 @@ export default function MyObjectsPage() {
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-2">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">{t('myObjects.title')}</h1>
                     <Link
                         to="/objects/add"
                         className="px-4 py-2 bg-amber-600 dark:bg-amber-500 hover:bg-amber-700 dark:hover:bg-amber-400 text-white dark:text-stone-900 text-sm rounded-lg"
                     >
                         {t('myObjects.addNew')}
+                    </Link>
+                </div>
+                <div className="flex gap-3 text-xs mb-6">
+                    <Link to="/my-reports" className="text-amber-700 dark:text-amber-400 hover:underline">
+                        ⚠ Мої репорти
+                    </Link>
+                    <Link to="/reports-on-my-objects" className="text-amber-700 dark:text-amber-400 hover:underline">
+                        📨 Репорти на мої об'єкти
                     </Link>
                 </div>
 

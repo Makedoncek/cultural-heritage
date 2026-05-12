@@ -18,6 +18,8 @@ import FavoriteAuthorsPage from './pages/FavoriteAuthorsPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import MyReportsPage from './pages/MyReportsPage';
+import ReportsOnMyObjectsPage from './pages/ReportsOnMyObjectsPage';
 
 function App() {
     const {theme} = useTheme();
@@ -53,6 +55,8 @@ function App() {
                     <Route path="/objects/:id/edit" element={<EditObjectPage/>}/>
                     <Route path="/my-objects" element={<MyObjectsPage/>}/>
                     <Route path="/my-photos" element={<MyPhotosPage/>}/>
+                    <Route path="/my-reports" element={<MyReportsPage/>}/>
+                    <Route path="/reports-on-my-objects" element={<ReportsOnMyObjectsPage/>}/>
                     <Route path="/favorites" element={<FavoritesPage/>}/>
                 </Route>
             </Route>
