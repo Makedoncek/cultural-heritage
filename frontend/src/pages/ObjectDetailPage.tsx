@@ -10,6 +10,7 @@ import {useAuth} from '../context/AuthContext';
 import FavoriteButton from '../components/Objects/FavoriteButton';
 import PhotoGallery from '../components/Objects/PhotoGallery';
 import PhotoUploader, {type PendingPhoto} from '../components/Objects/PhotoUploader';
+import ReportInaccuracyButton from '../components/Objects/ReportInaccuracyButton';
 import type {CulturalObjectDetail} from '../types';
 import '../utils/leaflet-fix';
 
@@ -334,6 +335,11 @@ export default function ObjectDetailPage() {
                     <p>{t('object.createdAt')} {new Date(object.created_at).toLocaleDateString(dateLocale)}</p>
                     {new Date(object.updated_at).getTime() - new Date(object.created_at).getTime() > 60000 && (
                         <p>{t('object.updatedAt')} {new Date(object.updated_at).toLocaleDateString(dateLocale)}</p>
+                    )}
+                    {!isAuthor && (
+                        <div className="mt-3">
+                            <ReportInaccuracyButton objectId={object.id} objectTitle={object.title}/>
+                        </div>
                     )}
                 </div>
             </div>
