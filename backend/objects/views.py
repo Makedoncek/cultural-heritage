@@ -1254,4 +1254,8 @@ def _admin_close_report(request, report_pk, resolved: bool):
     report.resolved_by = request.user
     report.resolved_at = timezone.now()
     report.save(update_fields=['status', 'admin_response', 'resolved_by', 'resolved_at'])
+
+    from .email import send_inaccuracy_outcome_email
+    send_inaccuracy_outcome_email.delay(report.id)
+
     return Response(InaccuracyReportSerializer(report).data)

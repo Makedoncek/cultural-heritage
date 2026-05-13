@@ -88,6 +88,7 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
         'author_link',
         'colored_status',
         'object_type',
+        'pending_reports_badge',
         'created_at',
         'archived_at',
     ]
@@ -155,6 +156,26 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
             obj.restore()
             count += 1
         self.message_user(request, f"Відновлено {count} об'єкт(ів)")
+
+    def get_queryset(self, request):
+        from django.db.models import Count, Q
+        qs = super().get_queryset(request)
+        return qs.annotate(
+            _pending_reports=Count(
+                'inaccuracy_reports',
+                filter=Q(inaccuracy_reports__status='pending'),
+            ),
+        )
+
+    @admin.display(description='⚠ Reports', ordering='_pending_reports')
+    def pending_reports_badge(self, obj):
+        count = getattr(obj, '_pending_reports', 0)
+        if not count:
+            return '—'
+        return format_html(
+            '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-weight:600;">{}</span>',
+            count,
+        )
 
     @admin.display(description='Переглянути на карті')
     def map_link(self, obj):
@@ -312,27 +333,43 @@ class InaccuracyReportAdmin(admin.ModelAdmin):
     actions = ['resolve_reports', 'dismiss_reports']
 
     def save_model(self, request, obj, form, change):
+        from .email import send_inaccuracy_outcome_email
+        prev_status = (
+            InaccuracyReport.objects.filter(pk=obj.pk).values_list('status', flat=True).first()
+            if change else None
+        )
         if change and obj.status in (InaccuracyReport.Status.RESOLVED, InaccuracyReport.Status.DISMISSED):
             if not obj.resolved_by:
                 obj.resolved_by = request.user
             if not obj.resolved_at:
                 obj.resolved_at = timezone.now()
         super().save_model(request, obj, form, change)
+        # Email the reporter when status transitions from pending to closed.
+        if change and prev_status == InaccuracyReport.Status.PENDING and obj.status != InaccuracyReport.Status.PENDING:
+            send_inaccuracy_outcome_email.delay(obj.pk)
 
     @admin.action(description='Підтвердити репорт (resolved)')
     def resolve_reports(self, request, queryset):
-        count = queryset.filter(status=InaccuracyReport.Status.PENDING).update(
+        from .email import send_inaccuracy_outcome_email
+        pending = list(queryset.filter(status=InaccuracyReport.Status.PENDING).values_list('pk', flat=True))
+        InaccuracyReport.objects.filter(pk__in=pending).update(
             status=InaccuracyReport.Status.RESOLVED,
             resolved_by=request.user,
             resolved_at=timezone.now(),
         )
-        self.message_user(request, f'Підтверджено {count} репортів.')
+        for pk in pending:
+            send_inaccuracy_outcome_email.delay(pk)
+        self.message_user(request, f'Підтверджено {len(pending)} репортів.')
 
     @admin.action(description='Відхилити репорт (dismissed)')
     def dismiss_reports(self, request, queryset):
-        count = queryset.filter(status=InaccuracyReport.Status.PENDING).update(
+        from .email import send_inaccuracy_outcome_email
+        pending = list(queryset.filter(status=InaccuracyReport.Status.PENDING).values_list('pk', flat=True))
+        InaccuracyReport.objects.filter(pk__in=pending).update(
             status=InaccuracyReport.Status.DISMISSED,
             resolved_by=request.user,
             resolved_at=timezone.now(),
         )
-        self.message_user(request, f'Відхилено {count} репортів.')
+        for pk in pending:
+            send_inaccuracy_outcome_email.delay(pk)
+        self.message_user(request, f'Відхилено {len(pending)} репортів.')
