@@ -35,3 +35,4 @@ cloudinary~=1.40
 django-cloudinary-storage~=0.3
 Pillow>=11.0
 drf-nested-routers~=0.95
+django-admin-sortable2~=2.3

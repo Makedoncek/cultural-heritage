@@ -1,0 +1,20 @@
+$kind: http-request
+description: Contributor uploads to pending object (set objectId to a pending
+  one not owned by current user).
+url: "{{baseUrl}}/api/objects/{{objectId}}/photos/"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: image
+      src: []
+auth:
+  type: bearer
+  credentials:
+    token: "{{accessToken}}"
+scripts:
+  - type: afterResponse
+    code: pm.test('Status 403', () => pm.response.to.have.status(403));
+    language: text/javascript
+order: 9000

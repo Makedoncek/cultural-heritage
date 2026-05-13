@@ -552,12 +552,27 @@ class ObjectViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
     def perform_update(self, serializer):
-        is_approved = serializer.instance.status == 'approved'
+        instance = serializer.instance
+        is_approved = instance.status == 'approved'
 
-        if not self.request.user.is_staff and is_approved:
+        if not self.request.user.is_staff and is_approved and self._has_actual_changes(instance, serializer.validated_data):
             serializer.save(status='pending')
         else:
             serializer.save()
+
+    @staticmethod
+    def _has_actual_changes(instance, validated_data):
+        """Перевіряє, чи дійсно змінились значення (PATCH тим самим контентом — no-op)."""
+        for field, value in validated_data.items():
+            if field == 'tags':
+                current = set(instance.tags.values_list('id', flat=True))
+                new = set(t.pk for t in value)
+                if current != new:
+                    return True
+            else:
+                if getattr(instance, field, None) != value:
+                    return True
+        return False
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -895,15 +910,13 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
         except Exception as e:
             return Response({'detail': f'Помилка завантаження: {e}'}, status=500)
 
-        order = 0
-        if is_author:
-            existing_orders = list(
-                ObjectPhoto.objects.filter(
-                    cultural_object=cultural_object,
-                    is_author_photo=True,
-                ).values_list('order', flat=True)
-            )
-            order = max(existing_orders, default=-1) + 1
+        # Нове фото йде в кінець — order = max(всі ордери) + 1
+        existing_orders = list(
+            ObjectPhoto.objects.filter(
+                cultural_object=cultural_object,
+            ).values_list('order', flat=True)
+        )
+        order = max(existing_orders, default=-1) + 1
 
         photo = ObjectPhoto.objects.create(
             cultural_object=cultural_object,
@@ -921,12 +934,7 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
         cultural_object = self._get_object()
         photo = get_object_or_404(ObjectPhoto, pk=kwargs['pk'], cultural_object=cultural_object)
         self.check_object_permissions(request, photo)
-
-        try:
-            cloudinary_service.delete_photo(photo.cloudinary_public_id)
-        except Exception:
-            pass
-        photo.delete()
+        photo.delete()  # pre_delete signal у objects/signals.py чистить Cloudinary
         return Response(status=204)
 
     def partial_update(self, request, *args, **kwargs):
@@ -938,8 +946,11 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
         if caption is not None:
             if len(caption) > 200:
                 return Response({'detail': 'Caption перевищує 200 символів.'}, status=400)
-            photo.caption = caption
-            photo.save(update_fields=['caption'])
+            if caption != photo.caption:
+                photo.caption = caption
+                # pre_save signal у objects/signals.py скидає status у pending,
+                # якщо approved/rejected фото отримує нову caption.
+                photo.save()
 
         return Response(ObjectPhotoSerializer(photo).data)
 
@@ -957,8 +968,6 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
         ))
         if len(photos) != len(photo_ids):
             return Response({'detail': 'Деякі фото не знайдено в цьому об\'єкті.'}, status=400)
-        if any(not p.is_author_photo for p in photos):
-            return Response({'detail': 'Можна перевпорядковувати лише свої фото.'}, status=400)
 
         by_id = {p.id: p for p in photos}
         for item in items:

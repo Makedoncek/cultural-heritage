@@ -1,0 +1,14 @@
+$kind: http-request
+description: Update photo caption. Approved/rejected → reset to pending (re-moderation).
+url: "{{baseUrl}}/api/objects/{{objectId}}/photos/{{photoId}}/"
+method: PATCH
+body:
+  mode: raw
+  raw: |-
+    {
+      "caption": "Оновлений підпис"
+    }
+  options:
+    raw:
+      language: json
+order: 5300

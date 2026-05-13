@@ -1,0 +1,11 @@
+$kind: http-request
+description: Add/remove object from current user's favorites.
+url: "{{baseUrl}}/api/objects/{{objectId}}/favorite/"
+method: POST
+events:
+  - listen: test
+    script:
+      exec: |
+        pm.test('Status 200', () => pm.response.to.have.status(200));
+        pm.test('Has is_favorited', () => pm.expect(pm.response.json()).to.have.property('is_favorited'));
+order: 4700

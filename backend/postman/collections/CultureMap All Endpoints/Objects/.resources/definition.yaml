@@ -1,0 +1,3 @@
+$kind: folder
+description: CRUD for cultural objects + custom actions (favorites, popular, my).
+order: 4000

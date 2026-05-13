@@ -1,0 +1,21 @@
+$kind: http-request
+description: Upload single photo (multipart). Throttled at 10/hour/user. Saves photoId.
+url: "{{baseUrl}}/api/objects/{{objectId}}/photos/"
+method: POST
+body:
+  mode: formdata
+  formdata:
+    - key: image
+      type: file
+    - key: caption
+      value: Тестовий підпис
+      type: text
+events:
+  - listen: test
+    script:
+      exec: |
+        pm.test('Status 201', () => pm.response.to.have.status(201));
+        const data = pm.response.json();
+        if (data.id) pm.collectionVariables.set('photoId', data.id);
+        pm.test('Status pending', () => pm.expect(data.status).to.equal('pending'));
+order: 5100

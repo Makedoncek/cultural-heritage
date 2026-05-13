@@ -1,4 +1,5 @@
 from datetime import timedelta
+from adminsortable2.admin import SortableAdminBase, SortableTabularInline
 from django.conf import settings
 from django.contrib import admin
 from django.utils import timezone
@@ -16,23 +17,52 @@ class TagAdmin(admin.ModelAdmin):
     ordering = ['name']
 
 
-class ObjectPhotoInline(admin.TabularInline):
+class ObjectPhotoInline(SortableTabularInline):
     model = ObjectPhoto
     extra = 0
     readonly_fields = ['thumbnail_preview_inline', 'uploaded_by', 'is_author_photo', 'created_at']
     fields = ['thumbnail_preview_inline', 'uploaded_by', 'caption', 'status', 'is_author_photo', 'order', 'created_at']
-    can_delete = False
+    can_delete = True
+    ordering_field = 'order'
 
-    @admin.display(description='Превью')
+    class Media:
+        css = {'all': ('admin/css/photo_inline_sortable.css',)}
+
+    @admin.display(description='Превью (клік для редагування)')
     def thumbnail_preview_inline(self, obj):
         if not obj.id:
             return '-'
-        return format_html('<img src="{}" style="height:60px;" />', obj.thumbnail_url)
+        from django.urls import reverse
+        url = reverse('admin:objects_objectphoto_change', args=[obj.id])
+        return format_html(
+            '<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">'
+            '<a href="{0}" title="Відкрити сторінку фото" '
+            'style="display:inline-block;border-radius:6px;overflow:hidden;'
+            'transition:transform 0.15s, box-shadow 0.15s;border:2px solid transparent;" '
+            'onmouseover="this.style.transform=\'scale(1.05)\';this.style.borderColor=\'#79aec8\';this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.3)\';" '
+            'onmouseout="this.style.transform=\'\';this.style.borderColor=\'transparent\';this.style.boxShadow=\'\';">'
+            '<img src="{1}" style="height:90px;width:120px;object-fit:cover;display:block;" />'
+            '</a>'
+            '<a href="{0}" '
+            'style="font-size:13px;padding:4px 10px;background:#417690;color:#fff;'
+            'border-radius:4px;text-decoration:none;font-weight:500;">'
+            'Редагувати фото</a>'
+            '</div>',
+            url, obj.thumbnail_url,
+        )
 
 
 @admin.register(CulturalObject)
-class CulturalObjectAdmin(admin.ModelAdmin):
+class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
     inlines = [ObjectPhotoInline]
+
+    class Media:
+        css = {'all': ('admin/leaflet/leaflet.css',)}
+        js = (
+            'admin/leaflet/leaflet.js',
+            'admin/js/admin_map.js',
+        )
+
     STATUS_COLORS = {
         'pending': '#f59e0b',
         'approved': '#10b981',
@@ -89,13 +119,10 @@ class CulturalObjectAdmin(admin.ModelAdmin):
 
     @admin.action(description="Затвердити обрані")
     def approve_objects(self, request, queryset):
-        from .email import send_status_notification
         count = 0
         for obj in queryset.filter(status=CulturalObject.Status.PENDING).select_related('author'):
             obj.status = CulturalObject.Status.APPROVED
             obj.save(update_fields=['status'])
-            if obj.author.email:
-                send_status_notification.delay(obj.id, 'approved')
             count += 1
         self.message_user(request, f'Затверджено {count} об\'єкт(ів)')
 
@@ -128,18 +155,13 @@ class CulturalObjectAdmin(admin.ModelAdmin):
             return '-'
         lat = float(obj.latitude)
         lng = float(obj.longitude)
-        src = (
-            f'https://www.openstreetmap.org/export/embed.html'
-            f'?bbox={lng - 0.01}%2C{lat - 0.01}%2C{lng + 0.01}%2C{lat + 0.01}'
-            f'&layer=mapnik&marker={lat}%2C{lng}'
-        )
+        map_id = f'admin-map-{obj.pk or "new"}'
         return mark_safe(
-            f'<div style="position:relative;">'
-            f'<iframe id="admin-map-iframe" width="100%" height="300" frameborder="0" '
-            f'scrolling="no" style="border-radius:8px;margin-top:5px;" allowfullscreen '
-            f'src="{src}"></iframe>'
+            f'<div style="position:relative;margin-top:5px;">'
+            f'<div id="{map_id}" data-admin-map data-lat="{lat}" data-lng="{lng}" '
+            f'style="height:300px;width:600px;max-width:100%;border-radius:8px;"></div>'
             f'<button type="button" onclick="'
-            f"var f=document.getElementById('admin-map-iframe');"
+            f"var f=document.getElementById('{map_id}');"
             f'if(!document.fullscreenElement){{f.requestFullscreen();}}'
             f'else{{document.exitFullscreen();}}'
             f'" style="position:absolute;top:12px;right:8px;z-index:999;'
@@ -149,7 +171,8 @@ class CulturalObjectAdmin(admin.ModelAdmin):
             f'<svg width="14" height="14" viewBox="0 0 14 14" fill="none" '
             f'stroke="black" stroke-width="2">'
             f'<path d="M1 5V1h4M9 1h4v4M13 9v4h-4M5 13H1V9"/>'
-            f'</svg></button></div>'
+            f'</svg></button>'
+            f'</div>'
         )
 
     @admin.display(description='Статус', ordering='status')
@@ -190,7 +213,7 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
 
     list_display = [
         'thumbnail_preview',
-        'cultural_object',
+        'cultural_object_link',
         'uploaded_by',
         'colored_status',
         'is_author_photo',
@@ -218,6 +241,12 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
             '<img src="{}" style="max-width:600px;border-radius:8px;" />', obj.image_url,
         )
 
+    @admin.display(description='Cultural object', ordering='cultural_object__title')
+    def cultural_object_link(self, obj):
+        from django.urls import reverse
+        url = reverse('admin:objects_culturalobject_change', args=[obj.cultural_object_id])
+        return format_html('<a href="{}">{}</a>', url, obj.cultural_object)
+
     @admin.display(description='Статус', ordering='status')
     def colored_status(self, obj):
         color = self.STATUS_COLORS.get(obj.status, '#6b7280')
@@ -229,7 +258,7 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
 
     @admin.action(description='Затвердити обрані фото')
     def approve_photos(self, request, queryset):
-        count = queryset.filter(status=ObjectPhoto.Status.PENDING).update(
+        count = queryset.exclude(status=ObjectPhoto.Status.APPROVED).update(
             status=ObjectPhoto.Status.APPROVED,
             moderated_at=timezone.now(),
             rejected_cleanup_at=None,
@@ -239,7 +268,7 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
     @admin.action(description='Відхилити обрані фото')
     def reject_photos(self, request, queryset):
         cleanup_at = timezone.now() + timedelta(days=settings.PHOTO_REJECTED_RETENTION_DAYS)
-        count = queryset.filter(status=ObjectPhoto.Status.PENDING).update(
+        count = queryset.exclude(status=ObjectPhoto.Status.REJECTED).update(
             status=ObjectPhoto.Status.REJECTED,
             moderated_at=timezone.now(),
             rejected_cleanup_at=cleanup_at,

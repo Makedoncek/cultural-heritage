@@ -1,0 +1,19 @@
+$kind: http-request
+description: Attach a file > 5 MB.
+url: "{{baseUrl}}/api/objects/{{objectId}}/photos/"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: image
+      src: []
+auth:
+  type: bearer
+  credentials:
+    token: "{{accessToken}}"
+scripts:
+  - type: afterResponse
+    code: pm.test('Status 400', () => pm.response.to.have.status(400));
+    language: text/javascript
+order: 7000

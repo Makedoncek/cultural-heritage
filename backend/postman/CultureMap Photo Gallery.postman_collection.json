@@ -1,0 +1,319 @@
+{
+  "info": {
+    "name": "CultureMap Photo Gallery API",
+    "description": "Photo gallery endpoints for CultureMap Ukraine. Set variables: baseUrl, accessToken (JWT), objectId, photoId.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8000"},
+    {"key": "accessToken", "value": ""},
+    {"key": "objectId", "value": "1"},
+    {"key": "photoId", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "1. Upload Photo",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/objects/{{objectId}}/photos/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "objects", "{{objectId}}", "photos", ""]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {"key": "image", "type": "file", "src": []},
+            {"key": "caption", "value": "Test caption", "type": "text"}
+          ]
+        },
+        "description": "Upload a photo (multipart). Saves photoId to collection variables for downstream requests."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "const data = pm.response.json();",
+              "pm.test('Has image_url', () => pm.expect(data).to.have.property('image_url'));",
+              "pm.test('Status pending', () => pm.expect(data.status).to.equal('pending'));",
+              "if (data.id) pm.collectionVariables.set('photoId', data.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. List Photos",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/objects/{{objectId}}/photos/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "objects", "{{objectId}}", "photos", ""]
+        },
+        "description": "List photos for an object. Anonymous sees only approved."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Patch Caption",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/api/objects/{{objectId}}/photos/{{photoId}}/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "objects", "{{objectId}}", "photos", "{{photoId}}", ""]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"caption\": \"Updated caption\"}",
+          "options": {"raw": {"language": "json"}}
+        },
+        "header": [{"key": "Content-Type", "value": "application/json"}]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Caption updated', () => pm.expect(pm.response.json().caption).to.equal('Updated caption'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Reorder Photos",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/objects/{{objectId}}/photos/reorder/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "objects", "{{objectId}}", "photos", "reorder", ""]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"order\": [{\"id\": {{photoId}}, \"order\": 0}]}",
+          "options": {"raw": {"language": "json"}}
+        },
+        "header": [{"key": "Content-Type", "value": "application/json"}]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Delete Photo",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/api/objects/{{objectId}}/photos/{{photoId}}/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "objects", "{{objectId}}", "photos", "{{photoId}}", ""]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative — Anonymous Upload (401)",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/objects/{{objectId}}/photos/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "objects", "{{objectId}}", "photos", ""]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [{"key": "image", "type": "file", "src": []}]
+        },
+        "description": "Upload without Authorization header. Expect 401."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 401', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative — Oversized File (400)",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/objects/{{objectId}}/photos/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "objects", "{{objectId}}", "photos", ""]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [{"key": "image", "type": "file", "src": []}]
+        },
+        "description": "Attach a file > 5 MB."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative — Wrong Format (400)",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/objects/{{objectId}}/photos/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "objects", "{{objectId}}", "photos", ""]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [{"key": "image", "type": "file", "src": []}]
+        },
+        "description": "Upload .pdf renamed to .jpg. Pillow magic-byte check rejects."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative — Pending Object (403)",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/objects/{{objectId}}/photos/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "objects", "{{objectId}}", "photos", ""]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [{"key": "image", "type": "file", "src": []}]
+        },
+        "description": "Contributor uploads to pending object (set objectId to a pending one not owned by current user)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative — Throttle Exceeded (429)",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/objects/{{objectId}}/photos/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "objects", "{{objectId}}", "photos", ""]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [{"key": "image", "type": "file", "src": []}]
+        },
+        "description": "11th upload from same user within an hour. Run 'Upload Photo' 10 times first."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 429', () => pm.response.to.have.status(429));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

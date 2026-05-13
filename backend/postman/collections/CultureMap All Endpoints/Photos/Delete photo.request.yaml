@@ -1,0 +1,5 @@
+$kind: http-request
+description: Hard delete photo (DB + Cloudinary via pre_delete signal). Uploader or admin only.
+url: "{{baseUrl}}/api/objects/{{objectId}}/photos/{{photoId}}/"
+method: DELETE
+order: 5500

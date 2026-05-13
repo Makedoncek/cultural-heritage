@@ -1,0 +1,16 @@
+$kind: http-request
+description: |
+  Список культурних об'єктів. Anonymous бачить тільки approved.
+  Authenticated бачить approved + власні pending/archived.
+
+  Параметри:
+  - search — підрядок у title/description (SearchFilter)
+  - tags — ID тегів через кому (BaseInFilter), напр. `1,2,3`
+  - object_type — `permanent` | `event`
+  - event_status — `active` | `upcoming` (тільки для подій)
+  - page — пагінація (PAGE_SIZE=100)
+url: "{{baseUrl}}/api/objects/?search=&tags=&object_type=&event_status=&page=1"
+method: GET
+auth:
+  type: noauth
+order: 4100

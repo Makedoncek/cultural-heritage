@@ -1,0 +1,3 @@
+$kind: folder
+description: Photos nested under cultural object. Upload, list, patch caption, reorder, delete.
+order: 5000

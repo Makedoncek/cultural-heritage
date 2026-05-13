@@ -1,4 +1,4 @@
-import {useState, useEffect, type ReactNode} from 'react';
+import {useState, useEffect, useRef, type ReactNode} from 'react';
 import {useForm} from 'react-hook-form';
 import {AxiosError} from 'axios';
 import {tagsService} from '../../services/tags.service';
@@ -54,13 +54,19 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
     const latitude = watch('latitude');
     const longitude = watch('longitude');
 
+    const loadedTagTypeRef = useRef<string | null>(null);
     useEffect(() => {
         setTagsLoading(true);
         const tagType = objectType === 'event' ? 'event' : 'object';
         tagsService.getAll(tagType)
             .then(data => {
                 setTags(data.results);
-                setValue('tags', []);
+                // Скидати лише при справжній зміні типу — щоб edit-форма не втратила initialData.tags
+                // і StrictMode-double-invoke не зачепив (на mount-і ref=null, ніколи не скидаємо).
+                if (loadedTagTypeRef.current !== null && loadedTagTypeRef.current !== tagType) {
+                    setValue('tags', []);
+                }
+                loadedTagTypeRef.current = tagType;
             })
             .catch(() => {})
             .finally(() => setTagsLoading(false));

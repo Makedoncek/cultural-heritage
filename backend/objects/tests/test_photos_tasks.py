@@ -18,7 +18,7 @@ class CleanupRejectedPhotosTests(TestCase):
         )
         self.obj.tags.add(self.tag)
 
-    @patch('objects.tasks.cloudinary_service.delete_photo')
+    @patch('objects.signals.cloudinary_service.delete_photo')
     def test_deletes_expired_rejected(self, mock_delete):
         expired = ObjectPhoto.objects.create(
             cultural_object=self.obj, uploaded_by=self.user,
@@ -30,7 +30,7 @@ class CleanupRejectedPhotosTests(TestCase):
         self.assertFalse(ObjectPhoto.objects.filter(id=expired.id).exists())
         mock_delete.assert_called_once_with('exp')
 
-    @patch('objects.tasks.cloudinary_service.delete_photo')
+    @patch('objects.signals.cloudinary_service.delete_photo')
     def test_does_not_delete_pending(self, mock_delete):
         ObjectPhoto.objects.create(
             cultural_object=self.obj, uploaded_by=self.user,
@@ -41,7 +41,7 @@ class CleanupRejectedPhotosTests(TestCase):
         self.assertEqual(ObjectPhoto.objects.count(), 1)
         mock_delete.assert_not_called()
 
-    @patch('objects.tasks.cloudinary_service.delete_photo')
+    @patch('objects.signals.cloudinary_service.delete_photo')
     def test_does_not_delete_future_cleanup(self, mock_delete):
         ObjectPhoto.objects.create(
             cultural_object=self.obj, uploaded_by=self.user,
@@ -53,8 +53,9 @@ class CleanupRejectedPhotosTests(TestCase):
         self.assertEqual(ObjectPhoto.objects.count(), 1)
         mock_delete.assert_not_called()
 
-    @patch('objects.tasks.cloudinary_service.delete_photo', side_effect=Exception('Cloudinary down'))
+    @patch('objects.signals.cloudinary_service.delete_photo', side_effect=Exception('Cloudinary down'))
     def test_continues_on_cloudinary_error(self, _mock):
+        # Signal catches Cloudinary errors і логує — DB-видалення все одно відбувається.
         photo = ObjectPhoto.objects.create(
             cultural_object=self.obj, uploaded_by=self.user,
             cloudinary_public_id='err', image_url='x', thumbnail_url='y',
@@ -62,4 +63,4 @@ class CleanupRejectedPhotosTests(TestCase):
             rejected_cleanup_at=timezone.now() - timedelta(days=1),
         )
         cleanup_rejected_photos()
-        self.assertTrue(ObjectPhoto.objects.filter(id=photo.id).exists())
+        self.assertFalse(ObjectPhoto.objects.filter(id=photo.id).exists())

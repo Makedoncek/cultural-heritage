@@ -1,5 +1,22 @@
+import {AxiosError} from 'axios';
 import api from './api';
 import type {ObjectPhoto, ReorderItem} from '../types';
+
+export function extractUploadError(err: unknown): string {
+    if (err instanceof AxiosError) {
+        const detail = err.response?.data?.detail;
+        if (typeof detail === 'string' && detail.length > 0) return detail;
+        const status = err.response?.status;
+        if (status === 429) return 'перевищено ліміт завантажень (10/год)';
+        if (status === 413) return 'файл занадто великий';
+        if (status === 401) return 'потрібна авторизація';
+        if (status === 403) return 'немає прав на завантаження';
+        if (status === 404) return 'об\'єкт не знайдено';
+        if (status && status >= 500) return 'помилка сервера, спробуйте пізніше';
+        if (err.code === 'ERR_NETWORK') return 'немає з\'єднання';
+    }
+    return 'невідома помилка';
+}
 
 export const photosService = {
     upload: (objectId: number, image: File, caption: string = '', onProgress?: (pct: number) => void) => {

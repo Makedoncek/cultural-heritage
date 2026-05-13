@@ -2,7 +2,7 @@ import {useState} from 'react';
 import {useNavigate} from 'react-router';
 import toast from 'react-hot-toast';
 import {objectsService} from '../services/objects.service';
-import {photosService} from '../services/photos.service';
+import {photosService, extractUploadError} from '../services/photos.service';
 import ObjectForm from '../components/Objects/ObjectForm';
 import PhotoUploader, {type PendingPhoto} from '../components/Objects/PhotoUploader';
 import type {CulturalObjectWrite} from '../types';
@@ -26,15 +26,15 @@ export default function AddObjectPage() {
 
         setUploading(true);
         setProgress({done: 0, total: photos.length});
-        const failures: string[] = [];
+        const failures: {name: string; reason: string}[] = [];
 
         await Promise.allSettled(
             photos.map(async (p) => {
                 try {
                     await photosService.upload(obj.id, p.file, p.caption);
                     setProgress(prev => ({...prev, done: prev.done + 1}));
-                } catch {
-                    failures.push(p.file.name);
+                } catch (e) {
+                    failures.push({name: p.file.name, reason: extractUploadError(e)});
                 }
             })
         );
@@ -44,7 +44,8 @@ export default function AddObjectPage() {
             toast.success('Об\'єкт і фото надіслано на модерацію');
             navigate('/my-objects');
         } else {
-            toast.error(`Не завантажено: ${failures.join(', ')}`);
+            const message = failures.map(f => `«${f.name}»: ${f.reason}`).join('\n');
+            toast.error(message, {duration: 6000});
             navigate(`/objects/${obj.id}`);
         }
     };

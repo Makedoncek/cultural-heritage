@@ -1,0 +1,7 @@
+$kind: http-request
+description: Get single tag by ID.
+url: "{{baseUrl}}/api/tags/{{tagId}}/"
+method: GET
+auth:
+  type: noauth
+order: 3200

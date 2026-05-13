@@ -310,7 +310,7 @@ class ObjectPhoto(models.Model):
     rejected_cleanup_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ['-is_author_photo', 'order', 'created_at']
+        ordering = ['order', 'created_at']
         indexes = [
             models.Index(fields=['cultural_object', 'status']),
             models.Index(fields=['status', 'rejected_cleanup_at']),

@@ -1,0 +1,27 @@
+$kind: http-request
+description: Create new object (status=pending). Saves objectId for downstream requests.
+url: "{{baseUrl}}/api/objects/"
+method: POST
+body:
+  mode: raw
+  raw: |-
+    {
+      "title": "Тестовий об'єкт",
+      "description": "Опис тестового об'єкта.",
+      "latitude": 50.453081,
+      "longitude": 30.530756,
+      "tags": [{{tagId}}],
+      "object_type": "permanent",
+      "wikipedia_url": "https://uk.wikipedia.org/wiki/Test"
+    }
+  options:
+    raw:
+      language: json
+events:
+  - listen: test
+    script:
+      exec: |
+        pm.test('Status 201', () => pm.response.to.have.status(201));
+        const data = pm.response.json();
+        if (data.id) pm.collectionVariables.set('objectId', data.id);
+order: 4300

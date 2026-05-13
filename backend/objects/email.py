@@ -122,3 +122,44 @@ def send_status_notification(obj_id, new_status):
         recipient_list=[obj.author.email],
         html_message=html_message,
     )
+
+
+# --- Follower Notifications ---
+
+@shared_task
+def send_follower_notifications(obj_id):
+    """Розсилає підписникам автора лист про нову публікацію (об'єкт або подію)."""
+    from .models import CulturalObject, FavoriteAuthor
+    obj = CulturalObject.objects.select_related('author').get(pk=obj_id)
+    followers = (
+        FavoriteAuthor.objects
+        .filter(author=obj.author)
+        .exclude(user=obj.author)
+        .select_related('user')
+    )
+
+    is_event = obj.object_type == CulturalObject.ObjectType.EVENT
+    object_type_label = 'подію' if is_event else 'об\'єкт'
+    object_type_short = 'подія' if is_event else 'об\'єкт'
+    object_url = f"{settings.FRONTEND_URL}/objects/{obj.pk}"
+    subject = f'CultureMap — {obj.author.username} опублікував(ла) {object_type_label} «{obj.title}»'
+
+    for fav in followers:
+        user = fav.user
+        if not user.email:
+            continue
+        html_message = render_to_string('emails/follower_new_object.html', {
+            'follower': user,
+            'author': obj.author,
+            'object': obj,
+            'object_url': object_url,
+            'object_type_label': object_type_label,
+            'object_type_short': object_type_short,
+        })
+        send_mail(
+            subject=subject,
+            message=strip_tags(html_message),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            html_message=html_message,
+        )

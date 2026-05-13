@@ -1,0 +1,5 @@
+$kind: http-request
+description: Current user's favorited objects (paginated).
+url: "{{baseUrl}}/api/objects/favorites/"
+method: GET
+order: 4800

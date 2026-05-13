@@ -39,26 +39,28 @@ class ObjectPhotoModelTests(TestCase):
                 cloudinary_public_id='dup', image_url='x2', thumbnail_url='y2',
             )
 
-    def test_ordering_author_first_then_order_then_created(self):
+    def test_ordering_by_order_then_created(self):
+        # Сортування лише за `order` і потім `created_at` — без преференції
+        # автору, щоб admin/object-author міг змішувати community-фото у будь-якому порядку.
         contrib = User.objects.create_user('bob', 'b@test.com', 'pass')
         ObjectPhoto.objects.create(
             cultural_object=self.obj, uploaded_by=contrib,
-            cloudinary_public_id='c1', image_url='x', thumbnail_url='y',
+            cloudinary_public_id='c0', image_url='x', thumbnail_url='y',
             is_author_photo=False, order=0,
         )
         ObjectPhoto.objects.create(
             cultural_object=self.obj, uploaded_by=self.user,
             cloudinary_public_id='a2', image_url='x', thumbnail_url='y',
-            is_author_photo=True, order=1,
+            is_author_photo=True, order=2,
         )
         ObjectPhoto.objects.create(
             cultural_object=self.obj, uploaded_by=self.user,
             cloudinary_public_id='a1', image_url='x', thumbnail_url='y',
-            is_author_photo=True, order=0,
+            is_author_photo=True, order=1,
         )
 
         public_ids = list(self.obj.photos.values_list('cloudinary_public_id', flat=True))
-        self.assertEqual(public_ids, ['a1', 'a2', 'c1'])
+        self.assertEqual(public_ids, ['c0', 'a1', 'a2'])
 
 
 class CoverUrlPropertyTests(TestCase):

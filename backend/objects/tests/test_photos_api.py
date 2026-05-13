@@ -247,7 +247,7 @@ class ObjectPhotoDeleteTests(APITestCase):
             is_author_photo=False, status='approved',
         )
 
-    @patch('objects.views.cloudinary_service.delete_photo')
+    @patch('objects.signals.cloudinary_service.delete_photo')
     def test_uploader_can_delete_own(self, mock_delete):
         self.client.force_authenticate(user=self.contrib)
         resp = self.client.delete(f'/api/objects/{self.obj.id}/photos/{self.contrib_photo.id}/')
@@ -265,7 +265,7 @@ class ObjectPhotoDeleteTests(APITestCase):
         resp = self.client.delete(f'/api/objects/{self.obj.id}/photos/{self.contrib_photo.id}/')
         self.assertEqual(resp.status_code, 403)
 
-    @patch('objects.views.cloudinary_service.delete_photo')
+    @patch('objects.signals.cloudinary_service.delete_photo')
     def test_admin_can_delete_any(self, _mock):
         self.client.force_authenticate(user=self.admin)
         resp = self.client.delete(f'/api/objects/{self.obj.id}/photos/{self.contrib_photo.id}/')
@@ -306,6 +306,76 @@ class ObjectPhotoPatchCaptionTests(APITestCase):
             {'caption': 'hack'},
         )
         self.assertEqual(resp.status_code, 403)
+
+    def test_caption_edit_on_approved_resets_to_pending(self):
+        from django.utils import timezone as tz
+        self.photo.moderated_at = tz.now()
+        self.photo.save(update_fields=['moderated_at'])
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.patch(
+            f'/api/objects/{self.obj.id}/photos/{self.photo.id}/',
+            {'caption': 'нова версія'},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.photo.refresh_from_db()
+        self.assertEqual(self.photo.status, 'pending')
+        self.assertIsNone(self.photo.moderated_at)
+        self.assertEqual(self.photo.caption, 'нова версія')
+
+    def test_caption_edit_by_admin_also_resets_to_pending(self):
+        # Уніформне правило: будь-яка зміна caption на approved/rejected → pending.
+        # Admin може потім явно змінити status через форму — pre_save поважає intent.
+        admin = User.objects.create_user('ad', 'ad@t.com', 'p', is_staff=True)
+        self.client.force_authenticate(user=admin)
+        resp = self.client.patch(
+            f'/api/objects/{self.obj.id}/photos/{self.photo.id}/',
+            {'caption': 'admin-edit'},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.photo.refresh_from_db()
+        self.assertEqual(self.photo.status, 'pending')
+        self.assertEqual(self.photo.caption, 'admin-edit')
+
+    def test_admin_form_changing_status_explicitly_is_respected(self):
+        # Якщо в одному save і caption, і status змінено — pre_save поважає admin-intent.
+        from objects.models import ObjectPhoto as Model
+        self.photo.caption = 'new caption'
+        self.photo.status = Model.Status.REJECTED
+        self.photo.save()
+        self.photo.refresh_from_db()
+        # Admin явно поставив rejected — signal не override-ить
+        self.assertEqual(self.photo.status, 'rejected')
+        self.assertEqual(self.photo.caption, 'new caption')
+
+    def test_caption_unchanged_does_not_reset_status(self):
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.patch(
+            f'/api/objects/{self.obj.id}/photos/{self.photo.id}/',
+            {'caption': 'old'},  # same as initial
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.photo.refresh_from_db()
+        self.assertEqual(self.photo.status, 'approved')
+
+    def test_caption_edit_on_rejected_resets_to_pending(self):
+        from datetime import timedelta
+        from django.utils import timezone as tz
+        self.photo.status = 'rejected'
+        self.photo.moderated_at = tz.now()
+        self.photo.rejected_cleanup_at = tz.now() + timedelta(days=30)
+        self.photo.save(update_fields=['status', 'moderated_at', 'rejected_cleanup_at'])
+
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.patch(
+            f'/api/objects/{self.obj.id}/photos/{self.photo.id}/',
+            {'caption': 'виправлений підпис'},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.photo.refresh_from_db()
+        self.assertEqual(self.photo.status, 'pending')
+        self.assertIsNone(self.photo.moderated_at)
+        self.assertIsNone(self.photo.rejected_cleanup_at)
+        self.assertEqual(self.photo.caption, 'виправлений підпис')
 
 
 class ObjectPhotoReorderTests(APITestCase):
@@ -357,11 +427,18 @@ class ObjectPhotoReorderTests(APITestCase):
         )
         self.assertEqual(resp.status_code, 403)
 
-    def test_reorder_with_non_author_photo_id_returns_400(self):
+    def test_author_can_reorder_contributor_photos(self):
+        # Object author керує усіма фото включно з community.
         self.client.force_authenticate(user=self.author)
         resp = self.client.post(
             f'/api/objects/{self.obj.id}/photos/reorder/',
-            {'order': [{'id': self.contrib_photo.id, 'order': 0}]},
+            {'order': [
+                {'id': self.contrib_photo.id, 'order': 0},
+                {'id': self.p1.id, 'order': 1},
+                {'id': self.p2.id, 'order': 2},
+            ]},
             format='json',
         )
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 200)
+        self.contrib_photo.refresh_from_db()
+        self.assertEqual(self.contrib_photo.order, 0)

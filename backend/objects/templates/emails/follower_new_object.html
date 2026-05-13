@@ -1,0 +1,27 @@
+{% extends "emails/base_email.html" %}
+{% block content %}
+<h2 style="color:#1f2937;font-size:20px;margin:0 0 16px;">
+    Новий {{ object_type_short }} від {{ author.username }}
+</h2>
+<p style="color:#4b5563;font-size:16px;line-height:1.5;">
+    Привіт, {{ follower.username }}!
+</p>
+<p style="color:#4b5563;font-size:16px;line-height:1.5;">
+    Автор <strong>{{ author.username }}</strong>, на якого ви підписані, опублікував {{ object_type_label }}
+    <strong>«{{ object.title }}»</strong>.
+</p>
+{% if object.description %}
+<p style="color:#6b7280;font-size:14px;line-height:1.5;font-style:italic;">
+    {{ object.description|truncatechars:200 }}
+</p>
+{% endif %}
+<div style="text-align:center;margin:24px 0;">
+    <a href="{{ object_url }}"
+       style="display:inline-block;background:#d97706;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
+        Переглянути на карті
+    </a>
+</div>
+<p style="color:#9ca3af;font-size:12px;margin-top:24px;">
+    Ви отримали цей лист, бо підписані на автора {{ author.username }} на CultureMap.
+</p>
+{% endblock %}

@@ -1,0 +1,16 @@
+$kind: http-request
+description: Bulk reorder photos. Object author or admin only.
+url: "{{baseUrl}}/api/objects/{{objectId}}/photos/reorder/"
+method: POST
+body:
+  mode: raw
+  raw: |-
+    {
+      "order": [
+        {"id": {{photoId}}, "order": 0}
+      ]
+    }
+  options:
+    raw:
+      language: json
+order: 5400

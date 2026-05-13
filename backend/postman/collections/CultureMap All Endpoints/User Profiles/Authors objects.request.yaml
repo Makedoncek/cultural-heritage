@@ -1,0 +1,7 @@
+$kind: http-request
+description: Approved objects authored by this user. Own profile shows pending too.
+url: "{{baseUrl}}/api/users/{{username}}/objects/"
+method: GET
+auth:
+  type: noauth
+order: 6200

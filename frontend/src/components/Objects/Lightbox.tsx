@@ -36,13 +36,21 @@ export default function Lightbox({photos, initialIndex, onClose}: Props) {
                 className="flex-1 w-full"
             >
                 {photos.map((p, i) => (
-                    <SwiperSlide key={p.id} className="flex flex-col items-center justify-center">
-                        <div className="text-white text-sm mb-2">{i + 1} / {photos.length}</div>
-                        <img src={p.image_url} alt={p.caption || ''} className="max-h-[80vh] max-w-full object-contain"/>
-                        {p.caption && <p className="text-white mt-3 text-center px-4">{p.caption}</p>}
-                        <p className="text-gray-400 text-xs mt-1">
-                            Завантажив: {p.uploaded_by.username} · {new Date(p.created_at).toLocaleDateString('uk-UA')}
-                        </p>
+                    <SwiperSlide key={p.id}>
+                        <div className="w-full h-full flex flex-col items-center justify-center px-12">
+                            <div className="text-white text-sm mb-2">{i + 1} / {photos.length}</div>
+                            <img
+                                src={p.image_url}
+                                alt={p.caption || ''}
+                                className="max-h-[75vh] max-w-[85vw] object-contain"
+                            />
+                            {p.caption && (
+                                <p className="text-white mt-3 text-center px-4 max-w-[85vw]">{p.caption}</p>
+                            )}
+                            <p className="text-gray-400 text-xs mt-1">
+                                Завантажив: {p.uploaded_by.username} · {new Date(p.created_at).toLocaleDateString('uk-UA')}
+                            </p>
+                        </div>
                     </SwiperSlide>
                 ))}
             </Swiper>

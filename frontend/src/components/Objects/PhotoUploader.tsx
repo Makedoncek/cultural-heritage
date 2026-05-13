@@ -57,27 +57,48 @@ function SortableItem({
 export default function PhotoUploader({photos, onChange, maxCount, label}: Props) {
     const [error, setError] = useState<string | null>(null);
 
-    const onDrop = useCallback((accepted: File[]) => {
+    const onDrop = useCallback(async (accepted: File[]) => {
         setError(null);
         const allowed = maxCount - photos.length;
         if (allowed <= 0) {
             setError(`Максимум ${maxCount} фото.`);
             return;
         }
-        const valid: PendingPhoto[] = [];
-        for (const f of accepted.slice(0, allowed)) {
+
+        const errors: string[] = [];
+        if (accepted.length > allowed) {
+            errors.push(`Прийнято ${allowed} з ${accepted.length} фото — досягнуто ліміту ${maxCount}.`);
+        }
+
+        const candidates = accepted.slice(0, allowed);
+        const checks = await Promise.all(candidates.map(async (f) => {
             if (f.size > MAX_SIZE_MB * 1024 * 1024) {
-                setError(`Файл ${f.name} перевищує ${MAX_SIZE_MB} MB.`);
-                continue;
+                errors.push(`«${f.name}» перевищує ${MAX_SIZE_MB} MB.`);
+                return null;
             }
-            valid.push({
+            const url = URL.createObjectURL(f);
+            const isImage = await new Promise<boolean>((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(true);
+                img.onerror = () => resolve(false);
+                img.src = url;
+            });
+            if (!isImage) {
+                URL.revokeObjectURL(url);
+                errors.push(`«${f.name}» не є валідним зображенням.`);
+                return null;
+            }
+            return {
                 id: `${Date.now()}-${Math.random()}`,
                 file: f,
-                previewUrl: URL.createObjectURL(f),
+                previewUrl: url,
                 caption: '',
-            });
-        }
-        onChange([...photos, ...valid]);
+            } satisfies PendingPhoto;
+        }));
+
+        const valid = checks.filter((p): p is PendingPhoto => p !== null);
+        if (errors.length > 0) setError(errors.join(' '));
+        if (valid.length > 0) onChange([...photos, ...valid]);
     }, [photos, maxCount, onChange]);
 
     const {getRootProps, getInputProps, isDragActive} = useDropzone({

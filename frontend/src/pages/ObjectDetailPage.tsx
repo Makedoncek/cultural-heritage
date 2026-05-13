@@ -3,7 +3,7 @@ import {useParams, useNavigate, Link} from 'react-router';
 import {MapContainer, TileLayer, Marker} from 'react-leaflet';
 import toast from 'react-hot-toast';
 import {objectsService} from '../services/objects.service';
-import {photosService} from '../services/photos.service';
+import {photosService, extractUploadError} from '../services/photos.service';
 import {useAuth} from '../context/AuthContext';
 import FavoriteButton from '../components/Objects/FavoriteButton';
 import PhotoGallery from '../components/Objects/PhotoGallery';
@@ -58,13 +58,13 @@ export default function ObjectDetailPage() {
     const handleContribUpload = async () => {
         if (!object || contribPhotos.length === 0) return;
         setUploadingContrib(true);
-        const failures: string[] = [];
+        const failures: {name: string; reason: string}[] = [];
         await Promise.allSettled(
             contribPhotos.map(async (p) => {
                 try {
                     await photosService.upload(object.id, p.file, p.caption);
-                } catch {
-                    failures.push(p.file.name);
+                } catch (e) {
+                    failures.push({name: p.file.name, reason: extractUploadError(e)});
                 }
             })
         );
@@ -74,7 +74,8 @@ export default function ObjectDetailPage() {
             setContribPhotos([]);
             setShowContribUploader(false);
         } else {
-            toast.error(`Не завантажено: ${failures.join(', ')}`);
+            const message = failures.map(f => `«${f.name}»: ${f.reason}`).join('\n');
+            toast.error(message, {duration: 6000});
         }
     };
 
