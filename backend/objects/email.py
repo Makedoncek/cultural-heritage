@@ -184,7 +184,7 @@ def _follower_subject_and_labels(lang: str, author_username: str, obj_title: str
 
 INACCURACY_SUBJECTS = {
     'uk': {
-        'resolved': 'CultureMap — Ваш репорт підтверджено',
+        'resolved': 'CultureMap — Ваш репорт вирішено',
         'dismissed': 'CultureMap — Ваш репорт відхилено',
     },
     'en': {
@@ -194,7 +194,7 @@ INACCURACY_SUBJECTS = {
 }
 
 INACCURACY_OUTCOME_LABELS = {
-    'uk': {'resolved': 'підтверджено', 'dismissed': 'відхилено'},
+    'uk': {'resolved': 'вирішено', 'dismissed': 'відхилено'},
     'en': {'resolved': 'confirmed', 'dismissed': 'dismissed'},
 }
 

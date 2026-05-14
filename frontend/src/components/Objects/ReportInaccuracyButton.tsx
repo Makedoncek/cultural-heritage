@@ -20,10 +20,11 @@ export default function ReportInaccuracyButton({objectId, objectTitle}: Props) {
                 type="button"
                 onClick={() => setOpen(true)}
                 disabled={submitted}
-                className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-stone-400 hover:text-amber-700 dark:hover:text-amber-300 underline decoration-dotted cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-amber-300 dark:border-stone-600 bg-amber-50 dark:bg-stone-800 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-stone-700 hover:border-amber-400 dark:hover:border-amber-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Повідомити про помилку у даних"
             >
-                ⚠ {submitted ? 'Репорт надіслано' : 'Повідомити про неточність'}
+                <span className="text-base">⚠</span>
+                {submitted ? 'Репорт надіслано' : 'Повідомити про неточність'}
             </button>
             {open && (
                 <ReportInaccuracyModal

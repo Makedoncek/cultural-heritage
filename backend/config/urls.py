@@ -81,6 +81,7 @@ class CustomRefreshView(TokenRefreshView):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('i18n/', include('django.conf.urls.i18n')),  # provides /i18n/setlang/ for language switching
     path('api/auth/login/', CustomLoginView.as_view(), name='token_obtain'),
     path('api/auth/refresh/', CustomRefreshView.as_view(), name='token_refresh'),
     path('api/', include('objects.urls')),

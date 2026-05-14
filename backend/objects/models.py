@@ -11,6 +11,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
 
 from .validators import validate_coordinates_within_ukraine
 
@@ -59,8 +60,8 @@ class Tag(models.Model):
 
     class Meta:
         ordering = ['name']
-        verbose_name = 'Tag'
-        verbose_name_plural = 'Tags'
+        verbose_name = _('Тег')
+        verbose_name_plural = _('Теги')
 
     def save(self, *args, **kwargs):
         """Auto-generate slug from name if not provided."""
@@ -198,8 +199,8 @@ class CulturalObject(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Cultural Object'
-        verbose_name_plural = 'Cultural Objects'
+        verbose_name = _('Культурний об\'єкт')
+        verbose_name_plural = _('Культурні об\'єкти')
 
         # Indexes for frequently filtered fields
         indexes = [
@@ -271,6 +272,8 @@ class Favorite(models.Model):
     class Meta:
         unique_together = ('user', 'cultural_object')
         ordering = ['-created_at']
+        verbose_name = _('Обране')
+        verbose_name_plural = _('Обране')
 
     def __str__(self):
         return f'{self.user.username} → {self.cultural_object.title}'
@@ -284,6 +287,8 @@ class FavoriteAuthor(models.Model):
     class Meta:
         unique_together = ('user', 'author')
         ordering = ['-created_at']
+        verbose_name = _('Підписка на автора')
+        verbose_name_plural = _('Підписки на авторів')
 
     def __str__(self):
         return f'{self.user.username} → {self.author.username}'
@@ -330,6 +335,8 @@ class ObjectPhoto(models.Model):
             models.Index(fields=['status', 'rejected_cleanup_at']),
             models.Index(fields=['uploaded_by']),
         ]
+        verbose_name = _('Фото об\'єкта')
+        verbose_name_plural = _('Фото об\'єктів')
 
     def __str__(self):
         return f'Photo {self.id} ({self.status}) for {self.cultural_object.title}'
@@ -380,7 +387,7 @@ class InaccuracyReport(models.Model):
 
     class Status(models.TextChoices):
         PENDING = 'pending', 'На розгляді'
-        RESOLVED = 'resolved', 'Підтверджено'
+        RESOLVED = 'resolved', 'Вирішено'
         DISMISSED = 'dismissed', 'Відхилено'
 
     cultural_object = models.ForeignKey(
@@ -416,6 +423,8 @@ class InaccuracyReport(models.Model):
             models.Index(fields=['cultural_object', 'status']),
         ]
         ordering = ['-created_at']
+        verbose_name = _('Репорт про неточність')
+        verbose_name_plural = _('Репорти про неточності')
 
     def __str__(self):
         return f'Report #{self.pk} on "{self.cultural_object.title}" by {self.reporter.username} ({self.status})'

@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from .models import Tag, CulturalObject, Favorite, ObjectPhoto, InaccuracyReport
+from .models import Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, InaccuracyReport
 
 
 @admin.register(Tag)
@@ -167,9 +167,13 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
             ),
         )
 
-    @admin.display(description='⚠ Reports', ordering='_pending_reports')
+    @admin.display(description='⚠ Reports')
     def pending_reports_badge(self, obj):
-        count = getattr(obj, '_pending_reports', 0)
+        # `_pending_reports` annotation may be absent when SortableAdminBase
+        # rebuilds the queryset (e.g. drag-to-reorder); fall back to a direct count.
+        count = getattr(obj, '_pending_reports', None)
+        if count is None:
+            count = obj.inaccuracy_reports.filter(status='pending').count()
         if not count:
             return '—'
         return format_html(
@@ -236,6 +240,15 @@ class FavoriteAdmin(admin.ModelAdmin):
     list_filter = ['created_at']
     readonly_fields = ['created_at']
     raw_id_fields = ['user', 'cultural_object']
+
+
+@admin.register(FavoriteAuthor)
+class FavoriteAuthorAdmin(admin.ModelAdmin):
+    list_display = ['user', 'author', 'created_at']
+    list_filter = ['created_at']
+    readonly_fields = ['created_at']
+    raw_id_fields = ['user', 'author']
+    search_fields = ['user__username', 'author__username']
 
 
 @admin.register(ObjectPhoto)
@@ -318,19 +331,46 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
 
 @admin.register(InaccuracyReport)
 class InaccuracyReportAdmin(admin.ModelAdmin):
-    list_display = ['id', 'cultural_object', 'reporter', 'reason_type', 'status', 'created_at']
+    list_display = ['id', 'cultural_object_title', 'reporter', 'reason_type', 'status', 'created_at', 'object_edit_link']
+    # Both id and the object title open the report — Django wraps these cells with the change-view link.
+    list_display_links = ['id', 'cultural_object_title']
     list_filter = ['status', 'reason_type', 'created_at']
     search_fields = ['cultural_object__title', 'reporter__username', 'note']
-    readonly_fields = ['reporter', 'cultural_object', 'reason_type', 'note', 'created_at', 'resolved_at', 'resolved_by']
+    readonly_fields = ['reporter', 'cultural_object_link_field', 'reason_type', 'note', 'created_at', 'resolved_at', 'resolved_by']
     fieldsets = (
         ('Report', {
-            'fields': ('cultural_object', 'reporter', 'reason_type', 'note', 'created_at'),
+            'fields': ('cultural_object_link_field', 'reporter', 'reason_type', 'note', 'created_at'),
         }),
         ('Moderation', {
             'fields': ('status', 'admin_response', 'resolved_by', 'resolved_at'),
         }),
     )
     actions = ['resolve_reports', 'dismiss_reports']
+
+    @admin.display(description='Cultural object', ordering='cultural_object__title')
+    def cultural_object_title(self, obj):
+        # Plain text — Django wraps the cell with the change-view link via list_display_links.
+        return str(obj.cultural_object)
+
+    @admin.display(description='Дія')
+    def object_edit_link(self, obj):
+        from django.urls import reverse
+        url = reverse('admin:objects_culturalobject_change', args=[obj.cultural_object_id])
+        # Django admin's built-in .button class adapts to the current theme palette.
+        return format_html(
+            '<a class="button" href="{}" style="white-space:nowrap;">Виправити об\'єкт</a>',
+            url,
+        )
+
+    @admin.display(description='Об\'єкт')
+    def cultural_object_link_field(self, obj):
+        from django.urls import reverse
+        url = reverse('admin:objects_culturalobject_change', args=[obj.cultural_object_id])
+        return format_html(
+            '{} &nbsp; <a class="button" href="{}" target="_blank" style="white-space:nowrap;">Виправити</a>',
+            obj.cultural_object,
+            url,
+        )
 
     def save_model(self, request, obj, form, change):
         from .email import send_inaccuracy_outcome_email
@@ -348,7 +388,7 @@ class InaccuracyReportAdmin(admin.ModelAdmin):
         if change and prev_status == InaccuracyReport.Status.PENDING and obj.status != InaccuracyReport.Status.PENDING:
             send_inaccuracy_outcome_email.delay(obj.pk)
 
-    @admin.action(description='Підтвердити репорт (resolved)')
+    @admin.action(description='Вирішити репорт (resolved)')
     def resolve_reports(self, request, queryset):
         from .email import send_inaccuracy_outcome_email
         pending = list(queryset.filter(status=InaccuracyReport.Status.PENDING).values_list('pk', flat=True))
@@ -359,7 +399,7 @@ class InaccuracyReportAdmin(admin.ModelAdmin):
         )
         for pk in pending:
             send_inaccuracy_outcome_email.delay(pk)
-        self.message_user(request, f'Підтверджено {len(pending)} репортів.')
+        self.message_user(request, f'Вирішено {len(pending)} репортів.')
 
     @admin.action(description='Відхилити репорт (dismissed)')
     def dismiss_reports(self, request, queryset):

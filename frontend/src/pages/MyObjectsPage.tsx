@@ -71,12 +71,20 @@ export default function MyObjectsPage() {
                         {t('myObjects.addNew')}
                     </Link>
                 </div>
-                <div className="flex gap-3 text-xs mb-6">
-                    <Link to="/my-reports" className="text-amber-700 dark:text-amber-400 hover:underline">
-                        ⚠ Мої репорти
+                <div className="flex flex-wrap gap-2 mb-6">
+                    <Link
+                        to="/my-reports"
+                        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-amber-300 dark:border-stone-600 bg-amber-50 dark:bg-stone-800 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-stone-700 hover:border-amber-400 dark:hover:border-amber-500 transition-colors"
+                    >
+                        <span className="text-base">⚠</span>
+                        Мої репорти
                     </Link>
-                    <Link to="/reports-on-my-objects" className="text-amber-700 dark:text-amber-400 hover:underline">
-                        📨 Репорти на мої об'єкти
+                    <Link
+                        to="/reports-on-my-objects"
+                        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-amber-300 dark:border-stone-600 bg-amber-50 dark:bg-stone-800 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-stone-700 hover:border-amber-400 dark:hover:border-amber-500 transition-colors"
+                    >
+                        <span className="text-base">📨</span>
+                        Репорти на мої об'єкти
                     </Link>
                 </div>
 
