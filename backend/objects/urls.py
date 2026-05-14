@@ -30,4 +30,18 @@ urlpatterns = [
     path('admin/reports/', views.admin_reports_list, name='admin_reports_list'),
     path('admin/reports/<int:report_pk>/resolve/', views.admin_resolve_report, name='admin_resolve_report'),
     path('admin/reports/<int:report_pk>/dismiss/', views.admin_dismiss_report, name='admin_dismiss_report'),
+
+    # Visits
+    path('objects/<int:object_pk>/visit/', views.toggle_visit, name='toggle_visit'),
+    path('objects/<int:object_pk>/visits-count/', views.visits_count, name='visits_count'),
+    path('visits/<int:visit_pk>/', views.update_visit, name='update_visit'),
+    path('users/me/visits/', views.my_visits, name='my_visits'),
+    path('users/me/visits/stats/', views.my_visits_stats, name='my_visits_stats'),
+    path('users/<str:username>/visits/', views.public_visits, name='public_visits'),
+
+    # Planned visits
+    path('objects/<int:object_pk>/plan-visit/', views.toggle_planned_visit, name='toggle_planned_visit'),
+    path('planned-visits/<int:planned_pk>/', views.update_planned_visit, name='update_planned_visit'),
+    path('planned-visits/<int:planned_pk>/convert-to-visit/', views.convert_planned_to_visit, name='convert_planned_to_visit'),
+    path('users/me/planned-visits/', views.my_planned_visits, name='my_planned_visits'),
 ] + router.urls + photos_router.urls

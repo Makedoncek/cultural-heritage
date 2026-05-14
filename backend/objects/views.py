@@ -1259,3 +1259,176 @@ def _admin_close_report(request, report_pk, resolved: bool):
     send_inaccuracy_outcome_email.delay(report.id)
 
     return Response(InaccuracyReportSerializer(report).data)
+
+
+# --- Visit & PlannedVisit endpoints ---
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def toggle_visit(request, object_pk):
+    """Toggle 'I visited' for the current user."""
+    from .models import Visit, CulturalObject
+    from .serializers import VisitSerializer
+    try:
+        obj = CulturalObject.objects.get(pk=object_pk)
+    except CulturalObject.DoesNotExist:
+        return Response({'detail': _('Об\'єкт не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+
+    visit = Visit.objects.filter(user=request.user, cultural_object=obj).first()
+    if visit:
+        visit.delete()
+        return Response({'is_visited': False})
+    visit = Visit.objects.create(user=request.user, cultural_object=obj)
+    return Response({'is_visited': True, 'visit': VisitSerializer(visit).data}, status=status.HTTP_201_CREATED)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_visit(request, visit_pk):
+    """Edit own visit: impression, visited_at, is_public."""
+    from .models import Visit
+    from .serializers import VisitSerializer
+    try:
+        visit = Visit.objects.get(pk=visit_pk)
+    except Visit.DoesNotExist:
+        return Response({'detail': _('Візит не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+    if visit.user_id != request.user.id:
+        return Response({'detail': _('Не можна редагувати чужий візит.')}, status=status.HTTP_403_FORBIDDEN)
+
+    allowed = {'impression', 'visited_at', 'is_public'}
+    updates = {k: v for k, v in request.data.items() if k in allowed}
+    for k, v in updates.items():
+        setattr(visit, k, v)
+    visit.save()
+    return Response(VisitSerializer(visit).data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def visits_count(request, object_pk):
+    """Public: how many unique users visited this object."""
+    from .models import Visit
+    count = Visit.objects.filter(cultural_object_id=object_pk).count()
+    return Response({'visits_count': count})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_visits(request):
+    from .models import Visit
+    from .serializers import VisitSerializer
+    qs = Visit.objects.filter(user=request.user).select_related('cultural_object')
+    return Response(VisitSerializer(qs, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def public_visits(request, username):
+    from .models import Visit
+    from .serializers import VisitSerializer
+    try:
+        target = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({'detail': _('Користувача не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+    qs = Visit.objects.filter(user=target, is_public=True).select_related('cultural_object')
+    return Response(VisitSerializer(qs, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_visits_stats(request):
+    """Aggregated counts for the cultural passport dashboard."""
+    from .models import Visit, Tag
+    from django.db.models import Count
+    base = Visit.objects.filter(user=request.user)
+    total = base.count()
+    total_objects = CulturalObject.objects.filter(status='approved').count()
+    by_tag = list(
+        Tag.objects.filter(culturalobject__visits__user=request.user)
+        .annotate(visited_count=Count('culturalobject__visits',
+                                      filter=Q(culturalobject__visits__user=request.user),
+                                      distinct=True))
+        .values('id', 'name', 'icon', 'visited_count')
+        .order_by('-visited_count')
+    )
+    return Response({
+        'total_visits': total,
+        'total_approved_objects': total_objects,
+        'by_tag': by_tag,
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def toggle_planned_visit(request, object_pk):
+    """Toggle 'I plan to visit' for the current user."""
+    from .models import PlannedVisit
+    from .serializers import PlannedVisitSerializer
+    try:
+        obj = CulturalObject.objects.get(pk=object_pk)
+    except CulturalObject.DoesNotExist:
+        return Response({'detail': _('Об\'єкт не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+
+    planned = PlannedVisit.objects.filter(user=request.user, cultural_object=obj).first()
+    if planned:
+        planned.delete()
+        return Response({'is_planned': False})
+    planned = PlannedVisit.objects.create(user=request.user, cultural_object=obj)
+    return Response(
+        {'is_planned': True, 'planned': PlannedVisitSerializer(planned).data},
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_planned_visit(request, planned_pk):
+    from .models import PlannedVisit
+    from .serializers import PlannedVisitSerializer
+    try:
+        planned = PlannedVisit.objects.get(pk=planned_pk)
+    except PlannedVisit.DoesNotExist:
+        return Response({'detail': _('План не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+    if planned.user_id != request.user.id:
+        return Response({'detail': _('Не можна редагувати чужий план.')}, status=status.HTTP_403_FORBIDDEN)
+
+    allowed = {'planned_date', 'note'}
+    for k, v in request.data.items():
+        if k in allowed:
+            setattr(planned, k, v)
+    planned.save()
+    return Response(PlannedVisitSerializer(planned).data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def convert_planned_to_visit(request, planned_pk):
+    """Convert a PlannedVisit into a Visit (deletes plan, creates visit)."""
+    from .models import PlannedVisit, Visit
+    from .serializers import VisitSerializer
+    try:
+        planned = PlannedVisit.objects.get(pk=planned_pk)
+    except PlannedVisit.DoesNotExist:
+        return Response({'detail': _('План не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+    if planned.user_id != request.user.id:
+        return Response({'detail': _('Не можна конвертувати чужий план.')}, status=status.HTTP_403_FORBIDDEN)
+
+    visit, created = Visit.objects.get_or_create(
+        user=planned.user,
+        cultural_object=planned.cultural_object,
+        defaults={'impression': planned.note},
+    )
+    planned.delete()
+    return Response(
+        {'visit': VisitSerializer(visit).data, 'created': created},
+        status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+    )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_planned_visits(request):
+    from .models import PlannedVisit
+    from .serializers import PlannedVisitSerializer
+    qs = PlannedVisit.objects.filter(user=request.user).select_related('cultural_object')
+    return Response(PlannedVisitSerializer(qs, many=True).data)

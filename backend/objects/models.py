@@ -428,3 +428,74 @@ class InaccuracyReport(models.Model):
 
     def __str__(self):
         return f'Report #{self.pk} on "{self.cultural_object.title}" by {self.reporter.username} ({self.status})'
+
+
+class Visit(models.Model):
+    """User check-in: 'I've visited this place' — with optional impression and privacy toggle."""
+
+    user = models.ForeignKey(
+        User,
+        related_name='visits',
+        on_delete=models.CASCADE,
+    )
+    cultural_object = models.ForeignKey(
+        CulturalObject,
+        related_name='visits',
+        on_delete=models.CASCADE,
+    )
+    visited_at = models.DateField(default=timezone.now)
+    impression = models.TextField(
+        max_length=1000,
+        blank=True,
+        help_text='Враження від візиту',
+    )
+    is_public = models.BooleanField(
+        default=False,
+        help_text='Чи показувати цей візит у публічному паспорті',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [('user', 'cultural_object')]
+        indexes = [
+            models.Index(fields=['user', 'visited_at']),
+            models.Index(fields=['cultural_object']),
+            models.Index(fields=['is_public', 'user']),
+        ]
+        ordering = ['-visited_at']
+        verbose_name = _('Візит')
+        verbose_name_plural = _('Візити')
+
+    def __str__(self):
+        return f'{self.user.username} → {self.cultural_object.title} ({self.visited_at})'
+
+
+class PlannedVisit(models.Model):
+    """User wishlist: 'I plan to visit this place' — with optional planned date."""
+
+    user = models.ForeignKey(
+        User,
+        related_name='planned_visits',
+        on_delete=models.CASCADE,
+    )
+    cultural_object = models.ForeignKey(
+        CulturalObject,
+        related_name='planned_visits',
+        on_delete=models.CASCADE,
+    )
+    planned_date = models.DateField(
+        null=True, blank=True,
+        help_text='Опційна планова дата',
+    )
+    note = models.TextField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('user', 'cultural_object')]
+        ordering = ['-created_at']
+        verbose_name = _('Заплановане відвідування')
+        verbose_name_plural = _('Заплановані відвідування')
+
+    def __str__(self):
+        return f'{self.user.username} plans → {self.cultural_object.title}'

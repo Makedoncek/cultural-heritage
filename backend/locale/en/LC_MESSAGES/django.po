@@ -100,3 +100,15 @@ msgstr "Inaccuracy report"
 
 msgid "Репорти про неточності"
 msgstr "Inaccuracy reports"
+
+msgid "Візит"
+msgstr "Visit"
+
+msgid "Візити"
+msgstr "Visits"
+
+msgid "Заплановане відвідування"
+msgstr "Planned visit"
+
+msgid "Заплановані відвідування"
+msgstr "Planned visits"

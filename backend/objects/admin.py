@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from .models import Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, InaccuracyReport
+from .models import Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, InaccuracyReport, Visit, PlannedVisit
 
 
 @admin.register(Tag)
@@ -249,6 +249,25 @@ class FavoriteAuthorAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at']
     raw_id_fields = ['user', 'author']
     search_fields = ['user__username', 'author__username']
+
+
+@admin.register(Visit)
+class VisitAdmin(admin.ModelAdmin):
+    list_display = ['user', 'cultural_object', 'visited_at', 'is_public', 'created_at']
+    list_filter = ['is_public', 'visited_at']
+    search_fields = ['user__username', 'cultural_object__title', 'impression']
+    readonly_fields = ['created_at', 'updated_at']
+    raw_id_fields = ['user', 'cultural_object']
+    date_hierarchy = 'visited_at'
+
+
+@admin.register(PlannedVisit)
+class PlannedVisitAdmin(admin.ModelAdmin):
+    list_display = ['user', 'cultural_object', 'planned_date', 'created_at']
+    list_filter = ['planned_date', 'created_at']
+    search_fields = ['user__username', 'cultural_object__title', 'note']
+    readonly_fields = ['created_at']
+    raw_id_fields = ['user', 'cultural_object']
 
 
 @admin.register(ObjectPhoto)

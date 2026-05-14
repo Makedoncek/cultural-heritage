@@ -5,7 +5,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from .models import Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, InaccuracyReport
+from .models import Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, InaccuracyReport, Visit, PlannedVisit
 from .validators import validate_coordinates_within_ukraine
 
 
@@ -151,6 +151,9 @@ class ObjectDetailSerializer(FavoriteMixin, serializers.ModelSerializer):
     photos = serializers.SerializerMethodField()
     photo_count = serializers.SerializerMethodField()
     cover_url = serializers.CharField(read_only=True, allow_null=True)
+    is_visited = serializers.SerializerMethodField()
+    is_planned = serializers.SerializerMethodField()
+    visits_count = serializers.SerializerMethodField()
 
     class Meta:
         model = CulturalObject
@@ -164,7 +167,23 @@ class ObjectDetailSerializer(FavoriteMixin, serializers.ModelSerializer):
             'created_at', 'updated_at', 'archived_at',
             'is_favorited', 'favorites_count',
             'photos', 'photo_count', 'cover_url',
+            'is_visited', 'is_planned', 'visits_count',
         ]
+
+    def get_is_visited(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return Visit.objects.filter(user=request.user, cultural_object=obj).exists()
+
+    def get_is_planned(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return PlannedVisit.objects.filter(user=request.user, cultural_object=obj).exists()
+
+    def get_visits_count(self, obj):
+        return Visit.objects.filter(cultural_object=obj).count()
 
     def get_fields(self):
         fields = super().get_fields()
@@ -348,3 +367,47 @@ class InaccuracyReportSerializer(serializers.ModelSerializer):
             'reason_label', 'status', 'status_label', 'admin_response',
             'created_at', 'resolved_at',
         ]
+
+
+class VisitSerializer(serializers.ModelSerializer):
+    object_id = serializers.IntegerField(source='cultural_object.id', read_only=True)
+    object_title = serializers.CharField(source='cultural_object.title', read_only=True)
+    object_cover_url = serializers.SerializerMethodField()
+    object_tags = TagSerializer(source='cultural_object.tags', many=True, read_only=True)
+
+    class Meta:
+        model = Visit
+        fields = [
+            'id', 'object_id', 'object_title', 'object_cover_url', 'object_tags',
+            'visited_at', 'impression', 'is_public',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'object_id', 'object_title', 'object_cover_url', 'object_tags',
+                            'created_at', 'updated_at']
+
+    def get_object_cover_url(self, obj):
+        photo = obj.cultural_object.photos.filter(status='approved').order_by(
+            '-is_author_photo', 'order', 'created_at'
+        ).first()
+        return photo.thumbnail_url if photo else None
+
+
+class PlannedVisitSerializer(serializers.ModelSerializer):
+    object_id = serializers.IntegerField(source='cultural_object.id', read_only=True)
+    object_title = serializers.CharField(source='cultural_object.title', read_only=True)
+    object_cover_url = serializers.SerializerMethodField()
+    object_tags = TagSerializer(source='cultural_object.tags', many=True, read_only=True)
+
+    class Meta:
+        model = PlannedVisit
+        fields = [
+            'id', 'object_id', 'object_title', 'object_cover_url', 'object_tags',
+            'planned_date', 'note', 'created_at',
+        ]
+        read_only_fields = ['id', 'object_id', 'object_title', 'object_cover_url', 'object_tags', 'created_at']
+
+    def get_object_cover_url(self, obj):
+        photo = obj.cultural_object.photos.filter(status='approved').order_by(
+            '-is_author_photo', 'order', 'created_at'
+        ).first()
+        return photo.thumbnail_url if photo else None
