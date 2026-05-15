@@ -8,6 +8,8 @@ import {objectsService} from '../services/objects.service';
 import {photosService, extractUploadError} from '../services/photos.service';
 import {useAuth} from '../context/AuthContext';
 import FavoriteButton from '../components/Objects/FavoriteButton';
+import VisitedToggleButton from '../components/Objects/VisitedToggleButton';
+import PlanVisitToggleButton from '../components/Objects/PlanVisitToggleButton';
 import PhotoGallery from '../components/Objects/PhotoGallery';
 import PhotoUploader, {type PendingPhoto} from '../components/Objects/PhotoUploader';
 import ReportInaccuracyButton from '../components/Objects/ReportInaccuracyButton';
@@ -153,11 +155,25 @@ export default function ObjectDetailPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                         {isAuthenticated && (
-                            <FavoriteButton
-                                objectId={object.id}
-                                initialFavorited={object.is_favorited ?? false}
-                                initialCount={object.favorites_count ?? 0}
-                            />
+                            <>
+                                <FavoriteButton
+                                    objectId={object.id}
+                                    initialFavorited={object.is_favorited ?? false}
+                                    initialCount={object.favorites_count ?? 0}
+                                />
+                                {!isAuthor && object.status === 'approved' && (
+                                    <>
+                                        <VisitedToggleButton
+                                            objectId={object.id}
+                                            initialVisited={object.is_visited ?? false}
+                                        />
+                                        <PlanVisitToggleButton
+                                            objectId={object.id}
+                                            initialPlanned={object.is_planned ?? false}
+                                        />
+                                    </>
+                                )}
+                            </>
                         )}
                         {canEdit && (
                             <>
@@ -276,6 +292,12 @@ export default function ObjectDetailPage() {
                     <div className="mb-6">
                         <p className="text-gray-700 dark:text-stone-200 whitespace-pre-line leading-relaxed">{object.description}</p>
                     </div>
+                )}
+
+                {typeof object.visits_count === 'number' && object.visits_count > 0 && (
+                    <p className="text-sm text-gray-500 dark:text-stone-400 mb-2">
+                        ✓ Відвідано: <strong className="text-green-700 dark:text-green-400">{object.visits_count}</strong> {object.visits_count === 1 ? 'раз' : 'раз(ів)'}
+                    </p>
                 )}
 
                 <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-stone-400 mb-2">

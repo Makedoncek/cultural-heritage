@@ -90,6 +90,9 @@ export interface CulturalObjectDetail {
     photos?: ObjectPhoto[];
     photo_count?: number;
     cover_url?: string | null;
+    is_visited?: boolean;
+    is_planned?: boolean;
+    visits_count?: number;
 }
 
 export interface PhotoUploadedBy {

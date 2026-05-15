@@ -20,6 +20,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import MyReportsPage from './pages/MyReportsPage';
 import ReportsOnMyObjectsPage from './pages/ReportsOnMyObjectsPage';
+import CulturalPassportPage from './pages/CulturalPassportPage';
 
 function App() {
     const {theme} = useTheme();
@@ -57,6 +58,7 @@ function App() {
                     <Route path="/my-photos" element={<MyPhotosPage/>}/>
                     <Route path="/my-reports" element={<MyReportsPage/>}/>
                     <Route path="/reports-on-my-objects" element={<ReportsOnMyObjectsPage/>}/>
+                    <Route path="/passport" element={<CulturalPassportPage/>}/>
                     <Route path="/favorites" element={<FavoritesPage/>}/>
                 </Route>
             </Route>
