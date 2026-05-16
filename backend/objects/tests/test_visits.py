@@ -57,6 +57,16 @@ class VisitFlowTests(APITestCase):
         self.assertTrue(visit.is_public)
         self.assertEqual(str(visit.visited_at), '2026-04-15')
 
+    def test_future_visited_at_rejected(self):
+        from datetime import date, timedelta
+        visit = Visit.objects.create(user=self.user, cultural_object=self.obj)
+        self.client.force_authenticate(self.user)
+        url = reverse('objects:update_visit', kwargs={'visit_pk': visit.pk})
+        tomorrow = (date.today() + timedelta(days=1)).isoformat()
+        response = self.client.patch(url, {'visited_at': tomorrow}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('visited_at', response.data)
+
     def test_user_cannot_edit_others_visit(self):
         visit = Visit.objects.create(user=self.user, cultural_object=self.obj)
         self.client.force_authenticate(self.other)

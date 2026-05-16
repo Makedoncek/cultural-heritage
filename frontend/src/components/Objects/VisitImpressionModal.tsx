@@ -15,7 +15,14 @@ export default function VisitImpressionModal({visit, onClose, onUpdated}: Props)
     const [isPublic, setIsPublic] = useState(visit.is_public);
     const [saving, setSaving] = useState(false);
 
+    const today = new Date().toISOString().slice(0, 10);
+    const futureDate = visitedAt > today;
+
     const handleSave = async () => {
+        if (futureDate) {
+            toast.error('Дата візиту не може бути у майбутньому');
+            return;
+        }
         setSaving(true);
         try {
             const updated = await visitsService.update(visit.id, {
@@ -49,9 +56,18 @@ export default function VisitImpressionModal({visit, onClose, onUpdated}: Props)
                 <input
                     type="date"
                     value={visitedAt}
+                    max={today}
                     onChange={(e) => setVisitedAt(e.target.value)}
-                    className="w-full bg-white dark:bg-stone-800 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-stone-100 rounded-lg px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    className={`w-full bg-white dark:bg-stone-800 border ${
+                        futureDate ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-stone-700'
+                    } text-gray-900 dark:text-stone-100 rounded-lg px-3 py-2 mb-1 focus:outline-none focus:ring-2 focus:ring-amber-400`}
                 />
+                {futureDate && (
+                    <p className="text-red-600 dark:text-red-400 text-xs mb-3">
+                        Дата візиту не може бути у майбутньому
+                    </p>
+                )}
+                {!futureDate && <div className="mb-3"/>}
 
                 <label className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-1">
                     Враження
@@ -92,8 +108,8 @@ export default function VisitImpressionModal({visit, onClose, onUpdated}: Props)
                     <button
                         type="button"
                         onClick={handleSave}
-                        disabled={saving}
-                        className="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg cursor-pointer disabled:opacity-50"
+                        disabled={saving || futureDate}
+                        className="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {saving ? 'Збереження...' : 'Зберегти'}
                     </button>

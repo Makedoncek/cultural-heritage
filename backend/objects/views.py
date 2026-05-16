@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.utils.translation import gettext as _
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample, inline_serializer
 from rest_framework import serializers as s
 from .filters import ObjectFilter
@@ -1297,6 +1298,19 @@ def update_visit(request, visit_pk):
 
     allowed = {'impression', 'visited_at', 'is_public'}
     updates = {k: v for k, v in request.data.items() if k in allowed}
+
+    if 'visited_at' in updates:
+        from datetime import date
+        try:
+            parsed = date.fromisoformat(str(updates['visited_at']))
+        except ValueError:
+            return Response({'visited_at': [_('Невірний формат дати.')]}, status=status.HTTP_400_BAD_REQUEST)
+        if parsed > timezone.localdate():
+            return Response(
+                {'visited_at': [_('Дата візиту не може бути у майбутньому.')]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
     for k, v in updates.items():
         setattr(visit, k, v)
     visit.save()
