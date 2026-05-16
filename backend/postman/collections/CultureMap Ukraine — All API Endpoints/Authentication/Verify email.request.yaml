@@ -1,0 +1,9 @@
+$kind: http-request
+description: Token comes from verification email link.
+url: "{{baseUrl}}/api/auth/verify-email/?token=PASTE_TOKEN"
+method: GET
+queryParams:
+  token: PASTE_TOKEN
+auth:
+  type: noauth
+order: 4000

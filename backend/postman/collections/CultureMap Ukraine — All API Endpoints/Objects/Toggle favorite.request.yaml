@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/objects/{{objectId}}/favorite/"
+method: POST
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 200', () => pm.response.to.have.status(200));
+      pm.test('Has is_favorited', () => pm.expect(pm.response.json()).to.have.property('is_favorited'));
+    language: text/javascript
+order: 7000

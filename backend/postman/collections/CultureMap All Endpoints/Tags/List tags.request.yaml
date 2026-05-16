@@ -1,7 +1,0 @@
-$kind: http-request
-description: List all available tags. Filter via tag_type=object|event.
-url: "{{baseUrl}}/api/tags/?tag_type=object"
-method: GET
-auth:
-  type: noauth
-order: 3100

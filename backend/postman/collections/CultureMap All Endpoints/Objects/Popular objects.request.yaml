@@ -1,7 +1,0 @@
-$kind: http-request
-description: Top objects ranked by favorites_count.
-url: "{{baseUrl}}/api/objects/popular/"
-method: GET
-auth:
-  type: noauth
-order: 4900

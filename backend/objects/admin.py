@@ -56,6 +56,20 @@ class ObjectPhotoInline(SortableTabularInline):
 class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
     inlines = [ObjectPhotoInline]
 
+    def save_formset(self, request, form, formset, change):
+        # Inline ObjectPhoto: admin caption edit не активує re-moderation.
+        if formset.model is ObjectPhoto:
+            instances = formset.save(commit=False)
+            for instance in instances:
+                instance._skip_status_reset = True
+                instance.save()
+            for instance in formset.deleted_objects:
+                instance.delete()
+            formset.save_m2m()
+        else:
+            super().save_formset(request, form, formset, change)
+
+
     class Media:
         css = {'all': ('admin/leaflet/leaflet.css',)}
         js = (
@@ -205,6 +219,11 @@ class FavoriteAdmin(admin.ModelAdmin):
 
 @admin.register(ObjectPhoto)
 class ObjectPhotoAdmin(admin.ModelAdmin):
+    def save_model(self, request, obj, form, change):
+        # Admin edit не активує re-moderation при зміні caption.
+        obj._skip_status_reset = True
+        super().save_model(request, obj, form, change)
+
     STATUS_COLORS = {
         'pending': '#f59e0b',
         'approved': '#10b981',

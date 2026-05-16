@@ -24,6 +24,21 @@ def _store_old_status(sender, instance, **kwargs):
         instance._old_status = None
 
 
+@receiver(pre_save, sender=CulturalObject)
+def _sync_archived_at(sender, instance, **kwargs):
+    """Синхронізує `archived_at` зі статусом при будь-якому save:
+       - status стає `archived` → archived_at = now
+       - status вже не `archived` → archived_at = None
+    """
+    from django.utils import timezone
+    if instance.status == CulturalObject.Status.ARCHIVED:
+        if instance.archived_at is None:
+            instance.archived_at = timezone.now()
+    else:
+        if instance.archived_at is not None:
+            instance.archived_at = None
+
+
 @receiver(post_save, sender=CulturalObject)
 def _trigger_status_emails(sender, instance, created, raw, **kwargs):
     """При переході status з pending у approved розсилає email-и автору і підписникам."""
@@ -41,10 +56,13 @@ def _trigger_status_emails(sender, instance, created, raw, **kwargs):
 def _reset_photo_status_on_caption_change(sender, instance, **kwargs):
     """Якщо caption approved/rejected фото редагується — скинути status у pending.
 
-    Якщо в тому ж save status змінено явно (admin form з кількома полями) — не чіпати,
-    повага до admin-intent.
+    Винятки:
+      - Якщо в тому ж save status змінено явно (admin form з кількома полями) — не чіпати.
+      - Якщо виставлено `instance._skip_status_reset` (admin edit) — не чіпати.
     """
     if not instance.pk:
+        return
+    if getattr(instance, '_skip_status_reset', False):
         return
     try:
         old = ObjectPhoto.objects.only('caption', 'status').get(pk=instance.pk)
@@ -66,12 +84,10 @@ def _cleanup_cloudinary_on_photo_delete(sender, instance, **kwargs):
 
     Спрацьовує і на admin «Видалити обрані», і на API DELETE,
     і на CASCADE при видаленні CulturalObject/User.
+    Виконується асинхронно через Celery-task з retry — щоб HTTP-call
+    до Cloudinary не блокував request і пережив тимчасові збої API.
     """
     if not instance.cloudinary_public_id:
         return
-    try:
-        cloudinary_service.delete_photo(instance.cloudinary_public_id)
-    except Exception as e:
-        logger.error(
-            f'Failed to delete Cloudinary file {instance.cloudinary_public_id}: {e}'
-        )
+    from .tasks import delete_cloudinary_file
+    delete_cloudinary_file.delay(instance.cloudinary_public_id)

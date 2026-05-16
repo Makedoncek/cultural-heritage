@@ -1,0 +1,20 @@
+$kind: collection
+name: CultureMap Ukraine — All API Endpoints
+description: "Full REST API collection for CultureMap. Login first to populate accessToken/refreshToken. Other variables: baseUrl, objectId, tagId, photoId, userId."
+variables:
+  baseUrl: http://localhost:8000
+  accessToken: ""
+  refreshToken: ""
+  objectId: "1"
+  tagId: "1"
+  photoId: ""
+  userId: "1"
+  username: alecs7turbo
+  password: SecurePass123!
+  email: test@example.com
+auth:
+  - id: a5f1b85e-eff8-493c-965c-0f84b751d8e1
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{accessToken}}"

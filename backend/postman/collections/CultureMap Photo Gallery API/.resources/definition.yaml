@@ -1,8 +1,14 @@
 $kind: collection
-description: "Photo gallery endpoints for CultureMap Ukraine. Set variables:
-  baseUrl, accessToken (JWT), objectId, photoId."
+name: CultureMap Photo Gallery API
+description: "Photo gallery endpoints for CultureMap Ukraine. Set variables: baseUrl, accessToken (JWT), objectId, photoId."
 variables:
   baseUrl: http://localhost:8000
   accessToken: ""
   objectId: "1"
   photoId: ""
+auth:
+  - id: 3f59c873-fd08-45e5-832a-7abb3f15a004
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{accessToken}}"

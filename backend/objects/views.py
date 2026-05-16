@@ -13,8 +13,15 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticate
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Count, Exists, OuterRef
 from .models import CulturalObject, Favorite, FavoriteAuthor
-from .serializers import ObjectListSerializer, ObjectDetailSerializer, ObjectWriteSerializer, UserProfileSerializer
-from .permissions import IsAuthorOrReadOnly, IsPhotoUploaderOrAdmin, IsObjectAuthor
+from .serializers import ObjectListSerializer, ObjectDetailSerializer, ObjectWriteSerializer, UserProfileSerializer, ObjectWithMyPhotosSerializer
+
+
+class _PhotoLimitExceeded(Exception):
+    """Внутрішня помилка для скасування транзакції upload-у при перевищенні ліміту."""
+    def __init__(self, code: str, limit: int):
+        self.code = code
+        self.limit = limit
+from .permissions import IsAuthorOrReadOnly, IsPhotoUploaderOrAdmin, IsObjectAuthor, IsPhotoCaptionEditor
 from .throttles import PhotoUploadThrottle
 from .validators import validate_image_size, validate_image_format
 from . import cloudinary_service
@@ -627,6 +634,34 @@ class ObjectViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         tags=['Objects'],
+        summary='Objects where I uploaded photos',
+        description='Returns objects (own or others) where the current user has uploaded at least one photo. Each item includes a `my_photos` array with statuses.',
+        responses={200: ObjectWithMyPhotosSerializer(many=True), 401: ErrorResponse},
+    )
+    @action(detail=False, methods=['get'], url_path='with-my-photos', permission_classes=[IsAuthenticated])
+    def with_my_photos(self, request):
+        object_ids = (ObjectPhoto.objects
+                      .filter(uploaded_by=request.user)
+                      .values_list('cultural_object_id', flat=True)
+                      .distinct())
+
+        objects = (CulturalObject.objects
+                   .select_related('author')
+                   .prefetch_related('tags', 'photos__uploaded_by')
+                   .filter(id__in=object_ids)
+                   .exclude(status='archived')
+                   .order_by('-created_at'))
+
+        page = self.paginate_queryset(objects)
+        if page is not None:
+            serializer = ObjectWithMyPhotosSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
+        serializer = ObjectWithMyPhotosSerializer(objects, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=['Objects'],
         summary='Toggle favorite',
         description='Add or remove object from favorites. Returns new state.',
         responses={200: inline_serializer('FavoriteToggle', fields={
@@ -834,8 +869,10 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
             return [IsAuthenticated()]
         if self.action == 'reorder':
             return [IsObjectAuthor()]
-        if self.action in ('destroy', 'partial_update'):
+        if self.action == 'destroy':
             return [IsAuthenticated(), IsPhotoUploaderOrAdmin()]
+        if self.action == 'partial_update':
+            return [IsAuthenticated(), IsPhotoCaptionEditor()]
         return [AllowAny()]
 
     def get_throttles(self):
@@ -908,26 +945,67 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
         try:
             uploaded = cloudinary_service.upload_photo(image)
         except Exception as e:
-            return Response({'detail': f'Помилка завантаження: {e}'}, status=500)
+            import logging
+            logging.getLogger(__name__).exception('Cloudinary upload failed: %s', e)
+            return Response(
+                {'detail': 'Не вдалося завантажити фото на сервер. Спробуйте пізніше.'},
+                status=500,
+            )
 
-        # Нове фото йде в кінець — order = max(всі ордери) + 1
-        existing_orders = list(
-            ObjectPhoto.objects.filter(
-                cultural_object=cultural_object,
-            ).values_list('order', flat=True)
-        )
-        order = max(existing_orders, default=-1) + 1
+        # Atomic-блок з row-lock запобігає race condition при паралельних uploads:
+        # сесія блокує parent-об'єкт, перевіряє ліміти ще раз, створює фото.
+        from django.db import transaction
+        try:
+            with transaction.atomic():
+                CulturalObject.objects.select_for_update().get(pk=cultural_object.pk)
 
-        photo = ObjectPhoto.objects.create(
-            cultural_object=cultural_object,
-            uploaded_by=request.user,
-            cloudinary_public_id=uploaded['public_id'],
-            image_url=uploaded['image_url'],
-            thumbnail_url=uploaded['thumbnail_url'],
-            caption=request.data.get('caption', '')[:200],
-            is_author_photo=is_author,
-            order=order,
-        )
+                user_count_locked = ObjectPhoto.objects.filter(
+                    cultural_object=cultural_object,
+                    uploaded_by=request.user,
+                ).exclude(status='rejected').count()
+                if user_count_locked >= max_user:
+                    raise _PhotoLimitExceeded('user_limit_exceeded', max_user)
+
+                total_locked = ObjectPhoto.objects.filter(
+                    cultural_object=cultural_object,
+                ).exclude(status='rejected').count()
+                if total_locked >= settings.PHOTO_MAX_PER_OBJECT:
+                    raise _PhotoLimitExceeded('object_full', settings.PHOTO_MAX_PER_OBJECT)
+
+                existing_orders = list(
+                    ObjectPhoto.objects.filter(
+                        cultural_object=cultural_object,
+                    ).values_list('order', flat=True)
+                )
+                order = max(existing_orders, default=-1) + 1
+
+                photo = ObjectPhoto.objects.create(
+                    cultural_object=cultural_object,
+                    uploaded_by=request.user,
+                    cloudinary_public_id=uploaded['public_id'],
+                    image_url=uploaded['image_url'],
+                    thumbnail_url=uploaded['thumbnail_url'],
+                    caption=request.data.get('caption', '')[:200],
+                    is_author_photo=is_author,
+                    order=order,
+                )
+        except _PhotoLimitExceeded as e:
+            # rollback: видалити Cloudinary-файл (бо ObjectPhoto не створено,
+            # тож pre_delete-signal не спрацює)
+            try:
+                cloudinary_service.delete_photo(uploaded['public_id'])
+            except Exception:
+                pass
+            if e.code == 'user_limit_exceeded':
+                return Response(
+                    {'detail': f'Ліміт {e.limit} фото на цей об\'єкт вичерпано.', 'code': 'user_limit_exceeded'},
+                    status=400,
+                )
+            return Response(
+                {'detail': f'Об\'єкт уже містить максимум {e.limit} фото.', 'code': 'object_full'},
+                status=400,
+            )
+
         return Response(ObjectPhotoSerializer(photo).data, status=201)
 
     def destroy(self, request, *args, **kwargs):
@@ -950,6 +1028,9 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
                 photo.caption = caption
                 # pre_save signal у objects/signals.py скидає status у pending,
                 # якщо approved/rejected фото отримує нову caption.
+                # Admin-edit обходить reset через _skip_status_reset.
+                if request.user.is_staff:
+                    photo._skip_status_reset = True
                 photo.save()
 
         return Response(ObjectPhotoSerializer(photo).data)

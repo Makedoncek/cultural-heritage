@@ -93,7 +93,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '1000/hour',
         'user': '5000/hour',
-        'photo_upload': '10/hour',
+        'photo_upload': '20/hour',
     },
 
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',

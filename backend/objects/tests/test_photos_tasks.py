@@ -1,7 +1,7 @@
 from datetime import timedelta
 from unittest.mock import patch
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from objects.models import CulturalObject, ObjectPhoto, Tag
@@ -18,7 +18,8 @@ class CleanupRejectedPhotosTests(TestCase):
         )
         self.obj.tags.add(self.tag)
 
-    @patch('objects.signals.cloudinary_service.delete_photo')
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
+    @patch('objects.tasks.cloudinary_service.delete_photo')
     def test_deletes_expired_rejected(self, mock_delete):
         expired = ObjectPhoto.objects.create(
             cultural_object=self.obj, uploaded_by=self.user,
@@ -30,7 +31,8 @@ class CleanupRejectedPhotosTests(TestCase):
         self.assertFalse(ObjectPhoto.objects.filter(id=expired.id).exists())
         mock_delete.assert_called_once_with('exp')
 
-    @patch('objects.signals.cloudinary_service.delete_photo')
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
+    @patch('objects.tasks.cloudinary_service.delete_photo')
     def test_does_not_delete_pending(self, mock_delete):
         ObjectPhoto.objects.create(
             cultural_object=self.obj, uploaded_by=self.user,
@@ -41,7 +43,8 @@ class CleanupRejectedPhotosTests(TestCase):
         self.assertEqual(ObjectPhoto.objects.count(), 1)
         mock_delete.assert_not_called()
 
-    @patch('objects.signals.cloudinary_service.delete_photo')
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
+    @patch('objects.tasks.cloudinary_service.delete_photo')
     def test_does_not_delete_future_cleanup(self, mock_delete):
         ObjectPhoto.objects.create(
             cultural_object=self.obj, uploaded_by=self.user,
@@ -53,7 +56,8 @@ class CleanupRejectedPhotosTests(TestCase):
         self.assertEqual(ObjectPhoto.objects.count(), 1)
         mock_delete.assert_not_called()
 
-    @patch('objects.signals.cloudinary_service.delete_photo', side_effect=Exception('Cloudinary down'))
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
+    @patch('objects.tasks.cloudinary_service.delete_photo', side_effect=Exception('Cloudinary down'))
     def test_continues_on_cloudinary_error(self, _mock):
         # Signal catches Cloudinary errors і логує — DB-видалення все одно відбувається.
         photo = ObjectPhoto.objects.create(

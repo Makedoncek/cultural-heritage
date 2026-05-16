@@ -19,7 +19,7 @@
                 L.Icon.Default.imagePath = '/static/admin/leaflet/images/';
                 var map = L.map(el).setView([lat, lng], 14);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap',
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
                     maxZoom: 19
                 }).addTo(map);
                 L.marker([lat, lng]).addTo(map);

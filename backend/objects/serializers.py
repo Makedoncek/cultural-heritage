@@ -17,6 +17,17 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['is_staff'] = user.is_staff
         return token
 
+    def validate(self, attrs):
+        # Дозволяємо логін як по username, так і по email.
+        login = attrs.get(self.username_field, '')
+        if '@' in login:
+            try:
+                user = User.objects.get(email__iexact=login)
+                attrs[self.username_field] = user.username
+            except User.DoesNotExist:
+                pass  # fallthrough — super().validate видасть помилку про невірні дані
+        return super().validate(attrs)
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(
@@ -166,6 +177,24 @@ class ObjectDetailSerializer(FavoriteMixin, serializers.ModelSerializer):
         return obj.photos.filter(status='approved').count()
 
 
+class ObjectWithMyPhotosSerializer(ObjectListSerializer):
+    """Об'єкт + масив фото, які завантажив поточний користувач (для /with-my-photos/)."""
+    my_photos = serializers.SerializerMethodField()
+
+    class Meta(ObjectListSerializer.Meta):
+        fields = list(ObjectListSerializer.Meta.fields) + ['my_photos']
+        read_only_fields = fields
+
+    def get_my_photos(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return []
+        # prefetch_related у view ставить кеш на `photos`, тож фільтр у Python — без зайвого SQL
+        photos = [p for p in obj.photos.all() if p.uploaded_by_id == request.user.id]
+        photos.sort(key=lambda p: p.created_at, reverse=True)
+        return ObjectPhotoSerializer(photos, many=True, context=self.context).data
+
+
 class UserProfileSerializer(serializers.Serializer):
     username = serializers.CharField(read_only=True)
     date_joined = serializers.DateTimeField(read_only=True)
@@ -173,6 +202,13 @@ class UserProfileSerializer(serializers.Serializer):
     total_favorites_received = serializers.IntegerField(read_only=True, default=0)
     followers_count = serializers.IntegerField(read_only=True, default=0)
     is_followed = serializers.BooleanField(read_only=True, default=False)
+    email = serializers.SerializerMethodField()
+
+    def get_email(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated and request.user.pk == obj.pk:
+            return obj.email
+        return None
 
 
 class ObjectWriteSerializer(serializers.ModelSerializer):
@@ -196,9 +232,10 @@ class ObjectWriteSerializer(serializers.ModelSerializer):
             'event_end_date',
             'wikipedia_url',
             'official_website',
-            'google_maps_url'
+            'google_maps_url',
+            'status',
         ]
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'status']
 
     def validate_tags(self, value):
         if len(value) < 1:

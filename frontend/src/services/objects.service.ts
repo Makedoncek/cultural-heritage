@@ -1,5 +1,5 @@
 import api from "./api";
-import type {CulturalObject, CulturalObjectDetail, CulturalObjectWrite, PaginatedResponse, FavoriteToggleResponse} from '../types';
+import type {CulturalObject, CulturalObjectDetail, CulturalObjectWithMyPhotos, CulturalObjectWrite, PaginatedResponse, FavoriteToggleResponse} from '../types';
 
 interface ObjectFilters {
     tags?: string;
@@ -36,4 +36,10 @@ export const objectsService = {
 
     getPopular: () =>
         api.get<CulturalObject[]>('/objects/popular/').then(res => res.data),
+
+    getWithMyPhotos: (params?: { page?: number }) =>
+        api.get<PaginatedResponse<CulturalObjectWithMyPhotos>>(
+            '/objects/with-my-photos/',
+            {params},
+        ).then(res => res.data),
 };

@@ -1,6 +1,5 @@
 $kind: http-request
-description: Contributor uploads to pending object (set objectId to a pending
-  one not owned by current user).
+description: Contributor uploads to pending object (set objectId to a pending one not owned by current user).
 url: "{{baseUrl}}/api/objects/{{objectId}}/photos/"
 method: POST
 body:

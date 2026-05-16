@@ -1,5 +1,0 @@
-$kind: http-request
-description: Soft delete (sets status=archived). Photos remain in DB but hidden.
-url: "{{baseUrl}}/api/objects/{{objectId}}/"
-method: DELETE
-order: 4500

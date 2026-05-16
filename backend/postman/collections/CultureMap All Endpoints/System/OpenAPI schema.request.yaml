@@ -1,7 +1,0 @@
-$kind: http-request
-description: Raw OpenAPI YAML schema. Available only when DEBUG=True.
-url: "{{baseUrl}}/api/schema/"
-method: GET
-auth:
-  type: noauth
-order: 2200

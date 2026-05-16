@@ -4,10 +4,8 @@ url: "{{baseUrl}}/api/objects/{{objectId}}/photos/"
 method: GET
 scripts:
   - type: afterResponse
-    code: >-
+    code: |-
       pm.test('Status 200', () => pm.response.to.have.status(200));
-
-      pm.test('Returns array', () =>
-      pm.expect(pm.response.json()).to.be.an('array'));
+      pm.test('Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));
     language: text/javascript
 order: 2000

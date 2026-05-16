@@ -4,16 +4,27 @@ import type {ObjectPhoto, ReorderItem} from '../types';
 
 export function extractUploadError(err: unknown): string {
     if (err instanceof AxiosError) {
-        const detail = err.response?.data?.detail;
-        if (typeof detail === 'string' && detail.length > 0) return detail;
         const status = err.response?.status;
-        if (status === 429) return 'перевищено ліміт завантажень (10/год)';
+        const detail = err.response?.data?.detail;
+        // 429 throttle має дефолтний англійський меседж від DRF — підмінюємо локалізованим
+        if (status === 429) {
+            if (typeof detail === 'string') {
+                const match = detail.match(/(\d+)\s*seconds?/i);
+                if (match) {
+                    const seconds = parseInt(match[1], 10);
+                    const minutes = Math.ceil(seconds / 60);
+                    return `перевищено ліміт завантажень (20/год). Спробуйте через ${minutes} хв.`;
+                }
+            }
+            return 'перевищено ліміт завантажень (20/год)';
+        }
+        if (err.code === 'ERR_NETWORK') return 'немає з\'єднання';
+        if (typeof detail === 'string' && detail.length > 0) return detail;
         if (status === 413) return 'файл занадто великий';
         if (status === 401) return 'потрібна авторизація';
         if (status === 403) return 'немає прав на завантаження';
         if (status === 404) return 'об\'єкт не знайдено';
         if (status && status >= 500) return 'помилка сервера, спробуйте пізніше';
-        if (err.code === 'ERR_NETWORK') return 'немає з\'єднання';
     }
     return 'невідома помилка';
 }

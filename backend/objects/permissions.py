@@ -18,6 +18,19 @@ class IsPhotoUploaderOrAdmin(permissions.BasePermission):
         return obj.uploaded_by == request.user or request.user.is_staff
 
 
+class IsPhotoCaptionEditor(permissions.BasePermission):
+    """Дозволяє редагувати caption фото uploader-у, автору об'єкта-батька або адміну."""
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        if request.user.is_staff:
+            return True
+        if obj.uploaded_by_id == request.user.id:
+            return True
+        return obj.cultural_object.author_id == request.user.id
+
+
 class IsObjectAuthor(permissions.BasePermission):
     """Дозволяє дію (наприклад, reorder) лише автору об'єкта-батька (з nested URL)."""
 

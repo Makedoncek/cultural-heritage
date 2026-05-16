@@ -34,6 +34,7 @@ export default function ObjectDetailPage() {
     const [deleting, setDeleting] = useState(false);
     const [contribPhotos, setContribPhotos] = useState<PendingPhoto[]>([]);
     const [uploadingContrib, setUploadingContrib] = useState(false);
+    const [contribProgress, setContribProgress] = useState({done: 0, total: 0});
     const [showContribUploader, setShowContribUploader] = useState(false);
 
     useEffect(() => {
@@ -58,16 +59,18 @@ export default function ObjectDetailPage() {
     const handleContribUpload = async () => {
         if (!object || contribPhotos.length === 0) return;
         setUploadingContrib(true);
+        setContribProgress({done: 0, total: contribPhotos.length});
         const failures: {name: string; reason: string}[] = [];
-        await Promise.allSettled(
-            contribPhotos.map(async (p) => {
-                try {
-                    await photosService.upload(object.id, p.file, p.caption);
-                } catch (e) {
-                    failures.push({name: p.file.name, reason: extractUploadError(e)});
-                }
-            })
-        );
+        // Sequential upload — щоб бекенд відхиляв надлишкові фото ДО Cloudinary
+        // (інакше parallel uploads витрачають bandwidth на файли, що не пройдуть лiміт).
+        for (const p of contribPhotos) {
+            try {
+                await photosService.upload(object.id, p.file, p.caption);
+                setContribProgress(prev => ({...prev, done: prev.done + 1}));
+            } catch (e) {
+                failures.push({name: p.file.name, reason: extractUploadError(e)});
+            }
+        }
         setUploadingContrib(false);
         if (failures.length === 0) {
             toast.success('Фото надіслано на модерацію');
@@ -233,20 +236,35 @@ export default function ObjectDetailPage() {
                         ) : (
                             <>
                                 <PhotoUploader photos={contribPhotos} onChange={setContribPhotos} maxCount={3}/>
+                                {uploadingContrib && contribProgress.total > 0 && (
+                                    <div className="mt-3">
+                                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                                            <span>Завантаження фото…</span>
+                                            <span>{contribProgress.done} / {contribProgress.total}</span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                            <div
+                                                className="bg-blue-600 h-2 transition-all duration-300"
+                                                style={{width: `${(contribProgress.done / contribProgress.total) * 100}%`}}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="mt-3 flex gap-2">
                                     <button
                                         onClick={handleContribUpload}
                                         disabled={contribPhotos.length === 0 || uploadingContrib}
                                         className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50 cursor-pointer"
                                     >
-                                        {uploadingContrib ? 'Завантаження...' : 'Надіслати'}
+                                        {uploadingContrib ? `${contribProgress.done}/${contribProgress.total} завантажується...` : 'Надіслати'}
                                     </button>
                                     <button
                                         onClick={() => {
                                             setShowContribUploader(false);
                                             setContribPhotos([]);
                                         }}
-                                        className="px-4 py-2 border rounded cursor-pointer"
+                                        disabled={uploadingContrib}
+                                        className="px-4 py-2 border rounded cursor-pointer disabled:opacity-50"
                                     >
                                         Скасувати
                                     </button>

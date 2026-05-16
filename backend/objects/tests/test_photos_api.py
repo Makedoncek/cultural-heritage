@@ -3,6 +3,7 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -247,7 +248,8 @@ class ObjectPhotoDeleteTests(APITestCase):
             is_author_photo=False, status='approved',
         )
 
-    @patch('objects.signals.cloudinary_service.delete_photo')
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
+    @patch('objects.tasks.cloudinary_service.delete_photo')
     def test_uploader_can_delete_own(self, mock_delete):
         self.client.force_authenticate(user=self.contrib)
         resp = self.client.delete(f'/api/objects/{self.obj.id}/photos/{self.contrib_photo.id}/')
@@ -265,7 +267,8 @@ class ObjectPhotoDeleteTests(APITestCase):
         resp = self.client.delete(f'/api/objects/{self.obj.id}/photos/{self.contrib_photo.id}/')
         self.assertEqual(resp.status_code, 403)
 
-    @patch('objects.signals.cloudinary_service.delete_photo')
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
+    @patch('objects.tasks.cloudinary_service.delete_photo')
     def test_admin_can_delete_any(self, _mock):
         self.client.force_authenticate(user=self.admin)
         resp = self.client.delete(f'/api/objects/{self.obj.id}/photos/{self.contrib_photo.id}/')
@@ -307,6 +310,25 @@ class ObjectPhotoPatchCaptionTests(APITestCase):
         )
         self.assertEqual(resp.status_code, 403)
 
+    def test_object_author_can_patch_contributor_caption(self):
+        contrib = User.objects.create_user('contrib', 'c@t.com', 'p')
+        contrib_photo = ObjectPhoto.objects.create(
+            cultural_object=self.obj, uploaded_by=contrib,
+            cloudinary_public_id='cp', image_url='x', thumbnail_url='y',
+            caption='original', status='approved',
+        )
+        # self.user — автор об'єкта, не uploader цього фото
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.patch(
+            f'/api/objects/{self.obj.id}/photos/{contrib_photo.id}/',
+            {'caption': 'edited by object author'},
+        )
+        self.assertEqual(resp.status_code, 200)
+        contrib_photo.refresh_from_db()
+        self.assertEqual(contrib_photo.caption, 'edited by object author')
+        # pre_save signal: caption change на approved → pending
+        self.assertEqual(contrib_photo.status, 'pending')
+
     def test_caption_edit_on_approved_resets_to_pending(self):
         from django.utils import timezone as tz
         self.photo.moderated_at = tz.now()
@@ -322,9 +344,9 @@ class ObjectPhotoPatchCaptionTests(APITestCase):
         self.assertIsNone(self.photo.moderated_at)
         self.assertEqual(self.photo.caption, 'нова версія')
 
-    def test_caption_edit_by_admin_also_resets_to_pending(self):
-        # Уніформне правило: будь-яка зміна caption на approved/rejected → pending.
-        # Admin може потім явно змінити status через форму — pre_save поважає intent.
+    def test_caption_edit_by_admin_keeps_status(self):
+        # Admin може редагувати caption без активації re-moderation
+        # (bypass через _skip_status_reset у views.py / admin.save_model).
         admin = User.objects.create_user('ad', 'ad@t.com', 'p', is_staff=True)
         self.client.force_authenticate(user=admin)
         resp = self.client.patch(
@@ -333,7 +355,7 @@ class ObjectPhotoPatchCaptionTests(APITestCase):
         )
         self.assertEqual(resp.status_code, 200)
         self.photo.refresh_from_db()
-        self.assertEqual(self.photo.status, 'pending')
+        self.assertEqual(self.photo.status, 'approved')
         self.assertEqual(self.photo.caption, 'admin-edit')
 
     def test_admin_form_changing_status_explicitly_is_respected(self):

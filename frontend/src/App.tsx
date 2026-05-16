@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ObjectDetailPage from './pages/ObjectDetailPage';
 import MyObjectsPage from './pages/MyObjectsPage';
+import MyPhotosPage from './pages/MyPhotosPage';
 import AddObjectPage from './pages/AddObjectPage';
 import EditObjectPage from './pages/EditObjectPage';
 import FavoritesPage from './pages/FavoritesPage';
@@ -21,7 +22,15 @@ function App() {
     return (
         <>
         <Toaster position="top-center" toastOptions={{
-            style: {borderRadius: '8px', background: '#fffbeb', color: '#92400e', border: '1px solid #fbbf24'},
+            style: {
+                borderRadius: '8px',
+                background: '#fffbeb',
+                color: '#92400e',
+                border: '1px solid #fbbf24',
+                maxWidth: '560px',
+                wordBreak: 'break-word',
+                whiteSpace: 'pre-line',
+            },
             success: {duration: 3000, iconTheme: {primary: '#d97706', secondary: '#fffbeb'}},
         }}/>
         <Routes>
@@ -40,6 +49,7 @@ function App() {
                     <Route path="/objects/add" element={<AddObjectPage/>}/>
                     <Route path="/objects/:id/edit" element={<EditObjectPage/>}/>
                     <Route path="/my-objects" element={<MyObjectsPage/>}/>
+                    <Route path="/my-photos" element={<MyPhotosPage/>}/>
                     <Route path="/favorites" element={<FavoritesPage/>}/>
                 </Route>
             </Route>

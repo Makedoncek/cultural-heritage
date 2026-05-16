@@ -1,3 +1,0 @@
-$kind: folder
-description: JWT login/refresh, registration, email verification, password reset.
-order: 1000

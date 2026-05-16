@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{baseUrl}}/api/objects/"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Тестовий об'єкт",
+      "description": "Опис тестового об'єкта.",
+      "latitude": 50.453081,
+      "longitude": 30.530756,
+      "tags": [{{tagId}}],
+      "object_type": "permanent",
+      "wikipedia_url": "https://uk.wikipedia.org/wiki/Test"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 201', () => pm.response.to.have.status(201));
+      const data = pm.response.json();
+      if (data.id) pm.collectionVariables.set('objectId', data.id);
+    language: text/javascript
+order: 3000

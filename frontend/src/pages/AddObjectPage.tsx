@@ -27,17 +27,16 @@ export default function AddObjectPage() {
         setUploading(true);
         setProgress({done: 0, total: photos.length});
         const failures: {name: string; reason: string}[] = [];
-
-        await Promise.allSettled(
-            photos.map(async (p) => {
-                try {
-                    await photosService.upload(obj.id, p.file, p.caption);
-                    setProgress(prev => ({...prev, done: prev.done + 1}));
-                } catch (e) {
-                    failures.push({name: p.file.name, reason: extractUploadError(e)});
-                }
-            })
-        );
+        // Sequential — щоб бекенд відхиляв надлишкові фото ДО Cloudinary
+        // (інакше parallel uploads витрачають bandwidth на файли, що не пройдуть лiміт).
+        for (const p of photos) {
+            try {
+                await photosService.upload(obj.id, p.file, p.caption);
+                setProgress(prev => ({...prev, done: prev.done + 1}));
+            } catch (e) {
+                failures.push({name: p.file.name, reason: extractUploadError(e)});
+            }
+        }
         setUploading(false);
 
         if (failures.length === 0) {

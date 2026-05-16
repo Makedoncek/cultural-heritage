@@ -21,7 +21,7 @@ export default function Lightbox({photos, initialIndex, onClose}: Props) {
     }, [onClose]);
 
     return (
-        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col">
+        <div className="fixed inset-0 z-[9999] bg-black/95 flex flex-col">
             <button
                 onClick={onClose}
                 className="absolute top-4 right-4 z-10 text-white text-3xl w-10 h-10 flex items-center justify-center"

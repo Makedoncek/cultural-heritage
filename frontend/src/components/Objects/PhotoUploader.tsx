@@ -1,5 +1,5 @@
 import {useCallback, useState} from 'react';
-import {useDropzone} from 'react-dropzone';
+import {useDropzone, type FileRejection} from 'react-dropzone';
 import {DndContext, closestCenter, type DragEndEvent} from '@dnd-kit/core';
 import {SortableContext, useSortable, arrayMove, horizontalListSortingStrategy} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
@@ -101,8 +101,22 @@ export default function PhotoUploader({photos, onChange, maxCount, label}: Props
         if (valid.length > 0) onChange([...photos, ...valid]);
     }, [photos, maxCount, onChange]);
 
+    const onDropRejected = useCallback((rejections: FileRejection[]) => {
+        const msgs = rejections.map(r => {
+            const reason = r.errors[0]?.code;
+            if (reason === 'file-too-large') return `«${r.file.name}» перевищує ${MAX_SIZE_MB} MB.`;
+            if (reason === 'file-invalid-type') return `«${r.file.name}» — непідтримуваний формат (потрібен JPG/PNG/WebP).`;
+            if (reason === 'too-many-files') return `Забагато файлів — максимум ${maxCount}.`;
+            return `«${r.file.name}» — ${r.errors[0]?.message || 'не прийнято'}.`;
+        });
+        setError(msgs.join(' '));
+    }, [maxCount]);
+
     const {getRootProps, getInputProps, isDragActive} = useDropzone({
-        onDrop, accept: ACCEPTED, maxSize: MAX_SIZE_MB * 1024 * 1024,
+        onDrop,
+        onDropRejected,
+        accept: ACCEPTED,
+        maxSize: MAX_SIZE_MB * 1024 * 1024,
     });
 
     const handleDragEnd = (event: DragEndEvent) => {

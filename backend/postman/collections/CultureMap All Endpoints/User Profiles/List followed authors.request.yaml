@@ -1,5 +1,0 @@
-$kind: http-request
-description: Authors whom current user follows.
-url: "{{baseUrl}}/api/users/favorite-authors/"
-method: GET
-order: 6400

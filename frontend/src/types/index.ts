@@ -115,6 +115,10 @@ export interface ReorderItem {
     order: number;
 }
 
+export interface CulturalObjectWithMyPhotos extends CulturalObject {
+    my_photos: ObjectPhoto[];
+}
+
 export interface CulturalObjectWrite {
     title: string;
     description: string;
@@ -150,6 +154,7 @@ export interface AuthorProfile {
     total_favorites_received: number;
     followers_count: number;
     is_followed: boolean;
+    email?: string | null;
 }
 
 export interface FollowToggleResponse {

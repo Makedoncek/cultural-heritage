@@ -1,7 +1,0 @@
-$kind: http-request
-description: List photos. Anonymous sees only approved; uploader sees own pending; admin sees all.
-url: "{{baseUrl}}/api/objects/{{objectId}}/photos/"
-method: GET
-auth:
-  type: noauth
-order: 5200
