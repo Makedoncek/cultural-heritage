@@ -1344,9 +1344,9 @@ def my_visits_stats(request):
     total = base.count()
     total_objects = CulturalObject.objects.filter(status='approved').count()
     by_tag = list(
-        Tag.objects.filter(culturalobject__visits__user=request.user)
-        .annotate(visited_count=Count('culturalobject__visits',
-                                      filter=Q(culturalobject__visits__user=request.user),
+        Tag.objects.filter(cultural_objects__visits__user=request.user)
+        .annotate(visited_count=Count('cultural_objects__visits',
+                                      filter=Q(cultural_objects__visits__user=request.user),
                                       distinct=True))
         .values('id', 'name', 'icon', 'visited_count')
         .order_by('-visited_count')

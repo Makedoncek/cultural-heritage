@@ -60,6 +60,7 @@ export interface CulturalObject {
     is_favorited?: boolean;
     favorites_count?: number;
     cover_url?: string | null;
+    is_visited?: boolean;
 }
 
 export interface FavoriteToggleResponse {

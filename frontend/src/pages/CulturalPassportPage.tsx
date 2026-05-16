@@ -4,6 +4,7 @@ import {useTranslation} from 'react-i18next';
 import toast from 'react-hot-toast';
 import {visitsService, plannedVisitsService} from '../services/visits.service';
 import type {Visit, PlannedVisit, VisitsStats} from '../types/visits';
+import VisitImpressionModal from '../components/Objects/VisitImpressionModal';
 
 export default function CulturalPassportPage() {
     const {t, i18n} = useTranslation();
@@ -13,6 +14,7 @@ export default function CulturalPassportPage() {
     const [stats, setStats] = useState<VisitsStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
 
     useEffect(() => {
         Promise.all([
@@ -148,13 +150,22 @@ export default function CulturalPassportPage() {
                                         )}
                                     </p>
                                 </div>
-                                <button
-                                    onClick={() => togglePublic(v)}
-                                    className="text-lg cursor-pointer"
-                                    title={v.is_public ? 'Публічно — клік щоб зробити приватним' : 'Приватно — клік щоб зробити публічним'}
-                                >
-                                    {v.is_public ? '🌐' : '🔒'}
-                                </button>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <button
+                                        onClick={() => setEditingVisit(v)}
+                                        className="text-xs px-2 py-1 border border-gray-300 dark:border-stone-600 text-gray-700 dark:text-stone-200 rounded hover:bg-gray-50 dark:hover:bg-stone-800 cursor-pointer"
+                                        title="Редагувати враження і дату"
+                                    >
+                                        ✎ Edit
+                                    </button>
+                                    <button
+                                        onClick={() => togglePublic(v)}
+                                        className="text-lg cursor-pointer"
+                                        title={v.is_public ? 'Публічно — клік щоб зробити приватним' : 'Приватно — клік щоб зробити публічним'}
+                                    >
+                                        {v.is_public ? '🌐' : '🔒'}
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -197,6 +208,14 @@ export default function CulturalPassportPage() {
                     </div>
                 )}
             </div>
+
+            {editingVisit && (
+                <VisitImpressionModal
+                    visit={editingVisit}
+                    onClose={() => setEditingVisit(null)}
+                    onUpdated={(u) => setVisits(prev => prev.map(x => x.id === u.id ? u : x))}
+                />
+            )}
         </div>
     );
 }

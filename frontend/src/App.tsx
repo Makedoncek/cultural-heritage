@@ -21,6 +21,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import MyReportsPage from './pages/MyReportsPage';
 import ReportsOnMyObjectsPage from './pages/ReportsOnMyObjectsPage';
 import CulturalPassportPage from './pages/CulturalPassportPage';
+import PublicPassportPage from './pages/PublicPassportPage';
 
 function App() {
     const {theme} = useTheme();
@@ -50,6 +51,7 @@ function App() {
                 <Route path="/objects/:id" element={<ObjectDetailPage/>}/>
                 <Route path="/popular" element={<PopularPage/>}/>
                 <Route path="/authors/:username" element={<AuthorProfilePage/>}/>
+                <Route path="/authors/:username/passport" element={<PublicPassportPage/>}/>
                 <Route element={<RequireAuth/>}>
                     <Route path="/favorite-authors" element={<FavoriteAuthorsPage/>}/>
                     <Route path="/objects/add" element={<AddObjectPage/>}/>

@@ -123,6 +123,7 @@ class ObjectListSerializer(FavoriteMixin, serializers.ModelSerializer):
 
     tags = TagSerializer(many=True, read_only=True)
     cover_url = serializers.CharField(read_only=True, allow_null=True)
+    is_visited = serializers.SerializerMethodField()
 
     class Meta:
         model = CulturalObject
@@ -141,8 +142,17 @@ class ObjectListSerializer(FavoriteMixin, serializers.ModelSerializer):
             'is_favorited',
             'favorites_count',
             'cover_url',
+            'is_visited',
         ]
         read_only_fields = fields
+
+    def get_is_visited(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        if hasattr(obj, '_is_visited'):
+            return obj._is_visited
+        return Visit.objects.filter(user=request.user, cultural_object=obj).exists()
 
 
 class ObjectDetailSerializer(FavoriteMixin, serializers.ModelSerializer):
@@ -369,11 +379,25 @@ class InaccuracyReportSerializer(serializers.ModelSerializer):
         ]
 
 
+def _object_cover_thumb(cultural_object) -> str | None:
+    photo = cultural_object.photos.filter(status='approved').order_by(
+        '-is_author_photo', 'order', 'created_at'
+    ).first()
+    return photo.thumbnail_url if photo else None
+
+
+def _object_tag_payload(cultural_object) -> list[dict]:
+    return [
+        {'id': t.id, 'name': t.name, 'slug': t.slug, 'icon': t.icon, 'tag_type': t.tag_type}
+        for t in cultural_object.tags.all()
+    ]
+
+
 class VisitSerializer(serializers.ModelSerializer):
-    object_id = serializers.IntegerField(source='cultural_object.id', read_only=True)
-    object_title = serializers.CharField(source='cultural_object.title', read_only=True)
+    object_id = serializers.IntegerField(source='cultural_object_id', read_only=True)
+    object_title = serializers.SerializerMethodField()
     object_cover_url = serializers.SerializerMethodField()
-    object_tags = TagSerializer(source='cultural_object.tags', many=True, read_only=True)
+    object_tags = serializers.SerializerMethodField()
 
     class Meta:
         model = Visit
@@ -385,18 +409,21 @@ class VisitSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'object_id', 'object_title', 'object_cover_url', 'object_tags',
                             'created_at', 'updated_at']
 
+    def get_object_title(self, obj):
+        return obj.cultural_object.title
+
     def get_object_cover_url(self, obj):
-        photo = obj.cultural_object.photos.filter(status='approved').order_by(
-            '-is_author_photo', 'order', 'created_at'
-        ).first()
-        return photo.thumbnail_url if photo else None
+        return _object_cover_thumb(obj.cultural_object)
+
+    def get_object_tags(self, obj):
+        return _object_tag_payload(obj.cultural_object)
 
 
 class PlannedVisitSerializer(serializers.ModelSerializer):
-    object_id = serializers.IntegerField(source='cultural_object.id', read_only=True)
-    object_title = serializers.CharField(source='cultural_object.title', read_only=True)
+    object_id = serializers.IntegerField(source='cultural_object_id', read_only=True)
+    object_title = serializers.SerializerMethodField()
     object_cover_url = serializers.SerializerMethodField()
-    object_tags = TagSerializer(source='cultural_object.tags', many=True, read_only=True)
+    object_tags = serializers.SerializerMethodField()
 
     class Meta:
         model = PlannedVisit
@@ -406,8 +433,11 @@ class PlannedVisitSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'object_id', 'object_title', 'object_cover_url', 'object_tags', 'created_at']
 
+    def get_object_title(self, obj):
+        return obj.cultural_object.title
+
     def get_object_cover_url(self, obj):
-        photo = obj.cultural_object.photos.filter(status='approved').order_by(
-            '-is_author_photo', 'order', 'created_at'
-        ).first()
-        return photo.thumbnail_url if photo else None
+        return _object_cover_thumb(obj.cultural_object)
+
+    def get_object_tags(self, obj):
+        return _object_tag_payload(obj.cultural_object)

@@ -112,6 +112,14 @@ export default function AuthorProfilePage() {
                             <span className="text-gray-500 dark:text-stone-400 ml-1">{t('profile.followersCount')}</span>
                         </div>
                     </div>
+                    <div className="mt-3">
+                        <Link
+                            to={`/authors/${profile.username}/passport`}
+                            className="inline-flex items-center gap-1 text-sm text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 hover:underline"
+                        >
+                            🎒 Переглянути культурний паспорт →
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Map */}

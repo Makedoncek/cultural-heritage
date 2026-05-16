@@ -443,7 +443,7 @@ class Visit(models.Model):
         related_name='visits',
         on_delete=models.CASCADE,
     )
-    visited_at = models.DateField(default=timezone.now)
+    visited_at = models.DateField(default=timezone.localdate)
     impression = models.TextField(
         max_length=1000,
         blank=True,
