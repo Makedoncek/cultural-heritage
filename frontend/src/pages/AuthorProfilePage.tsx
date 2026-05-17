@@ -86,9 +86,14 @@ export default function AuthorProfilePage() {
                             </span>
                         )}
                     </div>
-                    <p className="text-gray-500 text-sm mb-3">
+                    <p className="text-gray-500 text-sm mb-1">
                         На платформі з {new Date(profile.date_joined).toLocaleDateString('uk-UA')}
                     </p>
+                    {isOwnProfile && profile.email && (
+                        <p className="text-gray-500 text-sm mb-3">
+                            📧 <span className="text-gray-700">{profile.email}</span>
+                        </p>
+                    )}
                     <div className="flex gap-6 text-sm">
                         <div>
                             <span className="font-semibold text-gray-900">{profile.approved_objects_count}</span>

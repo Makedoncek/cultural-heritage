@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/objects/{{objectId}}/photos/{{photoId}}/"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: '{"caption": "Updated caption"}'
+auth:
+  type: bearer
+  credentials:
+    token: "{{accessToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 200', () => pm.response.to.have.status(200));
+      pm.test('Caption updated', () => pm.expect(pm.response.json().caption).to.equal('Updated caption'));
+    language: text/javascript
+order: 3000

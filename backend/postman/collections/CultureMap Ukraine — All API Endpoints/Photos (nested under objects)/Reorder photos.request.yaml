@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/api/objects/{{objectId}}/photos/reorder/"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "order": [
+        {"id": {{photoId}}, "order": 0}
+      ]
+    }
+order: 4000

@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/tags/?tag_type=object"
+method: GET
+queryParams:
+  - key: tag_type
+    value: object
+    description: object | event
+auth:
+  type: noauth
+order: 1000

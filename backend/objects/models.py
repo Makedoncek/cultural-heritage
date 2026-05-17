@@ -242,6 +242,12 @@ class CulturalObject(models.Model):
             if self.event_end_date < self.event_start_date:
                 raise ValidationError('Дата завершення не може бути раніше дати початку.')
 
+    @property
+    def cover_url(self):
+        """Thumbnail URL першого approved-фото (з урахуванням ordering: автор → контриб'ютори)."""
+        first = self.photos.filter(status='approved').first()
+        return first.thumbnail_url if first else None
+
 
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
@@ -267,3 +273,49 @@ class FavoriteAuthor(models.Model):
 
     def __str__(self):
         return f'{self.user.username} → {self.author.username}'
+
+
+class ObjectPhoto(models.Model):
+    """Фото культурного об'єкта з модерацією і Cloudinary-зберіганням."""
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending Review'
+        APPROVED = 'approved', 'Approved'
+        REJECTED = 'rejected', 'Rejected'
+
+    cultural_object = models.ForeignKey(
+        CulturalObject,
+        on_delete=models.CASCADE,
+        related_name='photos',
+    )
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='uploaded_photos',
+    )
+    cloudinary_public_id = models.CharField(max_length=255, unique=True)
+    image_url = models.URLField(max_length=500)
+    thumbnail_url = models.URLField(max_length=500)
+    caption = models.CharField(max_length=200, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    order = models.PositiveSmallIntegerField(default=0)
+    is_author_photo = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    moderated_at = models.DateTimeField(null=True, blank=True)
+    rejected_cleanup_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+        indexes = [
+            models.Index(fields=['cultural_object', 'status']),
+            models.Index(fields=['status', 'rejected_cleanup_at']),
+            models.Index(fields=['uploaded_by']),
+        ]
+
+    def __str__(self):
+        return f'Photo {self.id} ({self.status}) for {self.cultural_object.title}'

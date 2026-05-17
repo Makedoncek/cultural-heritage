@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef, type ReactNode} from 'react';
 import {useForm} from 'react-hook-form';
 import {AxiosError} from 'axios';
 import {tagsService} from '../../services/tags.service';
@@ -10,6 +10,7 @@ interface ObjectFormProps {
     onSubmit: (data: CulturalObjectWrite) => Promise<void>;
     submitLabel: string;
     submittingLabel: string;
+    children?: ReactNode;
 }
 
 const URL_PATTERN = /^https?:\/\/.+/;
@@ -19,7 +20,7 @@ const inputClass = (hasError: boolean) =>
         hasError ? 'border-red-400' : 'border-gray-200'
     }`;
 
-export default function ObjectForm({initialData, onSubmit, submitLabel, submittingLabel}: ObjectFormProps) {
+export default function ObjectForm({initialData, onSubmit, submitLabel, submittingLabel, children}: ObjectFormProps) {
     const [tags, setTags] = useState<Tag[]>([]);
     const [tagsLoading, setTagsLoading] = useState(true);
 
@@ -53,13 +54,19 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
     const latitude = watch('latitude');
     const longitude = watch('longitude');
 
+    const loadedTagTypeRef = useRef<string | null>(null);
     useEffect(() => {
         setTagsLoading(true);
         const tagType = objectType === 'event' ? 'event' : 'object';
         tagsService.getAll(tagType)
             .then(data => {
                 setTags(data.results);
-                setValue('tags', []);
+                // Скидати лише при справжній зміні типу — щоб edit-форма не втратила initialData.tags
+                // і StrictMode-double-invoke не зачепив (на mount-і ref=null, ніколи не скидаємо).
+                if (loadedTagTypeRef.current !== null && loadedTagTypeRef.current !== tagType) {
+                    setValue('tags', []);
+                }
+                loadedTagTypeRef.current = tagType;
             })
             .catch(() => {})
             .finally(() => setTagsLoading(false));
@@ -310,6 +317,8 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
                     </div>
                 </div>
             </div>
+
+            {children}
 
             {errors.root && (
                 <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2">

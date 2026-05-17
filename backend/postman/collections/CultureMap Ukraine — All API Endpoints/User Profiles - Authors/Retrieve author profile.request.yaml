@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/api/users/{{username}}/"
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 200', () => pm.response.to.have.status(200));
+      pm.test('Has approved_objects_count', () => pm.expect(pm.response.json()).to.have.property('approved_objects_count'));
+    language: text/javascript
+order: 1000

@@ -1,0 +1,27 @@
+$kind: http-request
+description: Upload a photo (multipart). Saves photoId to collection variables for downstream requests.
+url: "{{baseUrl}}/api/objects/{{objectId}}/photos/"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: image
+      src: []
+    - type: text
+      key: caption
+      value: Test caption
+auth:
+  type: bearer
+  credentials:
+    token: "{{accessToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 201', () => pm.response.to.have.status(201));
+      const data = pm.response.json();
+      pm.test('Has image_url', () => pm.expect(data).to.have.property('image_url'));
+      pm.test('Status pending', () => pm.expect(data.status).to.equal('pending'));
+      if (data.id) pm.collectionVariables.set('photoId', data.id);
+    language: text/javascript
+order: 1000

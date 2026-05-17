@@ -59,6 +59,7 @@ export interface CulturalObject {
     created_at: string;
     is_favorited?: boolean;
     favorites_count?: number;
+    cover_url?: string | null;
 }
 
 export interface FavoriteToggleResponse {
@@ -86,6 +87,36 @@ export interface CulturalObjectDetail {
     archived_at: string | null;
     is_favorited?: boolean;
     favorites_count?: number;
+    photos?: ObjectPhoto[];
+    photo_count?: number;
+    cover_url?: string | null;
+}
+
+export interface PhotoUploadedBy {
+    id: number;
+    username: string;
+}
+
+export interface ObjectPhoto {
+    id: number;
+    cultural_object: number;
+    uploaded_by: PhotoUploadedBy;
+    image_url: string;
+    thumbnail_url: string;
+    caption: string;
+    status: 'pending' | 'approved' | 'rejected';
+    order: number;
+    is_author_photo: boolean;
+    created_at: string;
+}
+
+export interface ReorderItem {
+    id: number;
+    order: number;
+}
+
+export interface CulturalObjectWithMyPhotos extends CulturalObject {
+    my_photos: ObjectPhoto[];
 }
 
 export interface CulturalObjectWrite {
@@ -123,6 +154,7 @@ export interface AuthorProfile {
     total_favorites_received: number;
     followers_count: number;
     is_followed: boolean;
+    email?: string | null;
 }
 
 export interface FollowToggleResponse {

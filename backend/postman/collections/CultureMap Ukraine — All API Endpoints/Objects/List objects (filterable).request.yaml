@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/api/objects/?search=&tags=&object_type=&event_status=&page=1"
+method: GET
+queryParams:
+  - key: search
+    value: ""
+    description: Substring in title/description
+  - key: tags
+    value: ""
+    description: Tag slugs comma-separated, e.g. zamok,muzey
+  - key: object_type
+    value: ""
+    description: permanent | event
+  - key: event_status
+    value: ""
+    description: active | upcoming | finished (events only)
+  - key: page
+    value: "1"
+auth:
+  type: noauth
+order: 1000

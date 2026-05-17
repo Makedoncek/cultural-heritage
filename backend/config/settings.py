@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'drf_spectacular',
+    'adminsortable2',
     'objects',
 ]
 
@@ -91,7 +92,8 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '1000/hour',
-        'user': '5000/hour'
+        'user': '5000/hour',
+        'photo_upload': '20/hour',
     },
 
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
@@ -109,6 +111,24 @@ SIMPLE_JWT = {
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+# Cloudinary
+import cloudinary
+
+cloudinary.config(
+    cloud_name=config('CLOUDINARY_CLOUD_NAME', default=''),
+    api_key=config('CLOUDINARY_API_KEY', default=''),
+    api_secret=config('CLOUDINARY_API_SECRET', default=''),
+    secure=True,
+)
+
+# Photo gallery limits
+PHOTO_MAX_SIZE_MB = 5
+PHOTO_ALLOWED_FORMATS = ['JPEG', 'PNG', 'WEBP']
+PHOTO_MAX_PER_AUTHOR = 5
+PHOTO_MAX_PER_CONTRIBUTOR = 3
+PHOTO_MAX_PER_OBJECT = 20
+PHOTO_REJECTED_RETENTION_DAYS = 30
 
 TEMPLATES = [
     {

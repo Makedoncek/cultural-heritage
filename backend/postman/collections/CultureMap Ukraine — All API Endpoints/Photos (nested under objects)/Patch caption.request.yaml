@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/api/objects/{{objectId}}/photos/{{photoId}}/"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "caption": "Оновлений підпис"
+    }
+order: 3000

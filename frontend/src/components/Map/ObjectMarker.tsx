@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import {Marker, Popup} from 'react-leaflet';
 import {useNavigate} from 'react-router';
+import CoverImage from '../Objects/CoverImage';
 import type {CulturalObject} from '../../types';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -64,6 +65,14 @@ export default function ObjectMarker({object}: ObjectMarkerProps) {
             icon={icon}
         >
             <Popup>
+                <div className="w-48">
+                    <CoverImage
+                        coverUrl={object.cover_url}
+                        tags={object.tags}
+                        alt={object.title}
+                        className="w-full h-24 rounded mb-2"
+                    />
+                </div>
                 <h3 className="font-bold text-sm mb-1">{object.title}</h3>
                 {isPending && (
                     <span className="inline-block px-1.5 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs mb-2">

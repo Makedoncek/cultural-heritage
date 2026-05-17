@@ -1,10 +1,11 @@
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from .models import Tag, CulturalObject, Favorite, FavoriteAuthor
+from .models import Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto
 from .validators import validate_coordinates_within_ukraine
 
 
@@ -15,6 +16,17 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['username'] = user.username
         token['is_staff'] = user.is_staff
         return token
+
+    def validate(self, attrs):
+        # Дозволяємо логін як по username, так і по email.
+        login = attrs.get(self.username_field, '')
+        if '@' in login:
+            try:
+                user = User.objects.get(email__iexact=login)
+                attrs[self.username_field] = user.username
+            except User.DoesNotExist:
+                pass  # fallthrough — super().validate видасть помилку про невірні дані
+        return super().validate(attrs)
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -101,6 +113,7 @@ class ObjectListSerializer(FavoriteMixin, serializers.ModelSerializer):
     )
 
     tags = TagSerializer(many=True, read_only=True)
+    cover_url = serializers.CharField(read_only=True, allow_null=True)
 
     class Meta:
         model = CulturalObject
@@ -118,6 +131,7 @@ class ObjectListSerializer(FavoriteMixin, serializers.ModelSerializer):
             'created_at',
             'is_favorited',
             'favorites_count',
+            'cover_url',
         ]
         read_only_fields = fields
 
@@ -125,16 +139,60 @@ class ObjectListSerializer(FavoriteMixin, serializers.ModelSerializer):
 class ObjectDetailSerializer(FavoriteMixin, serializers.ModelSerializer):
     author = serializers.StringRelatedField(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
+    photos = serializers.SerializerMethodField()
+    photo_count = serializers.SerializerMethodField()
+    cover_url = serializers.CharField(read_only=True, allow_null=True)
 
     class Meta:
         model = CulturalObject
-        fields = '__all__'
+        fields = [
+            'id', 'title', 'description',
+            'latitude', 'longitude',
+            'author', 'tags',
+            'status', 'object_type',
+            'event_start_date', 'event_end_date',
+            'wikipedia_url', 'official_website', 'google_maps_url',
+            'created_at', 'updated_at', 'archived_at',
+            'is_favorited', 'favorites_count',
+            'photos', 'photo_count', 'cover_url',
+        ]
 
     def get_fields(self):
         fields = super().get_fields()
         for field in fields.values():
             field.read_only = True
         return fields
+
+    def get_photos(self, obj):
+        request = self.context.get('request')
+        qs = obj.photos.all()
+        if request and request.user.is_authenticated:
+            if not request.user.is_staff:
+                qs = qs.filter(Q(status='approved') | Q(uploaded_by=request.user))
+        else:
+            qs = qs.filter(status='approved')
+        return ObjectPhotoSerializer(qs, many=True, context=self.context).data
+
+    def get_photo_count(self, obj):
+        return obj.photos.filter(status='approved').count()
+
+
+class ObjectWithMyPhotosSerializer(ObjectListSerializer):
+    """Об'єкт + масив фото, які завантажив поточний користувач (для /with-my-photos/)."""
+    my_photos = serializers.SerializerMethodField()
+
+    class Meta(ObjectListSerializer.Meta):
+        fields = list(ObjectListSerializer.Meta.fields) + ['my_photos']
+        read_only_fields = fields
+
+    def get_my_photos(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return []
+        # prefetch_related у view ставить кеш на `photos`, тож фільтр у Python — без зайвого SQL
+        photos = [p for p in obj.photos.all() if p.uploaded_by_id == request.user.id]
+        photos.sort(key=lambda p: p.created_at, reverse=True)
+        return ObjectPhotoSerializer(photos, many=True, context=self.context).data
 
 
 class UserProfileSerializer(serializers.Serializer):
@@ -144,6 +202,13 @@ class UserProfileSerializer(serializers.Serializer):
     total_favorites_received = serializers.IntegerField(read_only=True, default=0)
     followers_count = serializers.IntegerField(read_only=True, default=0)
     is_followed = serializers.BooleanField(read_only=True, default=False)
+    email = serializers.SerializerMethodField()
+
+    def get_email(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated and request.user.pk == obj.pk:
+            return obj.email
+        return None
 
 
 class ObjectWriteSerializer(serializers.ModelSerializer):
@@ -167,9 +232,10 @@ class ObjectWriteSerializer(serializers.ModelSerializer):
             'event_end_date',
             'wikipedia_url',
             'official_website',
-            'google_maps_url'
+            'google_maps_url',
+            'status',
         ]
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'status']
 
     def validate_tags(self, value):
         if len(value) < 1:
@@ -223,3 +289,31 @@ class ObjectWriteSerializer(serializers.ModelSerializer):
             data['event_end_date'] = None
 
         return data
+
+
+class UploadedByNestedSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    username = serializers.CharField()
+
+
+class ObjectPhotoSerializer(serializers.ModelSerializer):
+    uploaded_by = UploadedByNestedSerializer(read_only=True)
+
+    class Meta:
+        model = ObjectPhoto
+        fields = [
+            'id',
+            'cultural_object',
+            'uploaded_by',
+            'image_url',
+            'thumbnail_url',
+            'caption',
+            'status',
+            'order',
+            'is_author_photo',
+            'created_at',
+        ]
+        read_only_fields = [
+            'id', 'cultural_object', 'uploaded_by', 'image_url',
+            'thumbnail_url', 'status', 'order', 'is_author_photo', 'created_at',
+        ]

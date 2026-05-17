@@ -1,3 +1,5 @@
+from smtplib import SMTPException
+
 from celery import shared_task
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 from django.core.mail import send_mail
@@ -8,6 +10,16 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.models import User
+
+# Параметри retry для всіх email-task-ів: експоненційний backoff
+# (1s → 2s → 4s → 8s → 16s, max 600s) з jitter — захист від SMTP flapping.
+EMAIL_RETRY_KWARGS = dict(
+    autoretry_for=(SMTPException, ConnectionError, OSError, TimeoutError),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
+    max_retries=5,
+)
 
 signer = TimestampSigner()
 
@@ -27,7 +39,7 @@ def verify_email_token(token, max_age=86400):
         return None
 
 
-@shared_task
+@shared_task(**EMAIL_RETRY_KWARGS)
 def send_verification_email(user_id):
     user = User.objects.get(pk=user_id)
     token = make_email_verification_token(user)
@@ -69,7 +81,7 @@ def verify_password_reset_token(uidb64, token):
     return None
 
 
-@shared_task
+@shared_task(**EMAIL_RETRY_KWARGS)
 def send_password_reset_email(user_id):
     user = User.objects.get(pk=user_id)
     uid, token = make_password_reset_token(user)
@@ -91,10 +103,13 @@ def send_password_reset_email(user_id):
 
 # --- Status Notification ---
 
-@shared_task
+@shared_task(**EMAIL_RETRY_KWARGS)
 def send_status_notification(obj_id, new_status):
     from .models import CulturalObject
-    obj = CulturalObject.objects.select_related('author').get(pk=obj_id)
+    try:
+        obj = CulturalObject.objects.select_related('author').get(pk=obj_id)
+    except CulturalObject.DoesNotExist:
+        return  # об'єкт видалено — старий taзок з черги
 
     template_map = {
         'approved': 'emails/object_approved.html',
@@ -122,3 +137,47 @@ def send_status_notification(obj_id, new_status):
         recipient_list=[obj.author.email],
         html_message=html_message,
     )
+
+
+# --- Follower Notifications ---
+
+@shared_task(**EMAIL_RETRY_KWARGS)
+def send_follower_notifications(obj_id):
+    """Розсилає підписникам автора лист про нову публікацію (об'єкт або подію)."""
+    from .models import CulturalObject, FavoriteAuthor
+    try:
+        obj = CulturalObject.objects.select_related('author').get(pk=obj_id)
+    except CulturalObject.DoesNotExist:
+        return  # об'єкт видалено — старий task
+    followers = (
+        FavoriteAuthor.objects
+        .filter(author=obj.author)
+        .exclude(user=obj.author)
+        .select_related('user')
+    )
+
+    is_event = obj.object_type == CulturalObject.ObjectType.EVENT
+    object_type_label = 'подію' if is_event else 'об\'єкт'
+    object_type_short = 'подія' if is_event else 'об\'єкт'
+    object_url = f"{settings.FRONTEND_URL}/objects/{obj.pk}"
+    subject = f'CultureMap — {obj.author.username} опублікував(ла) {object_type_label} «{obj.title}»'
+
+    for fav in followers:
+        user = fav.user
+        if not user.email:
+            continue
+        html_message = render_to_string('emails/follower_new_object.html', {
+            'follower': user,
+            'author': obj.author,
+            'object': obj,
+            'object_url': object_url,
+            'object_type_label': object_type_label,
+            'object_type_short': object_type_short,
+        })
+        send_mail(
+            subject=subject,
+            message=strip_tags(html_message),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            html_message=html_message,
+        )

@@ -13,8 +13,25 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticate
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Count, Exists, OuterRef
 from .models import CulturalObject, Favorite, FavoriteAuthor
-from .serializers import ObjectListSerializer, ObjectDetailSerializer, ObjectWriteSerializer, UserProfileSerializer
-from .permissions import IsAuthorOrReadOnly
+from .serializers import ObjectListSerializer, ObjectDetailSerializer, ObjectWriteSerializer, UserProfileSerializer, ObjectWithMyPhotosSerializer
+
+
+class _PhotoLimitExceeded(Exception):
+    """Внутрішня помилка для скасування транзакції upload-у при перевищенні ліміту."""
+    def __init__(self, code: str, limit: int):
+        self.code = code
+        self.limit = limit
+from .permissions import IsAuthorOrReadOnly, IsPhotoUploaderOrAdmin, IsObjectAuthor, IsPhotoCaptionEditor
+from .throttles import PhotoUploadThrottle
+from .validators import validate_image_size, validate_image_format
+from . import cloudinary_service
+from .models import ObjectPhoto
+from .serializers import ObjectPhotoSerializer
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from django.shortcuts import get_object_or_404
+from django.core.exceptions import ValidationError
+from django.conf import settings
+from django.db.models import Q
 
 ErrorResponse = inline_serializer('ErrorResponse', fields={'detail': s.CharField()})
 
@@ -542,12 +559,27 @@ class ObjectViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
     def perform_update(self, serializer):
-        is_approved = serializer.instance.status == 'approved'
+        instance = serializer.instance
+        is_approved = instance.status == 'approved'
 
-        if not self.request.user.is_staff and is_approved:
+        if not self.request.user.is_staff and is_approved and self._has_actual_changes(instance, serializer.validated_data):
             serializer.save(status='pending')
         else:
             serializer.save()
+
+    @staticmethod
+    def _has_actual_changes(instance, validated_data):
+        """Перевіряє, чи дійсно змінились значення (PATCH тим самим контентом — no-op)."""
+        for field, value in validated_data.items():
+            if field == 'tags':
+                current = set(instance.tags.values_list('id', flat=True))
+                new = set(t.pk for t in value)
+                if current != new:
+                    return True
+            else:
+                if getattr(instance, field, None) != value:
+                    return True
+        return False
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -598,6 +630,34 @@ class ObjectViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
 
         serializer = ObjectListSerializer(objects, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=['Objects'],
+        summary='Objects where I uploaded photos',
+        description='Returns objects (own or others) where the current user has uploaded at least one photo. Each item includes a `my_photos` array with statuses.',
+        responses={200: ObjectWithMyPhotosSerializer(many=True), 401: ErrorResponse},
+    )
+    @action(detail=False, methods=['get'], url_path='with-my-photos', permission_classes=[IsAuthenticated])
+    def with_my_photos(self, request):
+        object_ids = (ObjectPhoto.objects
+                      .filter(uploaded_by=request.user)
+                      .values_list('cultural_object_id', flat=True)
+                      .distinct())
+
+        objects = (CulturalObject.objects
+                   .select_related('author')
+                   .prefetch_related('tags', 'photos__uploaded_by')
+                   .filter(id__in=object_ids)
+                   .exclude(status='archived')
+                   .order_by('-created_at'))
+
+        page = self.paginate_queryset(objects)
+        if page is not None:
+            serializer = ObjectWithMyPhotosSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
+        serializer = ObjectWithMyPhotosSerializer(objects, many=True, context={'request': request})
         return Response(serializer.data)
 
     @extend_schema(
@@ -797,3 +857,202 @@ class UserProfileViewSet(viewsets.GenericViewSet):
 @permission_classes([AllowAny])
 def health_check(request):
     return Response({'status': 'ok', 'message': 'API is running'})
+
+
+class ObjectPhotoViewSet(viewsets.GenericViewSet):
+    """Управління фото культурного об'єкта (nested під /api/objects/<object_pk>/photos/)."""
+    serializer_class = ObjectPhotoSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [IsAuthenticated()]
+        if self.action == 'reorder':
+            return [IsObjectAuthor()]
+        if self.action == 'destroy':
+            return [IsAuthenticated(), IsPhotoUploaderOrAdmin()]
+        if self.action == 'partial_update':
+            return [IsAuthenticated(), IsPhotoCaptionEditor()]
+        return [AllowAny()]
+
+    def get_throttles(self):
+        if self.action == 'create':
+            return [PhotoUploadThrottle()]
+        return super().get_throttles()
+
+    def _get_object(self):
+        return get_object_or_404(
+            CulturalObject.objects.exclude(status='archived'),
+            pk=self.kwargs['object_pk'],
+        )
+
+    def list(self, request, *args, **kwargs):
+        cultural_object = self._get_object()
+        qs = ObjectPhoto.objects.filter(cultural_object=cultural_object)
+
+        user = request.user
+        if not user.is_authenticated:
+            qs = qs.filter(status='approved')
+        elif not user.is_staff:
+            qs = qs.filter(Q(uploaded_by=user) | Q(status='approved'))
+
+        serializer = ObjectPhotoSerializer(qs, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        cultural_object = self._get_object()
+        is_author = cultural_object.author_id == request.user.id
+
+        if not is_author and cultural_object.status != 'approved':
+            return Response(
+                {'detail': 'Можна додавати фото лише до затверджених об\'єктів.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        image = request.FILES.get('image')
+        if not image:
+            return Response({'detail': 'Поле image є обов\'язковим.'}, status=400)
+
+        try:
+            validate_image_size(image)
+            validate_image_format(image)
+        except ValidationError as e:
+            return Response({'detail': e.message if hasattr(e, 'message') else str(e)}, status=400)
+
+        user_count = ObjectPhoto.objects.filter(
+            cultural_object=cultural_object,
+            uploaded_by=request.user,
+        ).exclude(status='rejected').count()
+        max_user = (
+            settings.PHOTO_MAX_PER_AUTHOR if is_author
+            else settings.PHOTO_MAX_PER_CONTRIBUTOR
+        )
+        if user_count >= max_user:
+            return Response(
+                {'detail': f'Ліміт {max_user} фото на цей об\'єкт вичерпано.', 'code': 'user_limit_exceeded'},
+                status=400,
+            )
+
+        total = ObjectPhoto.objects.filter(
+            cultural_object=cultural_object,
+        ).exclude(status='rejected').count()
+        if total >= settings.PHOTO_MAX_PER_OBJECT:
+            return Response(
+                {'detail': f'Об\'єкт уже містить максимум {settings.PHOTO_MAX_PER_OBJECT} фото.', 'code': 'object_full'},
+                status=400,
+            )
+
+        try:
+            uploaded = cloudinary_service.upload_photo(image)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).exception('Cloudinary upload failed: %s', e)
+            return Response(
+                {'detail': 'Не вдалося завантажити фото на сервер. Спробуйте пізніше.'},
+                status=500,
+            )
+
+        # Atomic-блок з row-lock запобігає race condition при паралельних uploads:
+        # сесія блокує parent-об'єкт, перевіряє ліміти ще раз, створює фото.
+        from django.db import transaction
+        try:
+            with transaction.atomic():
+                CulturalObject.objects.select_for_update().get(pk=cultural_object.pk)
+
+                user_count_locked = ObjectPhoto.objects.filter(
+                    cultural_object=cultural_object,
+                    uploaded_by=request.user,
+                ).exclude(status='rejected').count()
+                if user_count_locked >= max_user:
+                    raise _PhotoLimitExceeded('user_limit_exceeded', max_user)
+
+                total_locked = ObjectPhoto.objects.filter(
+                    cultural_object=cultural_object,
+                ).exclude(status='rejected').count()
+                if total_locked >= settings.PHOTO_MAX_PER_OBJECT:
+                    raise _PhotoLimitExceeded('object_full', settings.PHOTO_MAX_PER_OBJECT)
+
+                existing_orders = list(
+                    ObjectPhoto.objects.filter(
+                        cultural_object=cultural_object,
+                    ).values_list('order', flat=True)
+                )
+                order = max(existing_orders, default=-1) + 1
+
+                photo = ObjectPhoto.objects.create(
+                    cultural_object=cultural_object,
+                    uploaded_by=request.user,
+                    cloudinary_public_id=uploaded['public_id'],
+                    image_url=uploaded['image_url'],
+                    thumbnail_url=uploaded['thumbnail_url'],
+                    caption=request.data.get('caption', '')[:200],
+                    is_author_photo=is_author,
+                    order=order,
+                )
+        except _PhotoLimitExceeded as e:
+            # rollback: видалити Cloudinary-файл (бо ObjectPhoto не створено,
+            # тож pre_delete-signal не спрацює)
+            try:
+                cloudinary_service.delete_photo(uploaded['public_id'])
+            except Exception:
+                pass
+            if e.code == 'user_limit_exceeded':
+                return Response(
+                    {'detail': f'Ліміт {e.limit} фото на цей об\'єкт вичерпано.', 'code': 'user_limit_exceeded'},
+                    status=400,
+                )
+            return Response(
+                {'detail': f'Об\'єкт уже містить максимум {e.limit} фото.', 'code': 'object_full'},
+                status=400,
+            )
+
+        return Response(ObjectPhotoSerializer(photo).data, status=201)
+
+    def destroy(self, request, *args, **kwargs):
+        cultural_object = self._get_object()
+        photo = get_object_or_404(ObjectPhoto, pk=kwargs['pk'], cultural_object=cultural_object)
+        self.check_object_permissions(request, photo)
+        photo.delete()  # pre_delete signal у objects/signals.py чистить Cloudinary
+        return Response(status=204)
+
+    def partial_update(self, request, *args, **kwargs):
+        cultural_object = self._get_object()
+        photo = get_object_or_404(ObjectPhoto, pk=kwargs['pk'], cultural_object=cultural_object)
+        self.check_object_permissions(request, photo)
+
+        caption = request.data.get('caption')
+        if caption is not None:
+            if len(caption) > 200:
+                return Response({'detail': 'Caption перевищує 200 символів.'}, status=400)
+            if caption != photo.caption:
+                photo.caption = caption
+                # pre_save signal у objects/signals.py скидає status у pending,
+                # якщо approved/rejected фото отримує нову caption.
+                # Admin-edit обходить reset через _skip_status_reset.
+                if request.user.is_staff:
+                    photo._skip_status_reset = True
+                photo.save()
+
+        return Response(ObjectPhotoSerializer(photo).data)
+
+    @action(detail=False, methods=['post'], url_path='reorder')
+    def reorder(self, request, *args, **kwargs):
+        cultural_object = self._get_object()
+        items = request.data.get('order', [])
+        if not isinstance(items, list):
+            return Response({'detail': 'order must be a list'}, status=400)
+
+        photo_ids = [item.get('id') for item in items]
+        photos = list(ObjectPhoto.objects.filter(
+            id__in=photo_ids,
+            cultural_object=cultural_object,
+        ))
+        if len(photos) != len(photo_ids):
+            return Response({'detail': 'Деякі фото не знайдено в цьому об\'єкті.'}, status=400)
+
+        by_id = {p.id: p for p in photos}
+        for item in items:
+            p = by_id[item['id']]
+            p.order = int(item['order'])
+        ObjectPhoto.objects.bulk_update(photos, ['order'])
+        return Response({'detail': 'ok'})

@@ -30,6 +30,7 @@ export default function Header() {
                                     <NavLink to="/" end className={linkClass}>Карта</NavLink>
                                     <NavLink to="/popular" className={linkClass}>Популярне</NavLink>
                                     <NavLink to="/my-objects" className={linkClass}>Мої об'єкти</NavLink>
+                                    <NavLink to="/my-photos" className={linkClass}>Мої фото</NavLink>
                                     <NavLink to="/favorites" className={linkClass}>Обране</NavLink>
                                     <NavLink to="/favorite-authors" className={linkClass}>Підписки</NavLink>
                                     <NavLink to="/objects/add" className={linkClass}>Додати об'єкт</NavLink>
@@ -82,6 +83,8 @@ export default function Header() {
                                      onClick={() => setMenuOpen(false)}>Популярне</NavLink>
                             <NavLink to="/my-objects" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>Мої об'єкти</NavLink>
+                            <NavLink to="/my-photos" className={linkClass}
+                                     onClick={() => setMenuOpen(false)}>Мої фото</NavLink>
                             <NavLink to="/favorites" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>Обране</NavLink>
                             <NavLink to="/favorite-authors" className={linkClass}

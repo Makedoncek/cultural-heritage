@@ -4,3 +4,6 @@ from django.apps import AppConfig
 class ObjectsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'objects'
+
+    def ready(self):
+        from . import signals  # noqa: F401

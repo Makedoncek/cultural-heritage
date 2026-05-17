@@ -63,12 +63,13 @@ function LoginPage() {
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div>
                             <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                                Ім'я користувача
+                                Ім'я користувача або email
                             </label>
                             <input
                                 id="username"
                                 type="text"
                                 autoComplete="username"
+                                placeholder="username або you@example.com"
                                 className={`w-full border rounded-lg px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-colors ${
                                     errors.username ? 'border-red-400' : 'border-gray-200'
                                 }`}

@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/login/"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "{{username}}",
+      "password": "{{password}}"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 200', () => pm.response.to.have.status(200));
+      const data = pm.response.json();
+      if (data.access) pm.collectionVariables.set('accessToken', data.access);
+      if (data.refresh) pm.collectionVariables.set('refreshToken', data.refresh);
+      pm.test('Has access token', () => pm.expect(data).to.have.property('access'));
+    language: text/javascript
+order: 1000

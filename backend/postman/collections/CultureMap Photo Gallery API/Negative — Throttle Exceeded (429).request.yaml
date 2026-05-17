@@ -1,0 +1,19 @@
+$kind: http-request
+description: 11th upload from same user within an hour. Run 'Upload Photo' 10 times first.
+url: "{{baseUrl}}/api/objects/{{objectId}}/photos/"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: image
+      src: []
+auth:
+  type: bearer
+  credentials:
+    token: "{{accessToken}}"
+scripts:
+  - type: afterResponse
+    code: pm.test('Status 429', () => pm.response.to.have.status(429));
+    language: text/javascript
+order: 10000

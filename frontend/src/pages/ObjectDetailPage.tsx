@@ -3,8 +3,11 @@ import {useParams, useNavigate, Link} from 'react-router';
 import {MapContainer, TileLayer, Marker} from 'react-leaflet';
 import toast from 'react-hot-toast';
 import {objectsService} from '../services/objects.service';
+import {photosService, extractUploadError} from '../services/photos.service';
 import {useAuth} from '../context/AuthContext';
 import FavoriteButton from '../components/Objects/FavoriteButton';
+import PhotoGallery from '../components/Objects/PhotoGallery';
+import PhotoUploader, {type PendingPhoto} from '../components/Objects/PhotoUploader';
 import type {CulturalObjectDetail} from '../types';
 import '../utils/leaflet-fix';
 
@@ -29,6 +32,10 @@ export default function ObjectDetailPage() {
     const [notFound, setNotFound] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const [contribPhotos, setContribPhotos] = useState<PendingPhoto[]>([]);
+    const [uploadingContrib, setUploadingContrib] = useState(false);
+    const [contribProgress, setContribProgress] = useState({done: 0, total: 0});
+    const [showContribUploader, setShowContribUploader] = useState(false);
 
     useEffect(() => {
         if (!id) return;
@@ -46,6 +53,34 @@ export default function ObjectDetailPage() {
     }, [id]);
 
     const canEdit = user && object && (user.username === object.author || user.is_staff);
+    const isAuthor = user && object && user.username === object.author;
+    const canContribute = isAuthenticated && !isAuthor && object?.status === 'approved';
+
+    const handleContribUpload = async () => {
+        if (!object || contribPhotos.length === 0) return;
+        setUploadingContrib(true);
+        setContribProgress({done: 0, total: contribPhotos.length});
+        const failures: {name: string; reason: string}[] = [];
+        // Sequential upload — щоб бекенд відхиляв надлишкові фото ДО Cloudinary
+        // (інакше parallel uploads витрачають bandwidth на файли, що не пройдуть лiміт).
+        for (const p of contribPhotos) {
+            try {
+                await photosService.upload(object.id, p.file, p.caption);
+                setContribProgress(prev => ({...prev, done: prev.done + 1}));
+            } catch (e) {
+                failures.push({name: p.file.name, reason: extractUploadError(e)});
+            }
+        }
+        setUploadingContrib(false);
+        if (failures.length === 0) {
+            toast.success('Фото надіслано на модерацію');
+            setContribPhotos([]);
+            setShowContribUploader(false);
+        } else {
+            const message = failures.map(f => `«${f.name}»: ${f.reason}`).join('\n');
+            toast.error(message, {duration: 6000});
+        }
+    };
 
     const handleDelete = async () => {
         if (!object || !confirm('Ви впевнені, що хочете видалити цей об\'єкт? Тільки адміністратор зможе його відновити.')) return;
@@ -175,6 +210,66 @@ export default function ObjectDetailPage() {
                             <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-xs">
                                 Подія завершена
                             </span>
+                        )}
+                    </div>
+                )}
+
+                {object.photos && object.photos.length > 0 && (
+                    <div className="my-6">
+                        <PhotoGallery photos={object.photos}/>
+                    </div>
+                )}
+
+                {canContribute && (
+                    <div className="my-6 p-4 border rounded bg-blue-50">
+                        <h3 className="font-semibold mb-2">📷 Додати своє фото</h3>
+                        <p className="text-sm text-gray-600 mb-3">
+                            Можете додати до 3 фото. Після модерації з'являться у спільній галереї.
+                        </p>
+                        {!showContribUploader ? (
+                            <button
+                                onClick={() => setShowContribUploader(true)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded cursor-pointer"
+                            >
+                                Додати фото
+                            </button>
+                        ) : (
+                            <>
+                                <PhotoUploader photos={contribPhotos} onChange={setContribPhotos} maxCount={3}/>
+                                {uploadingContrib && contribProgress.total > 0 && (
+                                    <div className="mt-3">
+                                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                                            <span>Завантаження фото…</span>
+                                            <span>{contribProgress.done} / {contribProgress.total}</span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                            <div
+                                                className="bg-blue-600 h-2 transition-all duration-300"
+                                                style={{width: `${(contribProgress.done / contribProgress.total) * 100}%`}}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="mt-3 flex gap-2">
+                                    <button
+                                        onClick={handleContribUpload}
+                                        disabled={contribPhotos.length === 0 || uploadingContrib}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50 cursor-pointer"
+                                    >
+                                        {uploadingContrib ? `${contribProgress.done}/${contribProgress.total} завантажується...` : 'Надіслати'}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowContribUploader(false);
+                                            setContribPhotos([]);
+                                        }}
+                                        disabled={uploadingContrib}
+                                        className="px-4 py-2 border rounded cursor-pointer disabled:opacity-50"
+                                    >
+                                        Скасувати
+                                    </button>
+                                </div>
+                            </>
                         )}
                     </div>
                 )}

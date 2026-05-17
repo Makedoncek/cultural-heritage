@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/api/objects/{{objectId}}/"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Оновлена назва"
+    }
+order: 4000
