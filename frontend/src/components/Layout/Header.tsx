@@ -35,6 +35,7 @@ export default function Header() {
                                 <>
                                     <NavLink to="/" end className={linkClass}>{t('nav.map')}</NavLink>
                                     <NavLink to="/popular" className={linkClass}>{t('nav.popular')}</NavLink>
+                                    <NavLink to="/routes" className={linkClass}>🗺 Маршрути</NavLink>
                                     <NavLink to="/my-objects" className={linkClass}>{t('nav.myObjects')}</NavLink>
                                     <NavLink to="/my-photos" className={linkClass}>{t('nav.myPhotos')}</NavLink>
                                     <NavLink to="/favorites" className={linkClass}>{t('nav.favorites')}</NavLink>
@@ -53,6 +54,7 @@ export default function Header() {
                             ) : (
                                 <>
                                     <NavLink to="/popular" className={linkClass}>{t('nav.popular')}</NavLink>
+                                    <NavLink to="/routes" className={linkClass}>🗺 Маршрути</NavLink>
                                     <ThemeSwitcher/>
                                     <LanguageSwitcher/>
                                     <Link to="/login" className="border border-amber-600 dark:border-amber-500 text-amber-700 dark:text-amber-300 px-4 py-2 rounded-lg hover:bg-amber-50 dark:hover:bg-stone-800 transition-colors">{t('nav.login')}</Link>

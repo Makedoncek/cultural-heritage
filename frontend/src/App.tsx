@@ -22,6 +22,10 @@ import MyReportsPage from './pages/MyReportsPage';
 import ReportsOnMyObjectsPage from './pages/ReportsOnMyObjectsPage';
 import CulturalPassportPage from './pages/CulturalPassportPage';
 import PublicPassportPage from './pages/PublicPassportPage';
+import RoutesListPage from './pages/RoutesListPage';
+import RouteDetailPage from './pages/RouteDetailPage';
+import AddEditRoutePage from './pages/AddEditRoutePage';
+import MyRoutesPage from './pages/MyRoutesPage';
 
 function App() {
     const {theme} = useTheme();
@@ -52,6 +56,8 @@ function App() {
                 <Route path="/popular" element={<PopularPage/>}/>
                 <Route path="/authors/:username" element={<AuthorProfilePage/>}/>
                 <Route path="/authors/:username/passport" element={<PublicPassportPage/>}/>
+                <Route path="/routes" element={<RoutesListPage/>}/>
+                <Route path="/routes/:slug" element={<RouteDetailPage/>}/>
                 <Route element={<RequireAuth/>}>
                     <Route path="/favorite-authors" element={<FavoriteAuthorsPage/>}/>
                     <Route path="/objects/add" element={<AddObjectPage/>}/>
@@ -61,6 +67,9 @@ function App() {
                     <Route path="/my-reports" element={<MyReportsPage/>}/>
                     <Route path="/reports-on-my-objects" element={<ReportsOnMyObjectsPage/>}/>
                     <Route path="/passport" element={<CulturalPassportPage/>}/>
+                    <Route path="/my-routes" element={<MyRoutesPage/>}/>
+                    <Route path="/routes/add" element={<AddEditRoutePage/>}/>
+                    <Route path="/routes/:slug/edit" element={<AddEditRoutePage/>}/>
                     <Route path="/favorites" element={<FavoritesPage/>}/>
                 </Route>
             </Route>
