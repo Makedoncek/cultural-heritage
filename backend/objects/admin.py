@@ -5,7 +5,10 @@ from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from .models import Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, InaccuracyReport, Visit, PlannedVisit
+from .models import (
+    Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto,
+    InaccuracyReport, Visit, PlannedVisit, Route, RouteStop,
+)
 
 
 @admin.register(Tag)
@@ -432,3 +435,45 @@ class InaccuracyReportAdmin(admin.ModelAdmin):
         for pk in pending:
             send_inaccuracy_outcome_email.delay(pk)
         self.message_user(request, f'Відхилено {len(pending)} репортів.')
+
+
+class RouteStopInline(SortableTabularInline):
+    model = RouteStop
+    extra = 0
+    fields = ['order', 'cultural_object', 'note']
+    raw_id_fields = ['cultural_object']
+    ordering = ['order']
+
+
+@admin.register(Route)
+class RouteAdmin(SortableAdminBase, admin.ModelAdmin):
+    list_display = ['title', 'author', 'status', 'stops_count', 'is_featured', 'created_at']
+    list_filter = ['status', 'is_featured', 'created_at']
+    search_fields = ['title', 'description', 'author__username']
+    prepopulated_fields = {'slug': ('title',)}
+    raw_id_fields = ['author', 'copied_from']
+    filter_horizontal = ['tags']
+    readonly_fields = ['created_at', 'updated_at']
+    inlines = [RouteStopInline]
+    actions = ['approve_routes', 'archive_routes']
+
+    fieldsets = (
+        ('Основна інформація', {'fields': ('title', 'slug', 'description', 'status')}),
+        ('Метадані', {'fields': ('author', 'tags', 'is_featured', 'cover_photo',
+                                  'estimated_duration_minutes', 'copied_from')}),
+        ('Дати', {'fields': ('created_at', 'updated_at')}),
+    )
+
+    @admin.display(description='Зупинок')
+    def stops_count(self, obj):
+        return obj.stops.count()
+
+    @admin.action(description='Затвердити обрані маршрути')
+    def approve_routes(self, request, queryset):
+        n = queryset.exclude(status=Route.Status.APPROVED).update(status=Route.Status.APPROVED)
+        self.message_user(request, f'Затверджено {n} маршрут(ів).')
+
+    @admin.action(description='Архівувати обрані маршрути')
+    def archive_routes(self, request, queryset):
+        n = queryset.exclude(status=Route.Status.ARCHIVED).update(status=Route.Status.ARCHIVED)
+        self.message_user(request, f'Архівовано {n} маршрут(ів).')

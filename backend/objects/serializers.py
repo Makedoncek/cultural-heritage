@@ -441,3 +441,84 @@ class PlannedVisitSerializer(serializers.ModelSerializer):
 
     def get_object_tags(self, obj):
         return _object_tag_payload(obj.cultural_object)
+
+
+# --- Routes ---
+
+class RouteStopSerializer(serializers.ModelSerializer):
+    object_id = serializers.IntegerField(source='cultural_object_id', read_only=True)
+    object_title = serializers.SerializerMethodField()
+    latitude = serializers.SerializerMethodField()
+    longitude = serializers.SerializerMethodField()
+    object_status = serializers.SerializerMethodField()
+    object_cover_url = serializers.SerializerMethodField()
+    is_unavailable = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        from .models import RouteStop
+        model = RouteStop
+        fields = [
+            'id', 'order', 'object_id', 'object_title',
+            'latitude', 'longitude', 'object_status', 'object_cover_url',
+            'note', 'is_unavailable',
+        ]
+        read_only_fields = ['id', 'object_id', 'object_title', 'latitude', 'longitude',
+                            'object_status', 'object_cover_url', 'is_unavailable']
+
+    def get_object_title(self, obj):
+        return obj.cultural_object.title
+
+    def get_latitude(self, obj):
+        return str(obj.cultural_object.latitude)
+
+    def get_longitude(self, obj):
+        return str(obj.cultural_object.longitude)
+
+    def get_object_status(self, obj):
+        return obj.cultural_object.status
+
+    def get_object_cover_url(self, obj):
+        return _object_cover_thumb(obj.cultural_object)
+
+
+class RouteListSerializer(serializers.ModelSerializer):
+    from .models import Route
+    author_name = serializers.CharField(source='author.username', read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    stops_count = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import Route
+        model = Route
+        fields = [
+            'id', 'slug', 'title', 'description',
+            'status', 'is_featured',
+            'cover_photo', 'estimated_duration_minutes',
+            'author_name', 'tags', 'stops_count',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = fields
+
+    def get_stops_count(self, obj):
+        return obj.stops.count()
+
+
+class RouteDetailSerializer(RouteListSerializer):
+    stops = RouteStopSerializer(many=True, read_only=True)
+    copied_from = serializers.SlugRelatedField(slug_field='slug', read_only=True)
+
+    class Meta(RouteListSerializer.Meta):
+        fields = list(RouteListSerializer.Meta.fields) + ['stops', 'copied_from']
+        read_only_fields = fields
+
+
+class RouteWriteSerializer(serializers.ModelSerializer):
+    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True, required=False)
+
+    class Meta:
+        from .models import Route
+        model = Route
+        fields = [
+            'title', 'description',
+            'tags', 'cover_photo', 'estimated_duration_minutes',
+        ]

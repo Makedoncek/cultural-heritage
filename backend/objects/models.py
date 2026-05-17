@@ -499,3 +499,88 @@ class PlannedVisit(models.Model):
 
     def __str__(self):
         return f'{self.user.username} plans → {self.cultural_object.title}'
+
+
+class Route(models.Model):
+    """Curated multi-stop tourist route through cultural objects."""
+
+    class Status(models.TextChoices):
+        DRAFT = 'draft', 'Чернетка'
+        PENDING = 'pending', 'На модерації'
+        APPROVED = 'approved', 'Опубліковано'
+        ARCHIVED = 'archived', 'В архіві'
+
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=220, unique=True, blank=True)
+    description = models.TextField(max_length=2000)
+    author = models.ForeignKey(
+        User,
+        related_name='routes',
+        on_delete=models.CASCADE,
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.DRAFT,
+    )
+    tags = models.ManyToManyField(Tag, blank=True, related_name='routes')
+    is_featured = models.BooleanField(default=False)
+    cover_photo = models.URLField(blank=True)
+    estimated_duration_minutes = models.PositiveIntegerField(null=True, blank=True)
+    copied_from = models.ForeignKey(
+        'self',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='copies',
+        help_text='Якщо маршрут створений як копія',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['status', '-created_at']),
+            models.Index(fields=['is_featured', '-created_at']),
+            models.Index(fields=['author', 'status']),
+        ]
+        ordering = ['-created_at']
+        verbose_name = _('Маршрут')
+        verbose_name_plural = _('Маршрути')
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.title) or 'route'
+            slug = base_slug
+            i = 1
+            while Route.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                i += 1
+                slug = f'{base_slug}-{i}'
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.title} ({self.status})'
+
+
+class RouteStop(models.Model):
+    """Single stop in a Route, pointing at a CulturalObject."""
+
+    route = models.ForeignKey(Route, related_name='stops', on_delete=models.CASCADE)
+    cultural_object = models.ForeignKey(CulturalObject, on_delete=models.CASCADE)
+    order = models.PositiveSmallIntegerField()
+    note = models.TextField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('route', 'cultural_object')]
+        ordering = ['order']
+        verbose_name = _('Зупинка маршруту')
+        verbose_name_plural = _('Зупинки маршруту')
+
+    @property
+    def is_unavailable(self) -> bool:
+        """Stop is unavailable when its underlying object has been archived."""
+        return self.cultural_object.status == CulturalObject.Status.ARCHIVED
+
+    def __str__(self):
+        return f'{self.route.title} #{self.order}: {self.cultural_object.title}'

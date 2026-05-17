@@ -1446,3 +1446,231 @@ def my_planned_visits(request):
     from .serializers import PlannedVisitSerializer
     qs = PlannedVisit.objects.filter(user=request.user).select_related('cultural_object')
     return Response(PlannedVisitSerializer(qs, many=True).data)
+
+
+# --- Routes ---
+
+MAX_STOPS_PER_ROUTE = 50
+
+
+class RouteViewSet(viewsets.ModelViewSet):
+    """CRUD for Heritage Routes.
+
+    Visibility:
+      - public list: only approved routes
+      - draft/pending visible to author + admin
+    """
+    lookup_field = 'slug'
+
+    def get_serializer_class(self):
+        from .serializers import RouteListSerializer, RouteDetailSerializer, RouteWriteSerializer
+        if self.action == 'list':
+            return RouteListSerializer
+        if self.action in ('create', 'update', 'partial_update'):
+            return RouteWriteSerializer
+        return RouteDetailSerializer
+
+    def get_queryset(self):
+        from .models import Route
+        qs = Route.objects.select_related('author').prefetch_related('tags', 'stops__cultural_object')
+        user = self.request.user
+
+        if self.action == 'list':
+            qs = qs.filter(status=Route.Status.APPROVED)
+            if self.request.query_params.get('is_featured') == 'true':
+                qs = qs.filter(is_featured=True)
+            tag_ids = self.request.query_params.get('tags')
+            if tag_ids:
+                ids = [int(t) for t in tag_ids.split(',') if t.isdigit()]
+                if ids:
+                    qs = qs.filter(tags__id__in=ids).distinct()
+            return qs
+
+        if self.action == 'retrieve':
+            if user.is_authenticated:
+                if user.is_staff:
+                    return qs
+                return qs.filter(Q(status=Route.Status.APPROVED) | Q(author=user))
+            return qs.filter(status=Route.Status.APPROVED)
+
+        return qs
+
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy',
+                           'submit', 'copy', 'add_stop', 'reorder', 'remove_stop'):
+            return [IsAuthenticated()]
+        return [AllowAny()]
+
+    def perform_create(self, serializer):
+        from .models import Route
+        serializer.save(author=self.request.user, status=Route.Status.DRAFT)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Не можна редагувати чужий маршрут.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        from .models import Route
+        instance = self.get_object()
+        if instance.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Не можна видалити чужий маршрут.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        instance.status = Route.Status.ARCHIVED
+        instance.save(update_fields=['status', 'updated_at'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['post'])
+    def submit(self, request, slug=None):
+        from .models import Route
+        from .serializers import RouteDetailSerializer
+        route = self.get_object()
+        if route.author_id != request.user.id:
+            return Response({'detail': _('Тільки автор може подати маршрут на модерацію.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        if route.status != Route.Status.DRAFT:
+            return Response({'detail': _('Подати на модерацію можна лише чернетку.')},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if route.stops.count() < 2:
+            return Response({'detail': _('Маршрут має містити щонайменше 2 зупинки.')},
+                            status=status.HTTP_400_BAD_REQUEST)
+        route.status = Route.Status.PENDING
+        route.save(update_fields=['status', 'updated_at'])
+        return Response(RouteDetailSerializer(route, context={'request': request}).data)
+
+    @action(detail=True, methods=['post'])
+    def copy(self, request, slug=None):
+        from .models import Route, RouteStop
+        from .serializers import RouteDetailSerializer
+        original = self.get_object()
+        if original.status != Route.Status.APPROVED:
+            return Response({'detail': _('Можна копіювати тільки опубліковані маршрути.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        copy = Route.objects.create(
+            title=f'{original.title} (копія)',
+            description=original.description,
+            author=request.user,
+            status=Route.Status.DRAFT,
+            cover_photo=original.cover_photo,
+            estimated_duration_minutes=original.estimated_duration_minutes,
+            copied_from=original,
+        )
+        copy.tags.set(original.tags.all())
+        for stop in original.stops.all():
+            RouteStop.objects.create(
+                route=copy,
+                cultural_object=stop.cultural_object,
+                order=stop.order,
+                note=stop.note,
+            )
+        return Response(
+            RouteDetailSerializer(copy, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=True, methods=['post'], url_path='stops')
+    def add_stop(self, request, slug=None):
+        from .models import RouteStop
+        from .serializers import RouteStopSerializer
+        route = self.get_object()
+        if route.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Не можна редагувати чужий маршрут.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        if route.stops.count() >= MAX_STOPS_PER_ROUTE:
+            return Response(
+                {'detail': _('Маршрут не може містити більше 50 зупинок.')},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        object_id = request.data.get('cultural_object')
+        try:
+            cultural_object = CulturalObject.objects.get(pk=object_id)
+        except CulturalObject.DoesNotExist:
+            return Response({'cultural_object': [_('Об\'єкт не знайдено.')]},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if RouteStop.objects.filter(route=route, cultural_object=cultural_object).exists():
+            return Response(
+                {'detail': _('Цей об\'єкт уже доданий у маршрут.')},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        last_order = route.stops.count()
+        stop = RouteStop.objects.create(
+            route=route,
+            cultural_object=cultural_object,
+            order=last_order + 1,
+            note=str(request.data.get('note', ''))[:500],
+        )
+        return Response(RouteStopSerializer(stop).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='reorder')
+    def reorder(self, request, slug=None):
+        from .models import RouteStop
+        route = self.get_object()
+        if route.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Не можна редагувати чужий маршрут.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        items = request.data.get('order') or []
+        if not isinstance(items, list):
+            return Response({'detail': 'order must be a list'}, status=400)
+        ids = [int(it.get('id')) for it in items if 'id' in it and 'order' in it]
+        stops = list(RouteStop.objects.filter(route=route, id__in=ids))
+        if len(stops) != len(ids):
+            return Response({'detail': _('Деякі зупинки не належать цьому маршруту.')},
+                            status=status.HTTP_400_BAD_REQUEST)
+        by_id = {s.id: s for s in stops}
+        for it in items:
+            s = by_id[int(it['id'])]
+            s.order = int(it['order'])
+        RouteStop.objects.bulk_update(stops, ['order'])
+        return Response({'detail': 'ok'})
+
+    @action(detail=True, methods=['delete'], url_path=r'stops/(?P<stop_pk>\d+)')
+    def remove_stop(self, request, slug=None, stop_pk=None):
+        from .models import RouteStop
+        route = self.get_object()
+        if route.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Не можна редагувати чужий маршрут.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        try:
+            stop = RouteStop.objects.get(pk=stop_pk, route=route)
+        except RouteStop.DoesNotExist:
+            return Response({'detail': _('Зупинку не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+        stop.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['get'], url_path='export')
+    def export(self, request, slug=None):
+        from .services.route_export import export_route_as_gpx, export_route_as_kml
+        from django.http import HttpResponse
+        route = self.get_object()
+        fmt = request.query_params.get('format', 'gpx').lower()
+        if fmt == 'gpx':
+            content = export_route_as_gpx(route)
+            content_type = 'application/gpx+xml'
+            ext = 'gpx'
+        elif fmt == 'kml':
+            content = export_route_as_kml(route)
+            content_type = 'application/vnd.google-earth.kml+xml'
+            ext = 'kml'
+        else:
+            return Response({'detail': _('Підтримувані формати: gpx, kml.')},
+                            status=status.HTTP_400_BAD_REQUEST)
+        response = HttpResponse(content, content_type=content_type)
+        response['Content-Disposition'] = f'attachment; filename="{route.slug}.{ext}"'
+        return response
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_routes(request):
+    """List routes authored by the current user (any status)."""
+    from .models import Route
+    from .serializers import RouteListSerializer
+    qs = (Route.objects.filter(author=request.user)
+          .select_related('author').prefetch_related('tags')
+          .order_by('-updated_at'))
+    status_filter = request.query_params.get('status')
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    return Response(RouteListSerializer(qs, many=True, context={'request': request}).data)

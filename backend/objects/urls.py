@@ -7,6 +7,7 @@ router = DefaultRouter()
 router.register('tags', views.TagViewSet, basename='tag')
 router.register('objects', views.ObjectViewSet, basename='object')
 router.register('users', views.UserProfileViewSet, basename='user-profile')
+router.register('routes', views.RouteViewSet, basename='route')
 
 photos_router = NestedDefaultRouter(router, 'objects', lookup='object')
 photos_router.register('photos', views.ObjectPhotoViewSet, basename='object-photos')
@@ -44,4 +45,7 @@ urlpatterns = [
     path('planned-visits/<int:planned_pk>/', views.update_planned_visit, name='update_planned_visit'),
     path('planned-visits/<int:planned_pk>/convert-to-visit/', views.convert_planned_to_visit, name='convert_planned_to_visit'),
     path('users/me/planned-visits/', views.my_planned_visits, name='my_planned_visits'),
+
+    # Routes
+    path('users/me/routes/', views.my_routes, name='my_routes'),
 ] + router.urls + photos_router.urls
