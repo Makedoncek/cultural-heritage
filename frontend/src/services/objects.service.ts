@@ -10,8 +10,8 @@ interface ObjectFilters {
 }
 
 export const objectsService = {
-    getAll: (params?: ObjectFilters) =>
-        api.get<PaginatedResponse<CulturalObject>>('/objects/', {params}).then(res => res.data),
+    getAll: (params?: ObjectFilters, signal?: AbortSignal) =>
+        api.get<PaginatedResponse<CulturalObject>>('/objects/', {params, signal}).then(res => res.data),
 
     getById: (id: number) =>
         api.get<CulturalObjectDetail>(`/objects/${id}/`).then(res => res.data),

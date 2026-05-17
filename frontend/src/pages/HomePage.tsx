@@ -31,9 +31,11 @@ export default function HomePage() {
         const tagType = objectType === 'all' ? undefined : objectType;
         tagsService.getAll(tagType).then(res => {
             setTags(res.results);
-            setSelectedTags([]);
+            // Зберігаємо ту саму array-reference коли список і так порожній,
+            // інакше useEffect нижче тригериться повторно і дублює fetch.
+            setSelectedTags(prev => prev.length === 0 ? prev : []);
         }).catch(() => {});
-        if (objectType !== 'event') setEventStatus('all');
+        setEventStatus(prev => (objectType !== 'event' && prev !== 'all' ? 'all' : prev));
     }, [objectType]);
 
     useEffect(() => {
@@ -41,37 +43,52 @@ export default function HomePage() {
         return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
     }, [search]);
 
-    const fetchObjects = useCallback(async (tagIds: number[], searchQuery: string, type: string, evStatus: string) => {
+    const fetchObjects = useCallback(async (
+        tagIds: number[],
+        searchQuery: string,
+        type: string,
+        evStatus: string,
+        signal: AbortSignal,
+    ) => {
         setLoading(true);
         setError(null);
 
         try {
-            const allObjects: CulturalObject[] = [];
-            let page = 1;
-            let hasNext = true;
             const params: Record<string, string | number> = {};
             if (tagIds.length > 0) params.tags = tagIds.join(',');
             if (searchQuery) params.search = searchQuery;
             if (type !== 'all') params.object_type = type;
             if (type === 'event' && evStatus !== 'all') params.event_status = evStatus;
 
-            while (hasNext) {
-                const response = await objectsService.getAll({...params, page});
-                allObjects.push(...response.results);
-                hasNext = response.next !== null;
-                page++;
+            const first = await objectsService.getAll({...params, page: 1}, signal);
+            const pageSize = first.results.length || 100;
+            const totalPages = Math.ceil(first.count / pageSize);
+
+            if (totalPages <= 1) {
+                setObjects(first.results);
+                return;
             }
 
-            setObjects(allObjects);
-        } catch {
+            const rest = await Promise.all(
+                Array.from({length: totalPages - 1}, (_, i) =>
+                    objectsService.getAll({...params, page: i + 2}, signal)
+                )
+            );
+
+            setObjects([...first.results, ...rest.flatMap(r => r.results)]);
+        } catch (err) {
+            // Скасований запит (StrictMode-double-effect, зміна фільтрів під час loading) — мовчки ігноруємо
+            if ((err as {code?: string})?.code === 'ERR_CANCELED') return;
             setError('Не вдалося завантажити культурні об\'єкти.');
         } finally {
-            setLoading(false);
+            if (!signal.aborted) setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        fetchObjects(selectedTags, debouncedSearch, objectType, eventStatus);
+        const controller = new AbortController();
+        fetchObjects(selectedTags, debouncedSearch, objectType, eventStatus, controller.signal);
+        return () => controller.abort();
     }, [selectedTags, debouncedSearch, objectType, eventStatus, fetchObjects]);
 
     const handleTagToggle = (tagId: number) => {
@@ -217,6 +234,26 @@ export default function HomePage() {
                 <ErrorBoundary>
                     <MapView objects={objects} flyTo={flyTo}/>
                 </ErrorBoundary>
+
+                {!loading && objects.length > 0 && (
+                    <div className="absolute top-3 right-3 z-[400] bg-white/95 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 text-sm border border-gray-200">
+                        <div className="flex items-center gap-2">
+                            <span className="text-gray-500">На мапі:</span>
+                            <span className="font-bold text-gray-900">{objects.length}</span>
+                        </div>
+                        {(() => {
+                            const events = objects.filter(o => o.object_type === 'event').length;
+                            const permanent = objects.length - events;
+                            if (events === 0 || permanent === 0) return null;
+                            return (
+                                <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                                    <span>Пам'ятки: <span className="text-gray-700 font-medium">{permanent}</span></span>
+                                    <span>Події: <span className="text-gray-700 font-medium">{events}</span></span>
+                                </div>
+                            );
+                        })()}
+                    </div>
+                )}
 
                 {loading && objects.length > 0 && (
                     <div className="absolute inset-0 z-[500] flex items-center justify-center bg-black/10 pointer-events-none">

@@ -244,7 +244,14 @@ class CulturalObject(models.Model):
 
     @property
     def cover_url(self):
-        """Thumbnail URL першого approved-фото (з урахуванням ordering: автор → контриб'ютори)."""
+        """Thumbnail URL першого approved-фото (з урахуванням ordering: автор → контриб'ютори).
+
+        Використовує annotated `_cover_thumbnail_url` з ObjectViewSet.get_queryset якщо доступне,
+        інакше робить окремий запит (fallback для одиночних викликів).
+        """
+        annotated = getattr(self, '_cover_thumbnail_url', None)
+        if annotated is not None or self._state.fields_cache.get('_cover_thumbnail_url') is not None:
+            return annotated
         first = self.photos.filter(status='approved').first()
         return first.thumbnail_url if first else None
 

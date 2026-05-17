@@ -11,7 +11,7 @@ from .models import Tag
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Count, Exists, OuterRef
+from django.db.models import Q, Count, Exists, OuterRef, Subquery
 from .models import CulturalObject, Favorite, FavoriteAuthor
 from .serializers import ObjectListSerializer, ObjectDetailSerializer, ObjectWriteSerializer, UserProfileSerializer, ObjectWithMyPhotosSerializer
 
@@ -535,11 +535,18 @@ class ObjectViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
+        # Subquery для cover_thumbnail_url — щоб уникнути N+1 на @property cover_url
+        cover_thumb_sq = ObjectPhoto.objects.filter(
+            cultural_object=OuterRef('pk'),
+            status='approved',
+        ).order_by('-is_author_photo', 'order', 'created_at').values('thumbnail_url')[:1]
+
         base_qs = (CulturalObject.objects
                    .select_related('author')
                    .prefetch_related('tags')
                    .exclude(status='archived')
                    .annotate(favorites_count=Count('favorited_by', distinct=True))
+                   .annotate(_cover_thumbnail_url=Subquery(cover_thumb_sq))
                    .order_by('-created_at'))
 
         if user.is_authenticated:
