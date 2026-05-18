@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {Link, Navigate} from 'react-router';
+import {useTranslation, Trans} from 'react-i18next';
 import {useAuth} from '../context/AuthContext';
 import type {RegisterData} from '../types';
 import {AxiosError} from 'axios';
@@ -10,6 +11,7 @@ type ServerErrors = Record<string, string[]>;
 
 function RegisterPage() {
     const {register: registerUser, isAuthenticated} = useAuth();
+    const {t} = useTranslation();
     const [success, setSuccess] = useState(false);
     const [registeredEmail, setRegisteredEmail] = useState('');
     const {
@@ -40,7 +42,7 @@ function RegisterPage() {
                     setError('root', {message: serverErrors.non_field_errors[0]});
                 }
             } else {
-                setError('root', {message: 'Не вдалося з\'єднатися з сервером'});
+                setError('root', {message: t('auth.connectionError')});
             }
         }
     };
@@ -63,20 +65,17 @@ function RegisterPage() {
                         </div>
                         <div className="mt-2">
                             <h1 className="text-2xl font-bold text-amber-900 text-center">CultureMap</h1>
-                            <p className="text-sm text-amber-700/70 mt-1 text-center">Культурна спадщина України</p>
+                            <p className="text-sm text-amber-700/70 mt-1 text-center">{t('auth.tagline')}</p>
                         </div>
                     </div>
                     <div className="bg-white/80 backdrop-blur rounded-2xl shadow-lg shadow-amber-900/5 border border-amber-100 p-8 text-center">
-                        <h2 className="text-xl font-semibold text-gray-800 mb-3">Перевірте вашу пошту</h2>
+                        <h2 className="text-xl font-semibold text-gray-800 mb-3">{t('auth.checkEmailTitle')}</h2>
                         <p className="text-gray-600 mb-4">
-                            Ми надіслали лист на <strong>{registeredEmail}</strong>.
-                            Натисніть на посилання в листі, щоб підтвердити акаунт.
+                            <Trans i18nKey="auth.checkEmailDesc" values={{email: registeredEmail}} components={{strong: <strong/>}}/>
                         </p>
-                        <p className="text-sm text-gray-500 mb-6">
-                            Не отримали листа? Перевірте папку «Спам».
-                        </p>
+                        <p className="text-sm text-gray-500 mb-6">{t('auth.checkSpam')}</p>
                         <Link to="/login" className="text-amber-700 font-medium hover:text-amber-800 hover:underline">
-                            Перейти до входу
+                            {t('auth.goToLogin')}
                         </Link>
                     </div>
                 </div>
@@ -102,25 +101,25 @@ function RegisterPage() {
                     </div>
                     <div className="mt-2">
                         <h1 className="text-2xl font-bold text-amber-900 text-center">CultureMap</h1>
-                        <p className="text-sm text-amber-700/70 mt-1 text-center">Культурна спадщина України</p>
+                        <p className="text-sm text-amber-700/70 mt-1 text-center">{t('auth.tagline')}</p>
                     </div>
                 </div>
 
                 <div
                     className="bg-white/80 backdrop-blur rounded-2xl shadow-lg shadow-amber-900/5 border border-amber-100 p-8">
-                    <h2 className="text-xl font-semibold text-gray-800 text-center mb-5">Реєстрація</h2>
+                    <h2 className="text-xl font-semibold text-gray-800 text-center mb-5">{t('auth.registerTitle')}</h2>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div>
                             <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                                Ім'я користувача
+                                {t('auth.username')}
                             </label>
                             <input
                                 id="username"
                                 type="text"
                                 autoComplete="username"
                                 className={inputClass('username')}
-                                {...register('username', {required: 'Це поле обов\'язкове'})}
+                                {...register('username', {required: t('auth.required')})}
                             />
                             {errors.username && (
                                 <p className="text-red-600 text-sm mt-1">{errors.username.message}</p>
@@ -129,14 +128,14 @@ function RegisterPage() {
 
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                                Електронна пошта
+                                {t('auth.email')}
                             </label>
                             <input
                                 id="email"
                                 type="email"
                                 autoComplete="email"
                                 className={inputClass('email')}
-                                {...register('email', {required: 'Це поле обов\'язкове'})}
+                                {...register('email', {required: t('auth.required')})}
                             />
                             {errors.email && (
                                 <p className="text-red-600 text-sm mt-1">{errors.email.message}</p>
@@ -145,16 +144,16 @@ function RegisterPage() {
 
                         <div>
                             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                                Пароль
+                                {t('auth.password')}
                             </label>
                             <input
                                 id="password"
                                 type="password"
                                 autoComplete="new-password"
                                 className={inputClass('password')}
-                                {...register('password', {required: 'Це поле обов\'язкове'})}
+                                {...register('password', {required: t('auth.required')})}
                             />
-                            <p className="text-gray-500 text-xs mt-1">Мінімум 8 символів, не лише цифри</p>
+                            <p className="text-gray-500 text-xs mt-1">{t('auth.passwordHint')}</p>
                             {errors.password && (
                                 <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
                             )}
@@ -162,7 +161,7 @@ function RegisterPage() {
 
                         <div>
                             <label htmlFor="password2" className="block text-sm font-medium text-gray-700 mb-1">
-                                Підтвердження пароля
+                                {t('auth.passwordConfirm')}
                             </label>
                             <input
                                 id="password2"
@@ -170,9 +169,9 @@ function RegisterPage() {
                                 autoComplete="new-password"
                                 className={inputClass('password2')}
                                 {...register('password2', {
-                                    required: 'Це поле обов\'язкове',
+                                    required: t('auth.required'),
                                     validate: (value) =>
-                                        value === watch('password') || 'Паролі не збігаються',
+                                        value === watch('password') || t('auth.passwordMismatch'),
                                 })}
                             />
                             {errors.password2 && (
@@ -189,18 +188,18 @@ function RegisterPage() {
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full bg-amber-600 text-white py-2.5 rounded-lg font-medium hover:bg-amber-700 active:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="w-full bg-amber-600 text-white py-2.5 rounded-lg font-medium hover:bg-amber-700 active:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                         >
-                            {isSubmitting ? 'Реєстрація...' : 'Зареєструватися'}
+                            {isSubmitting ? t('auth.submittingRegister') : t('auth.submitRegister')}
                         </button>
                     </form>
 
                     <div className="mt-5 pt-4 border-t border-gray-100">
                         <p className="text-center text-sm text-gray-600">
-                            Вже є акаунт?{' '}
+                            {t('auth.haveAccount')}{' '}
                             <Link to="/login"
                                   className="text-amber-700 font-medium hover:text-amber-800 hover:underline">
-                                Увійти
+                                {t('auth.loginNow')}
                             </Link>
                         </p>
                     </div>

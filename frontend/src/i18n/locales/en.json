@@ -35,7 +35,13 @@
     "connectionError": "Failed to connect to the server",
     "tagline": "Cultural heritage of Ukraine",
     "registerNow": "Sign up",
-    "loginNow": "Log in"
+    "loginNow": "Log in",
+    "passwordHint": "Minimum 8 characters, not only digits",
+    "passwordMismatch": "Passwords do not match",
+    "checkEmailTitle": "Check your email",
+    "checkEmailDesc": "We sent an email to <strong>{{email}}</strong>. Click the link in it to confirm your account.",
+    "checkSpam": "Didn't receive it? Check your spam folder.",
+    "goToLogin": "Go to login"
   },
   "home": {
     "searchPlaceholder": "Search by name...",
