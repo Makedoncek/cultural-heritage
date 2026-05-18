@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {useSearchParams, Link} from 'react-router';
+import {useTranslation} from 'react-i18next';
 import {authService} from '../services/auth.service';
 import {AxiosError} from 'axios';
 import UkraineMapBg from '../components/UkraineMapBg';
@@ -11,6 +12,7 @@ interface ResetForm {
 }
 
 function ResetPasswordPage() {
+    const {t} = useTranslation();
     const [searchParams] = useSearchParams();
     const uid = searchParams.get('uid') || '';
     const token = searchParams.get('token') || '';
@@ -25,7 +27,7 @@ function ResetPasswordPage() {
             const axiosError = err as AxiosError<{ error: string | string[] }>;
             const errorMsg = axiosError.response?.data?.error;
             setError('root', {
-                message: Array.isArray(errorMsg) ? errorMsg[0] : (errorMsg || 'Помилка скидання пароля.'),
+                message: Array.isArray(errorMsg) ? errorMsg[0] : (errorMsg || t('auth.resetErrorGeneric')),
             });
         }
     };
@@ -43,16 +45,16 @@ function ResetPasswordPage() {
                         <UkraineMapBg/>
                         <div className="mt-2">
                             <h1 className="text-2xl font-bold text-amber-900 text-center">CultureMap</h1>
-                            <p className="text-sm text-amber-700/70 mt-1 text-center">Культурна спадщина України</p>
+                            <p className="text-sm text-amber-700/70 mt-1 text-center">{t('auth.tagline')}</p>
                         </div>
                     </div>
                     <div className="bg-white/80 backdrop-blur rounded-2xl shadow-lg shadow-amber-900/5 border border-amber-100 p-8 text-center">
                         <svg className="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
                         </svg>
-                        <h2 className="text-xl font-semibold text-red-700 mb-3">Недійсне посилання</h2>
+                        <h2 className="text-xl font-semibold text-red-700 mb-3">{t('auth.resetInvalidLink')}</h2>
                         <Link to="/forgot-password" className="text-amber-700 font-medium hover:text-amber-800 hover:underline">
-                            Запросити нове посилання
+                            {t('auth.resetRequestNewLink')}
                         </Link>
                     </div>
                 </div>
@@ -72,7 +74,7 @@ function ResetPasswordPage() {
                     </div>
                     <div className="mt-2">
                         <h1 className="text-2xl font-bold text-amber-900 text-center">CultureMap</h1>
-                        <p className="text-sm text-amber-700/70 mt-1 text-center">Культурна спадщина України</p>
+                        <p className="text-sm text-amber-700/70 mt-1 text-center">{t('auth.tagline')}</p>
                     </div>
                 </div>
                 <div className="bg-white/80 backdrop-blur rounded-2xl shadow-lg shadow-amber-900/5 border border-amber-100 p-8">
@@ -81,34 +83,34 @@ function ResetPasswordPage() {
                             <svg className="w-12 h-12 text-green-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
                             </svg>
-                            <h2 className="text-xl font-semibold text-green-700 mb-3">Пароль змінено!</h2>
-                            <p className="text-gray-600 mb-4">Тепер ви можете увійти з новим паролем.</p>
+                            <h2 className="text-xl font-semibold text-green-700 mb-3">{t('auth.resetSuccessTitle')}</h2>
+                            <p className="text-gray-600 mb-4">{t('auth.resetSuccessDesc')}</p>
                             <Link to="/login"
                                   className="inline-block bg-amber-600 text-white py-2.5 px-8 rounded-lg font-medium hover:bg-amber-700 transition-colors">
-                                Увійти
+                                {t('auth.loginNow')}
                             </Link>
                         </div>
                     ) : (
                         <>
-                            <h2 className="text-xl font-semibold text-gray-800 text-center mb-5">Новий пароль</h2>
+                            <h2 className="text-xl font-semibold text-gray-800 text-center mb-5">{t('auth.resetTitle')}</h2>
                             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                                 <div>
                                     <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                                        Пароль
+                                        {t('auth.password')}
                                     </label>
                                     <input
                                         id="password"
                                         type="password"
                                         autoComplete="new-password"
                                         className={inputClass('password')}
-                                        {...register('password', {required: "Це поле обов'язкове"})}
+                                        {...register('password', {required: t('auth.required')})}
                                     />
-                                    <p className="text-gray-500 text-xs mt-1">Мінімум 8 символів, не лише цифри</p>
+                                    <p className="text-gray-500 text-xs mt-1">{t('auth.passwordHint')}</p>
                                     {errors.password && <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>}
                                 </div>
                                 <div>
                                     <label htmlFor="password2" className="block text-sm font-medium text-gray-700 mb-1">
-                                        Підтвердження пароля
+                                        {t('auth.passwordConfirm')}
                                     </label>
                                     <input
                                         id="password2"
@@ -116,9 +118,9 @@ function ResetPasswordPage() {
                                         autoComplete="new-password"
                                         className={inputClass('password2')}
                                         {...register('password2', {
-                                            required: "Це поле обов'язкове",
+                                            required: t('auth.required'),
                                             validate: (value) =>
-                                                value === watch('password') || 'Паролі не збігаються',
+                                                value === watch('password') || t('auth.passwordMismatch'),
                                         })}
                                     />
                                     {errors.password2 && <p className="text-red-600 text-sm mt-1">{errors.password2.message}</p>}
@@ -133,9 +135,9 @@ function ResetPasswordPage() {
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="w-full bg-amber-600 text-white py-2.5 rounded-lg font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors"
+                                    className="w-full bg-amber-600 text-white py-2.5 rounded-lg font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors cursor-pointer"
                                 >
-                                    {isSubmitting ? 'Збереження...' : 'Змінити пароль'}
+                                    {isSubmitting ? t('auth.resetSubmitting') : t('auth.resetSubmit')}
                                 </button>
                             </form>
                         </>
@@ -147,4 +149,3 @@ function ResetPasswordPage() {
 }
 
 export default ResetPasswordPage;
-

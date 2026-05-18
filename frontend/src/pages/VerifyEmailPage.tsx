@@ -1,10 +1,12 @@
 import {useEffect, useState} from 'react';
 import {useSearchParams, Link} from 'react-router';
+import {useTranslation} from 'react-i18next';
 import {authService} from '../services/auth.service';
 import {AxiosError} from 'axios';
 import UkraineMapBg from '../components/UkraineMapBg';
 
 function VerifyEmailPage() {
+    const {t} = useTranslation();
     const [searchParams] = useSearchParams();
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [message, setMessage] = useState('');
@@ -13,7 +15,7 @@ function VerifyEmailPage() {
         const token = searchParams.get('token');
         if (!token) {
             setStatus('error');
-            setMessage('Токен не надано.');
+            setMessage(t('auth.verifyNoToken'));
             return;
         }
 
@@ -24,9 +26,9 @@ function VerifyEmailPage() {
             })
             .catch((err: AxiosError<{ error: string }>) => {
                 setStatus('error');
-                setMessage(err.response?.data?.error || 'Помилка верифікації.');
+                setMessage(err.response?.data?.error || t('auth.verifyError'));
             });
-    }, [searchParams]);
+    }, [searchParams, t]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 px-4">
@@ -40,12 +42,12 @@ function VerifyEmailPage() {
                     </div>
                     <div className="mt-2">
                         <h1 className="text-2xl font-bold text-amber-900 text-center">CultureMap</h1>
-                        <p className="text-sm text-amber-700/70 mt-1 text-center">Культурна спадщина України</p>
+                        <p className="text-sm text-amber-700/70 mt-1 text-center">{t('auth.tagline')}</p>
                     </div>
                 </div>
                 <div className="bg-white/80 backdrop-blur rounded-2xl shadow-lg shadow-amber-900/5 border border-amber-100 p-8 text-center">
                     {status === 'loading' && (
-                        <p className="text-gray-600">Підтвердження пошти...</p>
+                        <p className="text-gray-600">{t('auth.verifying')}</p>
                     )}
                     {status === 'success' && (
                         <>
@@ -55,7 +57,7 @@ function VerifyEmailPage() {
                             <h2 className="text-xl font-semibold text-green-700 mb-3">{message}</h2>
                             <Link to="/login"
                                   className="inline-block mt-2 bg-amber-600 text-white py-2.5 px-8 rounded-lg font-medium hover:bg-amber-700 transition-colors">
-                                Увійти
+                                {t('auth.loginNow')}
                             </Link>
                         </>
                     )}
@@ -67,7 +69,7 @@ function VerifyEmailPage() {
                             <h2 className="text-xl font-semibold text-red-700 mb-3">{message}</h2>
                             <Link to="/register"
                                   className="text-amber-700 font-medium hover:text-amber-800 hover:underline">
-                                Спробувати знову
+                                {t('auth.tryAgain')}
                             </Link>
                         </>
                     )}
