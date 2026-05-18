@@ -69,6 +69,6 @@ export const routesService = {
 
     exportUrl(slug: string, format: 'gpx' | 'kml'): string {
         const base = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000/api';
-        return `${base}/routes/${slug}/export/?format=${format}`;
+        return `${base}/routes/${slug}/export/?fmt=${format}`;
     },
 };

@@ -1644,7 +1644,7 @@ class RouteViewSet(viewsets.ModelViewSet):
         from .services.route_export import export_route_as_gpx, export_route_as_kml
         from django.http import HttpResponse
         route = self.get_object()
-        fmt = request.query_params.get('format', 'gpx').lower()
+        fmt = request.query_params.get('fmt', 'gpx').lower()
         if fmt == 'gpx':
             content = export_route_as_gpx(route)
             content_type = 'application/gpx+xml'
