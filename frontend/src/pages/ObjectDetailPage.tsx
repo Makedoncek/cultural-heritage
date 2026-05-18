@@ -2,6 +2,7 @@ import {useState, useEffect} from 'react';
 import {useParams, useNavigate, Link} from 'react-router';
 import {MapContainer, TileLayer, Marker} from 'react-leaflet';
 import toast from 'react-hot-toast';
+import {useTranslation} from 'react-i18next';
 import {objectsService} from '../services/objects.service';
 import {photosService, extractUploadError} from '../services/photos.service';
 import {useAuth} from '../context/AuthContext';
@@ -10,12 +11,6 @@ import PhotoGallery from '../components/Objects/PhotoGallery';
 import PhotoUploader, {type PendingPhoto} from '../components/Objects/PhotoUploader';
 import type {CulturalObjectDetail} from '../types';
 import '../utils/leaflet-fix';
-
-const STATUS_LABELS: Record<string, string> = {
-    pending: 'На модерації',
-    approved: 'Опубліковано',
-    archived: 'Архівовано',
-};
 
 const STATUS_COLORS: Record<string, string> = {
     pending: 'bg-yellow-100 text-yellow-800',
@@ -26,6 +21,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function ObjectDetailPage() {
     const {id} = useParams();
     const navigate = useNavigate();
+    const {t, i18n} = useTranslation();
     const {user, isAuthenticated} = useAuth();
     const [object, setObject] = useState<CulturalObjectDetail | null>(null);
     const [loading, setLoading] = useState(true);
@@ -37,6 +33,8 @@ export default function ObjectDetailPage() {
     const [contribProgress, setContribProgress] = useState({done: 0, total: 0});
     const [showContribUploader, setShowContribUploader] = useState(false);
 
+    const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
+
     useEffect(() => {
         if (!id) return;
         setLoading(true);
@@ -46,11 +44,11 @@ export default function ObjectDetailPage() {
                 if (err.response?.status === 404) {
                     setNotFound(true);
                 } else {
-                    setError('Не вдалося завантажити об\'єкт.');
+                    setError(t('object.loadError'));
                 }
             })
             .finally(() => setLoading(false));
-    }, [id]);
+    }, [id, t]);
 
     const canEdit = user && object && (user.username === object.author || user.is_staff);
     const isAuthor = user && object && user.username === object.author;
@@ -61,8 +59,6 @@ export default function ObjectDetailPage() {
         setUploadingContrib(true);
         setContribProgress({done: 0, total: contribPhotos.length});
         const failures: {name: string; reason: string}[] = [];
-        // Sequential upload — щоб бекенд відхиляв надлишкові фото ДО Cloudinary
-        // (інакше parallel uploads витрачають bandwidth на файли, що не пройдуть лiміт).
         for (const p of contribPhotos) {
             try {
                 await photosService.upload(object.id, p.file, p.caption);
@@ -73,7 +69,7 @@ export default function ObjectDetailPage() {
         }
         setUploadingContrib(false);
         if (failures.length === 0) {
-            toast.success('Фото надіслано на модерацію');
+            toast.success(t('photo.sentForReview'));
             setContribPhotos([]);
             setShowContribUploader(false);
         } else {
@@ -83,14 +79,14 @@ export default function ObjectDetailPage() {
     };
 
     const handleDelete = async () => {
-        if (!object || !confirm('Ви впевнені, що хочете видалити цей об\'єкт? Тільки адміністратор зможе його відновити.')) return;
+        if (!object || !confirm(t('object.deleteConfirm'))) return;
         setDeleting(true);
         try {
             await objectsService.delete(object.id);
-            toast.success('Об\'єкт архівовано');
+            toast.success(t('object.archived'));
             navigate('/');
         } catch {
-            setError('Не вдалося видалити об\'єкт.');
+            setError(t('object.deleteError'));
             setDeleting(false);
         }
     };
@@ -100,7 +96,7 @@ export default function ObjectDetailPage() {
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
-                    <p className="text-gray-600">Завантаження...</p>
+                    <p className="text-gray-600">{t('home.loading')}</p>
                 </div>
             </div>
         );
@@ -110,9 +106,9 @@ export default function ObjectDetailPage() {
         return (
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
-                    <p className="text-gray-600 text-lg">Об'єкт не знайдено</p>
+                    <p className="text-gray-600 text-lg">{t('object.notFound')}</p>
                     <Link to="/" className="text-amber-600 hover:text-amber-800 underline">
-                        На карту
+                        {t('object.backToMap')}
                     </Link>
                 </div>
             </div>
@@ -128,7 +124,7 @@ export default function ObjectDetailPage() {
                         onClick={() => window.location.reload()}
                         className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 cursor-pointer"
                     >
-                        Спробувати знову
+                        {t('home.retry')}
                     </button>
                 </div>
             </div>
@@ -149,7 +145,7 @@ export default function ObjectDetailPage() {
                         <h1 className="text-2xl font-bold text-gray-900">{object.title}</h1>
                         {canEdit && (
                             <span className={`px-3 py-1 text-sm font-medium rounded ${STATUS_COLORS[object.status]}`}>
-                                {STATUS_LABELS[object.status]}
+                                {t(`object.moderationStatus.${object.status}`)}
                             </span>
                         )}
                     </div>
@@ -167,14 +163,14 @@ export default function ObjectDetailPage() {
                                     onClick={() => navigate(`/objects/${object.id}/edit`)}
                                     className="px-3 py-1.5 text-sm bg-amber-500 text-white rounded hover:bg-amber-600 cursor-pointer"
                                 >
-                                    Редагувати
+                                    {t('object.edit')}
                                 </button>
                                 <button
                                     onClick={handleDelete}
                                     disabled={deleting}
                                     className="px-3 py-1.5 text-sm bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer disabled:opacity-50"
                                 >
-                                    {deleting ? 'Видалення...' : 'Видалити'}
+                                    {deleting ? t('object.deleting') : t('object.delete')}
                                 </button>
                             </>
                         )}
@@ -199,16 +195,16 @@ export default function ObjectDetailPage() {
                 {object.object_type === 'event' && (
                     <div className="flex flex-wrap items-center gap-2 mb-4">
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
-                            🎉 Подія
+                            🎉 {t('object.objectType.event')}
                         </span>
                         {object.event_start_date && object.event_end_date && (
                             <span className="text-sm text-gray-600">
-                                📅 {new Date(object.event_start_date).toLocaleString('uk-UA', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'})} — {new Date(object.event_end_date).toLocaleString('uk-UA', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'})}
+                                📅 {new Date(object.event_start_date).toLocaleString(dateLocale, {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'})} — {new Date(object.event_end_date).toLocaleString(dateLocale, {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'})}
                             </span>
                         )}
                         {object.event_end_date && new Date(object.event_end_date) < new Date() && (
                             <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-xs">
-                                Подія завершена
+                                {t('object.eventStatus.finished')}
                             </span>
                         )}
                     </div>
@@ -222,16 +218,16 @@ export default function ObjectDetailPage() {
 
                 {canContribute && (
                     <div className="my-6 p-4 border rounded bg-blue-50">
-                        <h3 className="font-semibold mb-2">📷 Додати своє фото</h3>
+                        <h3 className="font-semibold mb-2">{t('photo.addContribute')}</h3>
                         <p className="text-sm text-gray-600 mb-3">
-                            Можете додати до 3 фото. Після модерації з'являться у спільній галереї.
+                            {t('photo.contributeHint', {count: 3})}
                         </p>
                         {!showContribUploader ? (
                             <button
                                 onClick={() => setShowContribUploader(true)}
                                 className="px-4 py-2 bg-blue-600 text-white rounded cursor-pointer"
                             >
-                                Додати фото
+                                {t('photo.addPhoto')}
                             </button>
                         ) : (
                             <>
@@ -239,7 +235,7 @@ export default function ObjectDetailPage() {
                                 {uploadingContrib && contribProgress.total > 0 && (
                                     <div className="mt-3">
                                         <div className="flex justify-between text-xs text-gray-600 mb-1">
-                                            <span>Завантаження фото…</span>
+                                            <span>{t('photo.sending')}</span>
                                             <span>{contribProgress.done} / {contribProgress.total}</span>
                                         </div>
                                         <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
@@ -256,7 +252,7 @@ export default function ObjectDetailPage() {
                                         disabled={contribPhotos.length === 0 || uploadingContrib}
                                         className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50 cursor-pointer"
                                     >
-                                        {uploadingContrib ? `${contribProgress.done}/${contribProgress.total} завантажується...` : 'Надіслати'}
+                                        {uploadingContrib ? `${contribProgress.done}/${contribProgress.total}` : t('photo.send')}
                                     </button>
                                     <button
                                         onClick={() => {
@@ -266,7 +262,7 @@ export default function ObjectDetailPage() {
                                         disabled={uploadingContrib}
                                         className="px-4 py-2 border rounded cursor-pointer disabled:opacity-50"
                                     >
-                                        Скасувати
+                                        {t('form.cancel')}
                                     </button>
                                 </div>
                             </>
@@ -281,12 +277,12 @@ export default function ObjectDetailPage() {
                 )}
 
                 <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mb-2">
-                    <span>📍 Координати: {latitude.toFixed(6)}, {longitude.toFixed(6)}</span>
+                    <span>📍 {t('object.coordinates')} {latitude.toFixed(6)}, {longitude.toFixed(6)}</span>
                     <button
                         onClick={() => navigator.clipboard.writeText(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`)}
                         className="px-2 py-0.5 text-xs text-amber-600 hover:text-amber-800 border border-amber-200 rounded hover:bg-amber-50 cursor-pointer"
                     >
-                        Скопіювати
+                        {t('object.copy')}
                     </button>
                 </div>
 
@@ -310,24 +306,24 @@ export default function ObjectDetailPage() {
 
                 {(object.wikipedia_url || object.official_website || object.google_maps_url) && (
                     <div className="mb-6">
-                        <h2 className="text-sm font-semibold text-gray-700 mb-2">Посилання</h2>
+                        <h2 className="text-sm font-semibold text-gray-700 mb-2">{t('object.links')}</h2>
                         <div className="flex flex-wrap gap-3">
                             {object.wikipedia_url && (
                                 <a href={object.wikipedia_url} target="_blank" rel="noopener noreferrer"
                                    className="text-sm text-blue-600 hover:text-blue-800 underline">
-                                    Wikipedia
+                                    {t('object.wikipedia')}
                                 </a>
                             )}
                             {object.official_website && (
                                 <a href={object.official_website} target="_blank" rel="noopener noreferrer"
                                    className="text-sm text-blue-600 hover:text-blue-800 underline">
-                                    Офіційний сайт
+                                    {t('object.officialSite')}
                                 </a>
                             )}
                             {object.google_maps_url && (
                                 <a href={object.google_maps_url} target="_blank" rel="noopener noreferrer"
                                    className="text-sm text-blue-600 hover:text-blue-800 underline">
-                                    Google Maps
+                                    {t('object.googleMaps')}
                                 </a>
                             )}
                         </div>
@@ -336,10 +332,10 @@ export default function ObjectDetailPage() {
 
                 {/* Meta info */}
                 <div className="border-t border-gray-200 pt-4 text-sm text-gray-500">
-                    <p>Автор: <Link to={`/authors/${object.author}`} className="text-amber-600 hover:text-amber-800 underline">{object.author}</Link></p>
-                    <p>Створено: {new Date(object.created_at).toLocaleDateString('uk-UA')}</p>
+                    <p>{t('object.author')} <Link to={`/authors/${object.author}`} className="text-amber-600 hover:text-amber-800 underline">{object.author}</Link></p>
+                    <p>{t('object.createdAt')} {new Date(object.created_at).toLocaleDateString(dateLocale)}</p>
                     {new Date(object.updated_at).getTime() - new Date(object.created_at).getTime() > 60000 && (
-                        <p>Оновлено: {new Date(object.updated_at).toLocaleDateString('uk-UA')}</p>
+                        <p>{t('object.updatedAt')} {new Date(object.updated_at).toLocaleDateString(dateLocale)}</p>
                     )}
                 </div>
             </div>
