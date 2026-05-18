@@ -1,5 +1,6 @@
 import {useState, useEffect, useCallback, useRef} from 'react';
 import {useNavigate} from 'react-router';
+import {useTranslation} from 'react-i18next';
 import {objectsService} from '../services/objects.service';
 import {tagsService} from '../services/tags.service';
 import MapView from '../components/Map/MapView';
@@ -24,6 +25,7 @@ export default function HomePage() {
     const [searchFocused, setSearchFocused] = useState(false);
     const [flyTo, setFlyTo] = useState<FlyToTarget | null>(null);
     const navigate = useNavigate();
+    const {t} = useTranslation();
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -79,7 +81,7 @@ export default function HomePage() {
         } catch (err) {
             // Скасований запит (StrictMode-double-effect, зміна фільтрів під час loading) — мовчки ігноруємо
             if ((err as {code?: string})?.code === 'ERR_CANCELED') return;
-            setError('Не вдалося завантажити культурні об\'єкти.');
+            setError(t('home.loadError'));
         } finally {
             if (!signal.aborted) setLoading(false);
         }
@@ -106,7 +108,7 @@ export default function HomePage() {
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
-                    <p className="text-gray-600">Завантаження...</p>
+                    <p className="text-gray-600">{t('home.loading')}</p>
                 </div>
             </div>
         );
@@ -121,7 +123,7 @@ export default function HomePage() {
                         onClick={() => fetchObjects(selectedTags, debouncedSearch, objectType, eventStatus)}
                         className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 cursor-pointer"
                     >
-                        Спробувати знову
+                        {t('home.retry')}
                     </button>
                 </div>
             </div>
@@ -135,7 +137,7 @@ export default function HomePage() {
                     onClick={() => setSidebarOpen(true)}
                     className="md:hidden absolute top-3 right-3 z-[1000] bg-white rounded-lg shadow-md px-3 py-2 text-sm font-medium text-amber-700 border border-amber-200 cursor-pointer"
                 >
-                    ☰ Фільтри
+                    ☰ {t('home.filtersLabel')}
                 </button>
             )}
 
@@ -151,7 +153,7 @@ export default function HomePage() {
             >
                 <div className="p-4 pt-3">
                     <div className="flex items-center justify-between md:hidden mb-3">
-                        <span className="text-sm font-semibold text-gray-700">Фільтри</span>
+                        <span className="text-sm font-semibold text-gray-700">{t('home.filtersLabel')}</span>
                         <button
                             onClick={() => setSidebarOpen(false)}
                             className="text-gray-400 hover:text-gray-600 cursor-pointer text-lg leading-none"
@@ -171,7 +173,7 @@ export default function HomePage() {
                                     setSearchFocused(false);
                                 }
                             }}
-                            placeholder="Пошук за назвою..."
+                            placeholder={t('home.searchPlaceholder')}
                             className="w-full px-3 py-2 pr-8 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-amber-500"
                         />
                         {search && (
@@ -238,7 +240,7 @@ export default function HomePage() {
                 {!loading && objects.length > 0 && (
                     <div className="absolute top-3 right-3 z-[400] bg-white/95 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 text-sm border border-gray-200">
                         <div className="flex items-center gap-2">
-                            <span className="text-gray-500">На мапі:</span>
+                            <span className="text-gray-500">{t('home.objectsOnMap')}</span>
                             <span className="font-bold text-gray-900">{objects.length}</span>
                         </div>
                         {(() => {
@@ -247,8 +249,8 @@ export default function HomePage() {
                             if (events === 0 || permanent === 0) return null;
                             return (
                                 <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                                    <span>Пам'ятки: <span className="text-gray-700 font-medium">{permanent}</span></span>
-                                    <span>Події: <span className="text-gray-700 font-medium">{events}</span></span>
+                                    <span>{t('home.monuments')}: <span className="text-gray-700 font-medium">{permanent}</span></span>
+                                    <span>{t('home.events')}: <span className="text-gray-700 font-medium">{events}</span></span>
                                 </div>
                             );
                         })()}
@@ -264,7 +266,7 @@ export default function HomePage() {
                 {!loading && objects.length === 0 && (
                     <div className="absolute inset-0 z-[500] flex items-center justify-center pointer-events-none">
                         <div className="bg-white/90 rounded-lg px-6 py-4 shadow-md">
-                            <p className="text-gray-600">Нічого не знайдено</p>
+                            <p className="text-gray-600">{t('home.nothingFound')}</p>
                         </div>
                     </div>
                 )}

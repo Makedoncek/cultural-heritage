@@ -29,7 +29,13 @@
     "haveAccount": "Already have an account?",
     "resetPasswordTitle": "Reset password",
     "verifyEmailTitle": "Email verification",
-    "required": "This field is required"
+    "required": "This field is required",
+    "loginPlaceholder": "username or you@example.com",
+    "invalidCredentials": "Invalid username or password. If you just registered, check your email to confirm your account.",
+    "connectionError": "Failed to connect to the server",
+    "tagline": "Cultural heritage of Ukraine",
+    "registerNow": "Sign up",
+    "loginNow": "Log in"
   },
   "home": {
     "searchPlaceholder": "Search by name...",
@@ -41,7 +47,19 @@
     "loading": "Loading...",
     "loadError": "Failed to load cultural objects.",
     "retry": "Try again",
-    "details": "Details"
+    "details": "Details",
+    "filters": {
+      "typeTitle": "Object type",
+      "typeAll": "All",
+      "typeMonuments": "Monuments",
+      "typeEvents": "Events",
+      "eventStatusTitle": "Event status",
+      "eventStatusAll": "All events",
+      "eventStatusActive": "Active now",
+      "eventStatusUpcoming": "Upcoming",
+      "tagsTitle": "Filter by tags",
+      "tagsClear": "Reset filters"
+    }
   },
   "object": {
     "moderationStatus": {

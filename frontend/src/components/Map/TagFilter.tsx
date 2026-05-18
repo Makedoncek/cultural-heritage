@@ -1,3 +1,4 @@
+import {useTranslation} from 'react-i18next';
 import type {Tag} from '../../types';
 
 interface TagFilterProps {
@@ -8,9 +9,10 @@ interface TagFilterProps {
 }
 
 export default function TagFilter({tags, selectedTags, onTagToggle, onClear}: TagFilterProps) {
+    const {t} = useTranslation();
     return (
         <div className="flex flex-col gap-1">
-            <h3 className="text-sm font-semibold text-gray-700 mb-1">Фільтр за тегами</h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-1">{t('home.filters.tagsTitle')}</h3>
 
             {tags.map(tag => (
                 <label
@@ -33,7 +35,7 @@ export default function TagFilter({tags, selectedTags, onTagToggle, onClear}: Ta
                     onClick={onClear}
                     className="mt-2 text-sm text-amber-600 hover:text-amber-800 cursor-pointer text-left"
                 >
-                    Скинути фільтри
+                    {t('home.filters.tagsClear')}
                 </button>
             )}
         </div>

@@ -1,5 +1,6 @@
 import {useForm} from 'react-hook-form';
 import {Link, Navigate, useNavigate, useLocation} from 'react-router';
+import {useTranslation} from 'react-i18next';
 import {useAuth} from '../context/AuthContext';
 import type {LoginData} from '../types';
 import {AxiosError} from 'axios';
@@ -7,6 +8,7 @@ import UkraineMapBg from '../components/UkraineMapBg';
 
 function LoginPage() {
     const {login, isAuthenticated} = useAuth();
+    const {t} = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
     const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
@@ -26,9 +28,9 @@ function LoginPage() {
         } catch (err) {
             const axiosError = err as AxiosError;
             if (axiosError.response?.status === 401) {
-                setError('root', {message: 'Невірне ім\'я користувача або пароль. Якщо ви щойно зареєструвалися, перевірте пошту для підтвердження акаунту.'});
+                setError('root', {message: t('auth.invalidCredentials')});
             } else {
-                setError('root', {message: 'Не вдалося з\'єднатися з сервером'});
+                setError('root', {message: t('auth.connectionError')});
             }
         }
     };
@@ -51,29 +53,29 @@ function LoginPage() {
                     </div>
                     <div className="mt-2">
                         <h1 className="text-2xl font-bold text-amber-900 text-center">CultureMap</h1>
-                        <p className="text-sm text-amber-700/70 mt-1 text-center">Культурна спадщина України</p>
+                        <p className="text-sm text-amber-700/70 mt-1 text-center">{t('auth.tagline')}</p>
                     </div>
                 </div>
 
 
                 <div
                     className="bg-white/80 backdrop-blur rounded-2xl shadow-lg shadow-amber-900/5 border border-amber-100 p-8">
-                    <h2 className="text-xl font-semibold text-gray-800 text-center mb-5">Вхід</h2>
+                    <h2 className="text-xl font-semibold text-gray-800 text-center mb-5">{t('auth.loginTitle')}</h2>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div>
                             <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                                Ім'я користувача або email
+                                {t('auth.usernameOrEmail')}
                             </label>
                             <input
                                 id="username"
                                 type="text"
                                 autoComplete="username"
-                                placeholder="username або you@example.com"
+                                placeholder={t('auth.loginPlaceholder')}
                                 className={`w-full border rounded-lg px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-colors ${
                                     errors.username ? 'border-red-400' : 'border-gray-200'
                                 }`}
-                                {...register('username', {required: 'Це поле обов\'язкове'})}
+                                {...register('username', {required: t('auth.required')})}
                             />
                             {errors.username && (
                                 <p className="text-red-600 text-sm mt-1">{errors.username.message}</p>
@@ -82,7 +84,7 @@ function LoginPage() {
 
                         <div>
                             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                                Пароль
+                                {t('auth.password')}
                             </label>
                             <input
                                 id="password"
@@ -91,14 +93,14 @@ function LoginPage() {
                                 className={`w-full border rounded-lg px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-colors ${
                                     errors.password ? 'border-red-400' : 'border-gray-200'
                                 }`}
-                                {...register('password', {required: 'Це поле обов\'язкове'})}
+                                {...register('password', {required: t('auth.required')})}
                             />
                             {errors.password && (
                                 <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
                             )}
                             <div className="flex justify-end">
                                 <Link to="/forgot-password" className="text-sm text-amber-700 hover:text-amber-800 hover:underline">
-                                    Забули пароль?
+                                    {t('auth.forgotPassword')}
                                 </Link>
                             </div>
                         </div>
@@ -112,18 +114,18 @@ function LoginPage() {
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full bg-amber-600 text-white py-2.5 rounded-lg font-medium hover:bg-amber-700 active:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="w-full bg-amber-600 text-white py-2.5 rounded-lg font-medium hover:bg-amber-700 active:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                         >
-                            {isSubmitting ? 'Вхід...' : 'Увійти'}
+                            {isSubmitting ? t('auth.submittingLogin') : t('auth.submitLogin')}
                         </button>
                     </form>
 
                     <div className="mt-5 pt-4 border-t border-gray-100">
                         <p className="text-center text-sm text-gray-600">
-                            Немає акаунту?{' '}
+                            {t('auth.noAccount')}{' '}
                             <Link to="/register"
                                   className="text-amber-700 font-medium hover:text-amber-800 hover:underline">
-                                Зареєструватися
+                                {t('auth.registerNow')}
                             </Link>
                         </p>
                     </div>

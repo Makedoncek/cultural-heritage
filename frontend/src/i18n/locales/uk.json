@@ -29,7 +29,13 @@
     "haveAccount": "Вже маєте акаунт?",
     "resetPasswordTitle": "Скидання пароля",
     "verifyEmailTitle": "Підтвердження пошти",
-    "required": "Це поле обов'язкове"
+    "required": "Це поле обов'язкове",
+    "loginPlaceholder": "username або you@example.com",
+    "invalidCredentials": "Невірне ім'я користувача або пароль. Якщо ви щойно зареєструвалися, перевірте пошту для підтвердження акаунту.",
+    "connectionError": "Не вдалося з'єднатися з сервером",
+    "tagline": "Культурна спадщина України",
+    "registerNow": "Зареєструватися",
+    "loginNow": "Увійти"
   },
   "home": {
     "searchPlaceholder": "Пошук за назвою...",
@@ -41,7 +47,19 @@
     "loading": "Завантаження...",
     "loadError": "Не вдалося завантажити культурні об'єкти.",
     "retry": "Спробувати знову",
-    "details": "Детальніше"
+    "details": "Детальніше",
+    "filters": {
+      "typeTitle": "Тип об'єкта",
+      "typeAll": "Усі",
+      "typeMonuments": "Пам'ятки",
+      "typeEvents": "Події",
+      "eventStatusTitle": "Статус подій",
+      "eventStatusAll": "Усі події",
+      "eventStatusActive": "Активні зараз",
+      "eventStatusUpcoming": "Майбутні",
+      "tagsTitle": "Фільтр за тегами",
+      "tagsClear": "Скинути фільтри"
+    }
   },
   "object": {
     "moderationStatus": {
