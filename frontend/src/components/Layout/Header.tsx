@@ -1,12 +1,15 @@
 import {useState} from 'react';
 import {Link, NavLink} from 'react-router';
+import {useTranslation} from 'react-i18next';
 import {useAuth} from '../../context/AuthContext';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const linkClass = ({isActive}: { isActive: boolean }) =>
     isActive ? 'text-amber-700 font-semibold' : 'text-gray-700 hover:text-amber-700';
 
 export default function Header() {
     const {user, isAuthenticated, loading, logout} = useAuth();
+    const {t} = useTranslation();
     const [menuOpen, setMenuOpen] = useState(false);
 
     return (
@@ -27,28 +30,30 @@ export default function Header() {
                         <nav className="hidden md:flex items-center gap-4">
                             {isAuthenticated ? (
                                 <>
-                                    <NavLink to="/" end className={linkClass}>Карта</NavLink>
-                                    <NavLink to="/popular" className={linkClass}>Популярне</NavLink>
-                                    <NavLink to="/my-objects" className={linkClass}>Мої об'єкти</NavLink>
-                                    <NavLink to="/my-photos" className={linkClass}>Мої фото</NavLink>
-                                    <NavLink to="/favorites" className={linkClass}>Обране</NavLink>
-                                    <NavLink to="/favorite-authors" className={linkClass}>Підписки</NavLink>
-                                    <NavLink to="/objects/add" className={linkClass}>Додати об'єкт</NavLink>
+                                    <NavLink to="/" end className={linkClass}>{t('nav.map')}</NavLink>
+                                    <NavLink to="/popular" className={linkClass}>{t('nav.popular')}</NavLink>
+                                    <NavLink to="/my-objects" className={linkClass}>{t('nav.myObjects')}</NavLink>
+                                    <NavLink to="/my-photos" className={linkClass}>{t('nav.myPhotos')}</NavLink>
+                                    <NavLink to="/favorites" className={linkClass}>{t('nav.favorites')}</NavLink>
+                                    <NavLink to="/favorite-authors" className={linkClass}>{t('nav.subscriptions')}</NavLink>
+                                    <NavLink to="/objects/add" className={linkClass}>{t('nav.addObject')}</NavLink>
                                     <Link to={`/authors/${user?.username}`} className="text-amber-800 font-medium hover:text-amber-600">{user?.username}</Link>
+                                    <LanguageSwitcher/>
                                     <button
                                         onClick={logout}
-                                        className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors"
+                                        className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors cursor-pointer"
                                     >
-                                        Вийти
+                                        {t('nav.logout')}
                                     </button>
                                 </>
                             ) : (
                                 <>
-                                    <NavLink to="/popular" className={linkClass}>Популярне</NavLink>
-                                    <Link to="/login" className="border border-amber-600 text-amber-700 px-4 py-2 rounded-lg hover:bg-amber-50 transition-colors">Увійти</Link>
+                                    <NavLink to="/popular" className={linkClass}>{t('nav.popular')}</NavLink>
+                                    <LanguageSwitcher/>
+                                    <Link to="/login" className="border border-amber-600 text-amber-700 px-4 py-2 rounded-lg hover:bg-amber-50 transition-colors">{t('nav.login')}</Link>
                                     <Link to="/register"
                                           className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors">
-                                        Реєстрація
+                                        {t('nav.register')}
                                     </Link>
                                 </>
                             )}
@@ -57,7 +62,7 @@ export default function Header() {
                         <button
                             onClick={() => setMenuOpen(!menuOpen)}
                             className="md:hidden p-2 text-gray-600 hover:text-amber-700"
-                            aria-label="Меню"
+                            aria-label={t('nav.menu')}
                         >
                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                  strokeWidth={2}>
@@ -78,42 +83,46 @@ export default function Header() {
                     {isAuthenticated ? (
                         <>
                             <NavLink to="/" end className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>Карта</NavLink>
+                                     onClick={() => setMenuOpen(false)}>{t('nav.map')}</NavLink>
                             <NavLink to="/popular" className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>Популярне</NavLink>
+                                     onClick={() => setMenuOpen(false)}>{t('nav.popular')}</NavLink>
                             <NavLink to="/my-objects" className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>Мої об'єкти</NavLink>
+                                     onClick={() => setMenuOpen(false)}>{t('nav.myObjects')}</NavLink>
                             <NavLink to="/my-photos" className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>Мої фото</NavLink>
+                                     onClick={() => setMenuOpen(false)}>{t('nav.myPhotos')}</NavLink>
                             <NavLink to="/favorites" className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>Обране</NavLink>
+                                     onClick={() => setMenuOpen(false)}>{t('nav.favorites')}</NavLink>
                             <NavLink to="/favorite-authors" className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>Підписки</NavLink>
+                                     onClick={() => setMenuOpen(false)}>{t('nav.subscriptions')}</NavLink>
                             <NavLink to="/objects/add" className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>Додати об'єкт</NavLink>
-                            <div className="border-t border-gray-100 pt-3 flex items-center justify-between">
-                                <Link to={`/authors/${user?.username}`} className="text-amber-800 font-medium hover:text-amber-600" onClick={() => setMenuOpen(false)}>{user?.username}</Link>
+                                     onClick={() => setMenuOpen(false)}>{t('nav.addObject')}</NavLink>
+                            <div className="border-t border-gray-100 pt-3 flex items-center justify-between gap-2">
+                                <Link to={`/authors/${user?.username}`} className="text-amber-800 font-medium hover:text-amber-600 flex-1" onClick={() => setMenuOpen(false)}>{user?.username}</Link>
+                                <LanguageSwitcher/>
                                 <button
                                     onClick={() => {
                                         logout();
                                         setMenuOpen(false);
                                     }}
-                                    className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors"
+                                    className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors cursor-pointer"
                                 >
-                                    Вийти
+                                    {t('nav.logout')}
                                 </button>
                             </div>
                         </>
                     ) : (
                         <>
                             <NavLink to="/popular" className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>Популярне</NavLink>
+                                     onClick={() => setMenuOpen(false)}>{t('nav.popular')}</NavLink>
+                            <div className="flex items-center justify-between">
+                                <LanguageSwitcher/>
+                            </div>
                             <Link to="/login" className="border border-amber-600 text-amber-700 px-4 py-2 rounded-lg hover:bg-amber-50 transition-colors text-center"
-                                  onClick={() => setMenuOpen(false)}>Увійти</Link>
+                                  onClick={() => setMenuOpen(false)}>{t('nav.login')}</Link>
                             <Link to="/register"
                                   className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors text-center"
                                   onClick={() => setMenuOpen(false)}>
-                                Реєстрація
+                                {t('nav.register')}
                             </Link>
                         </>
                     )}
