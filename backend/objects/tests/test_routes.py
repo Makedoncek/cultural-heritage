@@ -106,7 +106,7 @@ class RouteFlowTests(APITestCase):
         self.assertIn('50', response.data['detail'])
 
     def test_copy_route_creates_draft_copy(self):
-        original = Route.objects.create(title='Original', description='desc', author=self.author, status='approved')
+        original = Route.objects.create(title='Original', description='desc', author=self.author, visibility='public', status='approved')
         original.tags.add(self.tag)
         RouteStop.objects.create(route=original, cultural_object=self.obj1, order=1, note='start')
         RouteStop.objects.create(route=original, cultural_object=self.obj2, order=2)
@@ -130,7 +130,7 @@ class RouteFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_archived_object_stop_marked_unavailable(self):
-        route = Route.objects.create(title='R', description='x', author=self.author, status='approved')
+        route = Route.objects.create(title='R', description='x', author=self.author, visibility='public', status='approved')
         RouteStop.objects.create(route=route, cultural_object=self.obj_archived, order=1)
 
         response = self.client.get(f'/api/routes/{route.pk}/')
@@ -138,7 +138,7 @@ class RouteFlowTests(APITestCase):
         self.assertTrue(response.data['stops'][0]['is_unavailable'])
 
     def test_gpx_export_returns_valid_xml(self):
-        route = Route.objects.create(title='Tour', description='x', author=self.author, status='approved')
+        route = Route.objects.create(title='Tour', description='x', author=self.author, visibility='public', status='approved')
         RouteStop.objects.create(route=route, cultural_object=self.obj1, order=1)
         RouteStop.objects.create(route=route, cultural_object=self.obj2, order=2)
 
@@ -151,7 +151,7 @@ class RouteFlowTests(APITestCase):
         self.assertIn('St Sophia', body)
 
     def test_kml_export_returns_valid_xml(self):
-        route = Route.objects.create(title='Tour', description='x', author=self.author, status='approved')
+        route = Route.objects.create(title='Tour', description='x', author=self.author, visibility='public', status='approved')
         RouteStop.objects.create(route=route, cultural_object=self.obj1, order=1)
         RouteStop.objects.create(route=route, cultural_object=self.obj2, order=2)
 
@@ -163,7 +163,10 @@ class RouteFlowTests(APITestCase):
         self.assertIn('Lutsk Castle', body)
 
     def test_submit_requires_at_least_two_stops(self):
-        route = Route.objects.create(title='Single', description='x', author=self.author, status='draft')
+        route = Route.objects.create(
+            title='Single', description='x', author=self.author,
+            visibility='public', status='draft',
+        )
         RouteStop.objects.create(route=route, cultural_object=self.obj1, order=1)
 
         self.client.force_authenticate(self.author)
@@ -171,7 +174,11 @@ class RouteFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_submit_changes_status_to_pending(self):
-        route = Route.objects.create(title='Ready', description='x', author=self.author, status='draft')
+        # Public route in draft can be submitted for moderation.
+        route = Route.objects.create(
+            title='Ready', description='x', author=self.author,
+            visibility='public', status='draft',
+        )
         RouteStop.objects.create(route=route, cultural_object=self.obj1, order=1)
         RouteStop.objects.create(route=route, cultural_object=self.obj2, order=2)
 
@@ -180,3 +187,31 @@ class RouteFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         route.refresh_from_db()
         self.assertEqual(route.status, 'pending')
+
+    def test_private_route_cannot_be_submitted(self):
+        route = Route.objects.create(
+            title='Private', description='x', author=self.author,
+            visibility='private', status='draft',
+        )
+        RouteStop.objects.create(route=route, cultural_object=self.obj1, order=1)
+        RouteStop.objects.create(route=route, cultural_object=self.obj2, order=2)
+        self.client.force_authenticate(self.author)
+        response = self.client.post(f'/api/routes/{route.pk}/submit/')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_switch_private_to_public_resets_to_draft(self):
+        # Previously approved public route → flipped to private → flipped back to public.
+        route = Route.objects.create(
+            title='Switched', description='x', author=self.author,
+            visibility='private', status='draft',
+        )
+        self.client.force_authenticate(self.author)
+        response = self.client.patch(
+            f'/api/routes/{route.pk}/',
+            {'title': 'Switched', 'description': 'x', 'visibility': 'public'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        route.refresh_from_db()
+        self.assertEqual(route.visibility, 'public')
+        self.assertEqual(route.status, 'draft')

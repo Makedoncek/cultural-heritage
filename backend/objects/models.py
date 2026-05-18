@@ -510,8 +510,18 @@ class Route(models.Model):
         APPROVED = 'approved', 'Опубліковано'
         ARCHIVED = 'archived', 'В архіві'
 
+    class Visibility(models.TextChoices):
+        PRIVATE = 'private', 'Особистий'
+        PUBLIC = 'public', 'Публічний'
+
     title = models.CharField(max_length=200)
     description = models.TextField(max_length=2000)
+    visibility = models.CharField(
+        max_length=10,
+        choices=Visibility.choices,
+        default=Visibility.PRIVATE,
+        help_text='Private — only author sees, no moderation. Public — visible to everyone after approval.',
+    )
     author = models.ForeignKey(
         User,
         related_name='routes',
@@ -538,9 +548,9 @@ class Route(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['status', '-created_at']),
+            models.Index(fields=['visibility', 'status', '-created_at']),
             models.Index(fields=['is_featured', '-created_at']),
-            models.Index(fields=['author', 'status']),
+            models.Index(fields=['author', 'visibility']),
         ]
         ordering = ['-created_at']
         verbose_name = _('Маршрут')

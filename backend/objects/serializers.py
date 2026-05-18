@@ -492,7 +492,7 @@ class RouteListSerializer(serializers.ModelSerializer):
         model = Route
         fields = [
             'id', 'title', 'description',
-            'status', 'is_featured',
+            'status', 'visibility', 'is_featured',
             'cover_photo', 'estimated_duration_minutes',
             'author_name', 'tags', 'stops_count',
             'created_at', 'updated_at',
@@ -519,6 +519,6 @@ class RouteWriteSerializer(serializers.ModelSerializer):
         from .models import Route
         model = Route
         fields = [
-            'title', 'description',
+            'title', 'description', 'visibility',
             'tags', 'cover_photo', 'estimated_duration_minutes',
         ]

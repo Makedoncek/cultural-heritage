@@ -18,6 +18,16 @@ const STATUS_LABEL: Record<RouteStatus, string> = {
     archived: 'Архів',
 };
 
+const VISIBILITY_BADGE = {
+    private: 'bg-gray-100 text-gray-700 dark:bg-stone-800 dark:text-stone-300',
+    public: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+} as const;
+
+const VISIBILITY_LABEL = {
+    private: '🔒 Особистий',
+    public: '🌐 Публічний',
+} as const;
+
 export default function MyRoutesPage() {
     const {t, i18n} = useTranslation();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
@@ -84,13 +94,20 @@ export default function MyRoutesPage() {
                                 <div className="flex items-start justify-between gap-2 mb-1">
                                     <Link
                                         to={`/routes/${r.id}`}
-                                        className="text-gray-900 dark:text-stone-100 font-medium hover:text-amber-700 dark:hover:text-amber-300"
+                                        className="text-gray-900 dark:text-stone-100 font-medium hover:text-amber-700 dark:hover:text-amber-300 flex-1 min-w-0"
                                     >
                                         {r.title}
                                     </Link>
-                                    <span className={`px-2 py-0.5 text-xs font-medium rounded shrink-0 ${STATUS_BADGE[r.status]}`}>
-                                        {STATUS_LABEL[r.status]}
-                                    </span>
+                                    <div className="flex gap-1 shrink-0">
+                                        <span className={`px-2 py-0.5 text-xs font-medium rounded ${VISIBILITY_BADGE[r.visibility]}`}>
+                                            {VISIBILITY_LABEL[r.visibility]}
+                                        </span>
+                                        {r.visibility === 'public' && (
+                                            <span className={`px-2 py-0.5 text-xs font-medium rounded ${STATUS_BADGE[r.status]}`}>
+                                                {STATUS_LABEL[r.status]}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                                 <p className="text-xs text-gray-500 dark:text-stone-400">
                                     {r.stops_count} зупинок · оновлено {new Date(r.updated_at).toLocaleDateString(dateLocale)}

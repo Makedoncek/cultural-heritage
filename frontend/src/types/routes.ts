@@ -1,6 +1,7 @@
 import type {Tag} from './index';
 
 export type RouteStatus = 'draft' | 'pending' | 'approved' | 'archived';
+export type RouteVisibility = 'private' | 'public';
 
 export interface RouteStop {
     id: number;
@@ -20,6 +21,7 @@ export interface RouteListItem {
     title: string;
     description: string;
     status: RouteStatus;
+    visibility: RouteVisibility;
     is_featured: boolean;
     cover_photo: string;
     estimated_duration_minutes: number | null;
@@ -38,6 +40,7 @@ export interface RouteDetail extends RouteListItem {
 export interface RouteWritePayload {
     title: string;
     description: string;
+    visibility?: RouteVisibility;
     tags?: number[];
     cover_photo?: string;
     estimated_duration_minutes?: number | null;

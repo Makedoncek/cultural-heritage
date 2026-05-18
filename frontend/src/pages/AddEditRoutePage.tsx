@@ -8,7 +8,7 @@ import {useTranslation} from 'react-i18next';
 import {routesService} from '../services/routes.service';
 import {objectsService} from '../services/objects.service';
 import {tagsService} from '../services/tags.service';
-import type {RouteDetail, RouteStop} from '../types/routes';
+import type {RouteDetail, RouteStop, RouteVisibility} from '../types/routes';
 import type {CulturalObject, Tag} from '../types';
 
 function SortableStopItem({stop, onRemove}: {stop: RouteStop; onRemove: () => void}) {
@@ -57,6 +57,7 @@ export default function AddEditRoutePage() {
     const [route, setRoute] = useState<RouteDetail | null>(null);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [visibility, setVisibility] = useState<RouteVisibility>('private');
     const [durationHours, setDurationHours] = useState<string>('');
     const [selectedTags, setSelectedTags] = useState<number[]>([]);
     const [stops, setStops] = useState<RouteStop[]>([]);
@@ -80,6 +81,7 @@ export default function AddEditRoutePage() {
                 setRoute(r);
                 setTitle(r.title);
                 setDescription(r.description);
+                setVisibility(r.visibility);
                 setDurationHours(r.estimated_duration_minutes ? String(Math.round(r.estimated_duration_minutes / 60 * 10) / 10) : '');
                 setSelectedTags(r.tags.map(t => t.id));
                 setStops(r.stops);
@@ -96,6 +98,7 @@ export default function AddEditRoutePage() {
         const payload = {
             title: title.trim(),
             description: description.trim(),
+            visibility,
             tags: selectedTags,
             estimated_duration_minutes: durationHours ? Math.round(parseFloat(durationHours) * 60) : null,
         };
@@ -225,6 +228,53 @@ export default function AddEditRoutePage() {
                             maxLength={200}
                             className="w-full bg-white dark:bg-stone-800 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-stone-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400"
                         />
+                    </div>
+
+                    {/* Visibility */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-2">
+                            Тип маршруту
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setVisibility('private')}
+                                className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer text-left ${
+                                    visibility === 'private'
+                                        ? 'bg-amber-100 dark:bg-amber-900/40 border-amber-400 dark:border-amber-600 text-amber-800 dark:text-amber-300'
+                                        : 'bg-white dark:bg-stone-800 border-gray-200 dark:border-stone-700 text-gray-600 dark:text-stone-300 hover:border-gray-400 dark:hover:border-stone-500'
+                                }`}
+                            >
+                                🔒 Особистий
+                                <span className="block text-xs font-normal mt-0.5 opacity-80">
+                                    Тільки для мене, без модерації
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setVisibility('public')}
+                                className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer text-left ${
+                                    visibility === 'public'
+                                        ? 'bg-amber-100 dark:bg-amber-900/40 border-amber-400 dark:border-amber-600 text-amber-800 dark:text-amber-300'
+                                        : 'bg-white dark:bg-stone-800 border-gray-200 dark:border-stone-700 text-gray-600 dark:text-stone-300 hover:border-gray-400 dark:hover:border-stone-500'
+                                }`}
+                            >
+                                🌐 Публічний
+                                <span className="block text-xs font-normal mt-0.5 opacity-80">
+                                    Для всіх, потребує модерації
+                                </span>
+                            </button>
+                        </div>
+                        {isEdit && route && route.visibility === 'public' && visibility === 'private' && (
+                            <p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
+                                ⚠ При зміні на «Особистий» маршрут буде прихований з публічного каталогу.
+                            </p>
+                        )}
+                        {isEdit && route && route.visibility === 'private' && visibility === 'public' && (
+                            <p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
+                                ℹ При зміні на «Публічний» маршрут піде у чернетки і потребуватиме модерації.
+                            </p>
+                        )}
                     </div>
 
                     {/* Description */}

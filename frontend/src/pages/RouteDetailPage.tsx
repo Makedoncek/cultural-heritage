@@ -130,11 +130,20 @@ export default function RouteDetailPage() {
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">
                         🗺 {route.title}
                     </h1>
-                    {route.status !== 'approved' && (
-                        <span className="px-2 py-1 text-xs font-medium rounded bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">
-                            {route.status === 'draft' ? 'Чернетка' : route.status === 'pending' ? 'На модерації' : 'В архіві'}
+                    <div className="flex gap-1.5">
+                        <span className={`px-2 py-1 text-xs font-medium rounded ${
+                            route.visibility === 'public'
+                                ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
+                                : 'bg-gray-100 dark:bg-stone-800 text-gray-700 dark:text-stone-300'
+                        }`}>
+                            {route.visibility === 'public' ? '🌐 Публічний' : '🔒 Особистий'}
                         </span>
-                    )}
+                        {route.visibility === 'public' && route.status !== 'approved' && (
+                            <span className="px-2 py-1 text-xs font-medium rounded bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">
+                                {route.status === 'draft' ? 'Чернетка' : route.status === 'pending' ? 'На модерації' : 'В архіві'}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 <p className="text-sm text-gray-500 dark:text-stone-400 mb-3">
@@ -172,7 +181,7 @@ export default function RouteDetailPage() {
                             📋 Скопіювати в мої
                         </button>
                     )}
-                    {isOwner && route.status === 'draft' && (
+                    {isOwner && route.visibility === 'public' && route.status === 'draft' && (
                         <button
                             onClick={handleSubmit}
                             disabled={actionLoading || route.stops_count < 2}

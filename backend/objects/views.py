@@ -1476,7 +1476,8 @@ class RouteViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         if self.action == 'list':
-            qs = qs.filter(status=Route.Status.APPROVED)
+            # Public catalog: only public routes that have been approved.
+            qs = qs.filter(visibility=Route.Visibility.PUBLIC, status=Route.Status.APPROVED)
             if self.request.query_params.get('is_featured') == 'true':
                 qs = qs.filter(is_featured=True)
             tag_ids = self.request.query_params.get('tags')
@@ -1490,8 +1491,12 @@ class RouteViewSet(viewsets.ModelViewSet):
             if user.is_authenticated:
                 if user.is_staff:
                     return qs
-                return qs.filter(Q(status=Route.Status.APPROVED) | Q(author=user))
-            return qs.filter(status=Route.Status.APPROVED)
+                # Author sees own routes (any visibility); others only public+approved.
+                return qs.filter(
+                    Q(author=user) |
+                    Q(visibility=Route.Visibility.PUBLIC, status=Route.Status.APPROVED)
+                )
+            return qs.filter(visibility=Route.Visibility.PUBLIC, status=Route.Status.APPROVED)
 
         return qs
 
@@ -1518,15 +1523,20 @@ class RouteViewSet(viewsets.ModelViewSet):
         )
 
     def update(self, request, *args, **kwargs):
+        from .models import Route
         instance = self.get_object()
         if instance.author_id != request.user.id and not request.user.is_staff:
             return Response({'detail': _('Не можна редагувати чужий маршрут.')},
                             status=status.HTTP_403_FORBIDDEN)
-        # Same response-as-detail trick: ensure frontend always receives full payload.
         from .serializers import RouteDetailSerializer
         partial = kwargs.pop('partial', False)
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
+        # If user switches private→public, send the route back to draft so it goes through moderation.
+        new_visibility = serializer.validated_data.get('visibility')
+        if (new_visibility == Route.Visibility.PUBLIC
+                and instance.visibility == Route.Visibility.PRIVATE):
+            serializer.validated_data['status'] = Route.Status.DRAFT
         self.perform_update(serializer)
         return Response(
             RouteDetailSerializer(serializer.instance, context={'request': request}).data,
@@ -1550,6 +1560,11 @@ class RouteViewSet(viewsets.ModelViewSet):
         if route.author_id != request.user.id:
             return Response({'detail': _('Тільки автор може подати маршрут на модерацію.')},
                             status=status.HTTP_403_FORBIDDEN)
+        if route.visibility != Route.Visibility.PUBLIC:
+            return Response(
+                {'detail': _('Особистий маршрут не потребує модерації. Зробіть його публічним, щоб подати.')},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if route.status != Route.Status.DRAFT:
             return Response({'detail': _('Подати на модерацію можна лише чернетку.')},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -1565,13 +1580,16 @@ class RouteViewSet(viewsets.ModelViewSet):
         from .models import Route, RouteStop
         from .serializers import RouteDetailSerializer
         original = self.get_object()
-        if original.status != Route.Status.APPROVED:
+        # Can copy only public+approved routes (private ones aren't shareable by design).
+        if original.visibility != Route.Visibility.PUBLIC or original.status != Route.Status.APPROVED:
             return Response({'detail': _('Можна копіювати тільки опубліковані маршрути.')},
                             status=status.HTTP_403_FORBIDDEN)
         copy = Route.objects.create(
             title=f'{original.title} (копія)',
             description=original.description,
             author=request.user,
+            # Copy defaults to PRIVATE — user explicitly opts in to publish.
+            visibility=Route.Visibility.PRIVATE,
             status=Route.Status.DRAFT,
             cover_photo=original.cover_photo,
             estimated_duration_minutes=original.estimated_duration_minutes,
