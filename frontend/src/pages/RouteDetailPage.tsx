@@ -33,7 +33,8 @@ function FitToStops({coords}: {coords: [number, number][]}) {
 }
 
 export default function RouteDetailPage() {
-    const {slug} = useParams<{slug: string}>();
+    const {id} = useParams<{id: string}>();
+    const routeId = id ? Number(id) : null;
     const navigate = useNavigate();
     const {t, i18n} = useTranslation();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
@@ -47,18 +48,18 @@ export default function RouteDetailPage() {
     const canEdit = isOwner || user?.is_staff;
 
     useEffect(() => {
-        if (!slug) return;
-        routesService.detail(slug)
+        if (routeId == null) return;
+        routesService.detail(routeId)
             .then(setRoute)
             .catch(() => setError('Не вдалося завантажити маршрут.'))
             .finally(() => setLoading(false));
-    }, [slug]);
+    }, [routeId]);
 
     const handleSubmit = async () => {
         if (!route) return;
         setActionLoading(true);
         try {
-            const updated = await routesService.submit(route.slug);
+            const updated = await routesService.submit(route.id);
             setRoute(updated);
             toast.success('Маршрут надіслано на модерацію');
         } catch (e) {
@@ -73,9 +74,9 @@ export default function RouteDetailPage() {
         if (!route) return;
         setActionLoading(true);
         try {
-            const copy = await routesService.copy(route.slug);
+            const copy = await routesService.copy(route.id);
             toast.success('Скопійовано у ваші чернетки');
-            navigate(`/routes/${copy.slug}/edit`);
+            navigate(`/routes/${copy.id}/edit`);
         } catch {
             toast.error('Не вдалося скопіювати');
         } finally {
@@ -88,7 +89,7 @@ export default function RouteDetailPage() {
         if (!confirm('Архівувати цей маршрут?')) return;
         setActionLoading(true);
         try {
-            await routesService.archive(route.slug);
+            await routesService.archive(route.id);
             toast.success('Маршрут архівовано');
             navigate('/my-routes');
         } catch {
@@ -184,7 +185,7 @@ export default function RouteDetailPage() {
                     {canEdit && (
                         <>
                             <Link
-                                to={`/routes/${route.slug}/edit`}
+                                to={`/routes/${route.id}/edit`}
                                 className="px-3 py-1.5 text-sm bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg"
                             >
                                 Редагувати
@@ -199,14 +200,14 @@ export default function RouteDetailPage() {
                         </>
                     )}
                     <a
-                        href={routesService.exportUrl(route.slug, 'gpx')}
+                        href={routesService.exportUrl(route.id, 'gpx')}
                         className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-stone-800 text-gray-700 dark:text-stone-200 border border-gray-300 dark:border-stone-600 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-700"
                         title="GPS Exchange Format — для Garmin, OsmAnd, Maps.me, Strava"
                     >
                         📥 GPX
                     </a>
                     <a
-                        href={routesService.exportUrl(route.slug, 'kml')}
+                        href={routesService.exportUrl(route.id, 'kml')}
                         className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-stone-800 text-gray-700 dark:text-stone-200 border border-gray-300 dark:border-stone-600 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-700"
                         title="Keyhole Markup Language — для Google Earth, Google My Maps"
                     >

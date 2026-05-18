@@ -511,7 +511,6 @@ class Route(models.Model):
         ARCHIVED = 'archived', 'В архіві'
 
     title = models.CharField(max_length=200)
-    slug = models.SlugField(max_length=220, unique=True, blank=True)
     description = models.TextField(max_length=2000)
     author = models.ForeignKey(
         User,
@@ -546,17 +545,6 @@ class Route(models.Model):
         ordering = ['-created_at']
         verbose_name = _('Маршрут')
         verbose_name_plural = _('Маршрути')
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            base_slug = slugify(self.title) or 'route'
-            slug = base_slug
-            i = 1
-            while Route.objects.filter(slug=slug).exclude(pk=self.pk).exists():
-                i += 1
-                slug = f'{base_slug}-{i}'
-            self.slug = slug
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.title} ({self.status})'

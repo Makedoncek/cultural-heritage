@@ -450,7 +450,6 @@ class RouteAdmin(SortableAdminBase, admin.ModelAdmin):
     list_display = ['title', 'author', 'status', 'stops_count', 'is_featured', 'created_at']
     list_filter = ['status', 'is_featured', 'created_at']
     search_fields = ['title', 'description', 'author__username']
-    prepopulated_fields = {'slug': ('title',)}
     raw_id_fields = ['author', 'copied_from']
     filter_horizontal = ['tags']
     readonly_fields = ['created_at', 'updated_at']
@@ -458,7 +457,7 @@ class RouteAdmin(SortableAdminBase, admin.ModelAdmin):
     actions = ['approve_routes', 'archive_routes']
 
     fieldsets = (
-        ('Основна інформація', {'fields': ('title', 'slug', 'description', 'status')}),
+        ('Основна інформація', {'fields': ('title', 'description', 'status')}),
         ('Метадані', {'fields': ('author', 'tags', 'is_featured', 'cover_photo',
                                   'estimated_duration_minutes', 'copied_from')}),
         ('Дати', {'fields': ('created_at', 'updated_at')}),

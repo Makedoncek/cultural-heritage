@@ -57,7 +57,7 @@ function App() {
                 <Route path="/authors/:username" element={<AuthorProfilePage/>}/>
                 <Route path="/authors/:username/passport" element={<PublicPassportPage/>}/>
                 <Route path="/routes" element={<RoutesListPage/>}/>
-                <Route path="/routes/:slug" element={<RouteDetailPage/>}/>
+                <Route path="/routes/:id" element={<RouteDetailPage/>}/>
                 <Route element={<RequireAuth/>}>
                     <Route path="/favorite-authors" element={<FavoriteAuthorsPage/>}/>
                     <Route path="/objects/add" element={<AddObjectPage/>}/>
@@ -69,7 +69,7 @@ function App() {
                     <Route path="/passport" element={<CulturalPassportPage/>}/>
                     <Route path="/my-routes" element={<MyRoutesPage/>}/>
                     <Route path="/routes/add" element={<AddEditRoutePage/>}/>
-                    <Route path="/routes/:slug/edit" element={<AddEditRoutePage/>}/>
+                    <Route path="/routes/:id/edit" element={<AddEditRoutePage/>}/>
                     <Route path="/favorites" element={<FavoritesPage/>}/>
                 </Route>
             </Route>

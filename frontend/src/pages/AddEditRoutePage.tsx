@@ -48,8 +48,9 @@ function SortableStopItem({stop, onRemove}: {stop: RouteStop; onRemove: () => vo
 }
 
 export default function AddEditRoutePage() {
-    const {slug} = useParams<{slug: string}>();
-    const isEdit = !!slug;
+    const {id} = useParams<{id: string}>();
+    const routeId = id ? Number(id) : null;
+    const isEdit = routeId !== null;
     const navigate = useNavigate();
     const {t} = useTranslation();
 
@@ -73,8 +74,8 @@ export default function AddEditRoutePage() {
     }, []);
 
     useEffect(() => {
-        if (!isEdit || !slug) return;
-        routesService.detail(slug)
+        if (!isEdit || routeId == null) return;
+        routesService.detail(routeId)
             .then(r => {
                 setRoute(r);
                 setTitle(r.title);
@@ -85,7 +86,7 @@ export default function AddEditRoutePage() {
             })
             .catch(() => toast.error('Не вдалося завантажити маршрут'))
             .finally(() => setLoading(false));
-    }, [isEdit, slug]);
+    }, [isEdit, routeId]);
 
     const handleSaveBasics = async (): Promise<RouteDetail | null> => {
         if (!title.trim() || !description.trim()) {
@@ -100,7 +101,7 @@ export default function AddEditRoutePage() {
         };
         try {
             if (isEdit && route) {
-                return await routesService.update(route.slug, payload);
+                return await routesService.update(route.id, payload);
             }
             return await routesService.create(payload);
         } catch (e) {
@@ -117,7 +118,7 @@ export default function AddEditRoutePage() {
         if (r) {
             toast.success('Збережено');
             if (!isEdit) {
-                navigate(`/routes/${r.slug}/edit`, {replace: true});
+                navigate(`/routes/${r.id}/edit`, {replace: true});
             } else {
                 setRoute(r);
             }
@@ -131,7 +132,7 @@ export default function AddEditRoutePage() {
         }
         setSearching(true);
         try {
-            const res = await objectsService.list({search: search.trim()});
+            const res = await objectsService.getAll({search: search.trim()});
             const usedIds = new Set(stops.map(s => s.object_id));
             setSearchResults(res.results.filter(o => !usedIds.has(o.id)).slice(0, 8));
         } catch {
@@ -148,10 +149,10 @@ export default function AddEditRoutePage() {
             currentRoute = await handleSaveBasics();
             if (!currentRoute) return;
             setRoute(currentRoute);
-            navigate(`/routes/${currentRoute.slug}/edit`, {replace: true});
+            navigate(`/routes/${currentRoute.id}/edit`, {replace: true});
         }
         try {
-            const newStop = await routesService.addStop(currentRoute.slug, {cultural_object: objectId});
+            const newStop = await routesService.addStop(currentRoute.id, {cultural_object: objectId});
             setStops(prev => [...prev, newStop]);
             setSearch('');
             setSearchResults([]);
@@ -166,7 +167,7 @@ export default function AddEditRoutePage() {
         if (!route) return;
         if (!confirm('Видалити цю зупинку?')) return;
         try {
-            await routesService.removeStop(route.slug, stopId);
+            await routesService.removeStop(route.id, stopId);
             setStops(prev => prev.filter(s => s.id !== stopId).map((s, i) => ({...s, order: i + 1})));
             toast.success('Видалено');
         } catch {
@@ -182,7 +183,7 @@ export default function AddEditRoutePage() {
         const reordered = arrayMove(stops, oldIdx, newIdx).map((s, i) => ({...s, order: i + 1}));
         setStops(reordered);
         try {
-            await routesService.reorder(route.slug, reordered.map(s => ({id: s.id, order: s.order})));
+            await routesService.reorder(route.id, reordered.map(s => ({id: s.id, order: s.order})));
         } catch {
             toast.error('Не вдалося зберегти порядок');
         }
@@ -203,7 +204,7 @@ export default function AddEditRoutePage() {
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
-                <Link to={isEdit && route ? `/routes/${route.slug}` : '/my-routes'}
+                <Link to={isEdit && route ? `/routes/${route.id}` : '/my-routes'}
                       className="text-sm text-amber-700 dark:text-amber-400 hover:underline mb-2 inline-block">
                     ← Назад
                 </Link>

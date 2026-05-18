@@ -17,7 +17,6 @@ export interface RouteStop {
 
 export interface RouteListItem {
     id: number;
-    slug: string;
     title: string;
     description: string;
     status: RouteStatus;
@@ -33,7 +32,7 @@ export interface RouteListItem {
 
 export interface RouteDetail extends RouteListItem {
     stops: RouteStop[];
-    copied_from: string | null;
+    copied_from: number | null;
 }
 
 export interface RouteWritePayload {

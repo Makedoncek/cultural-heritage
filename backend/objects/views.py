@@ -1460,7 +1460,7 @@ class RouteViewSet(viewsets.ModelViewSet):
       - public list: only approved routes
       - draft/pending visible to author + admin
     """
-    lookup_field = 'slug'
+    # Default lookup_field='pk' — routes are identified by numeric ID.
 
     def get_serializer_class(self):
         from .serializers import RouteListSerializer, RouteDetailSerializer, RouteWriteSerializer
@@ -1505,12 +1505,32 @@ class RouteViewSet(viewsets.ModelViewSet):
         from .models import Route
         serializer.save(author=self.request.user, status=Route.Status.DRAFT)
 
+    def create(self, request, *args, **kwargs):
+        # Use write serializer for validation, detail serializer for the response
+        # so the frontend immediately gets `id`, `status`, etc.
+        from .serializers import RouteDetailSerializer
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(
+            RouteDetailSerializer(serializer.instance, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         if instance.author_id != request.user.id and not request.user.is_staff:
             return Response({'detail': _('Не можна редагувати чужий маршрут.')},
                             status=status.HTTP_403_FORBIDDEN)
-        return super().update(request, *args, **kwargs)
+        # Same response-as-detail trick: ensure frontend always receives full payload.
+        from .serializers import RouteDetailSerializer
+        partial = kwargs.pop('partial', False)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(
+            RouteDetailSerializer(serializer.instance, context={'request': request}).data,
+        )
 
     def destroy(self, request, *args, **kwargs):
         from .models import Route
@@ -1523,7 +1543,7 @@ class RouteViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post'])
-    def submit(self, request, slug=None):
+    def submit(self, request, pk=None):
         from .models import Route
         from .serializers import RouteDetailSerializer
         route = self.get_object()
@@ -1541,7 +1561,7 @@ class RouteViewSet(viewsets.ModelViewSet):
         return Response(RouteDetailSerializer(route, context={'request': request}).data)
 
     @action(detail=True, methods=['post'])
-    def copy(self, request, slug=None):
+    def copy(self, request, pk=None):
         from .models import Route, RouteStop
         from .serializers import RouteDetailSerializer
         original = self.get_object()
@@ -1571,7 +1591,7 @@ class RouteViewSet(viewsets.ModelViewSet):
         )
 
     @action(detail=True, methods=['post'], url_path='stops')
-    def add_stop(self, request, slug=None):
+    def add_stop(self, request, pk=None):
         from .models import RouteStop
         from .serializers import RouteStopSerializer
         route = self.get_object()
@@ -1604,7 +1624,7 @@ class RouteViewSet(viewsets.ModelViewSet):
         return Response(RouteStopSerializer(stop).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'], url_path='reorder')
-    def reorder(self, request, slug=None):
+    def reorder(self, request, pk=None):
         from .models import RouteStop
         route = self.get_object()
         if route.author_id != request.user.id and not request.user.is_staff:
@@ -1626,7 +1646,7 @@ class RouteViewSet(viewsets.ModelViewSet):
         return Response({'detail': 'ok'})
 
     @action(detail=True, methods=['delete'], url_path=r'stops/(?P<stop_pk>\d+)')
-    def remove_stop(self, request, slug=None, stop_pk=None):
+    def remove_stop(self, request, pk=None, stop_pk=None):
         from .models import RouteStop
         route = self.get_object()
         if route.author_id != request.user.id and not request.user.is_staff:
@@ -1640,7 +1660,7 @@ class RouteViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['get'], url_path='export')
-    def export(self, request, slug=None):
+    def export(self, request, pk=None):
         from .services.route_export import export_route_as_gpx, export_route_as_kml
         from django.http import HttpResponse
         route = self.get_object()
@@ -1657,7 +1677,9 @@ class RouteViewSet(viewsets.ModelViewSet):
             return Response({'detail': _('Підтримувані формати: gpx, kml.')},
                             status=status.HTTP_400_BAD_REQUEST)
         response = HttpResponse(content, content_type=content_type)
-        response['Content-Disposition'] = f'attachment; filename="{route.slug}.{ext}"'
+        from django.utils.text import slugify
+        filename = slugify(route.title) or f'route-{route.pk}'
+        response['Content-Disposition'] = f'attachment; filename="{filename}.{ext}"'
         return response
 
 

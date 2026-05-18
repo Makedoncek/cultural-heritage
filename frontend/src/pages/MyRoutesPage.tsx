@@ -83,7 +83,7 @@ export default function MyRoutesPage() {
                             >
                                 <div className="flex items-start justify-between gap-2 mb-1">
                                     <Link
-                                        to={`/routes/${r.slug}`}
+                                        to={`/routes/${r.id}`}
                                         className="text-gray-900 dark:text-stone-100 font-medium hover:text-amber-700 dark:hover:text-amber-300"
                                     >
                                         {r.title}
@@ -97,13 +97,13 @@ export default function MyRoutesPage() {
                                 </p>
                                 <div className="flex gap-2 mt-2 text-xs">
                                     <Link
-                                        to={`/routes/${r.slug}/edit`}
+                                        to={`/routes/${r.id}/edit`}
                                         className="text-amber-700 dark:text-amber-400 hover:underline"
                                     >
                                         Редагувати
                                     </Link>
                                     <Link
-                                        to={`/routes/${r.slug}`}
+                                        to={`/routes/${r.id}`}
                                         className="text-amber-700 dark:text-amber-400 hover:underline"
                                     >
                                         Переглянути

@@ -491,7 +491,7 @@ class RouteListSerializer(serializers.ModelSerializer):
         from .models import Route
         model = Route
         fields = [
-            'id', 'slug', 'title', 'description',
+            'id', 'title', 'description',
             'status', 'is_featured',
             'cover_photo', 'estimated_duration_minutes',
             'author_name', 'tags', 'stops_count',
@@ -505,7 +505,7 @@ class RouteListSerializer(serializers.ModelSerializer):
 
 class RouteDetailSerializer(RouteListSerializer):
     stops = RouteStopSerializer(many=True, read_only=True)
-    copied_from = serializers.SlugRelatedField(slug_field='slug', read_only=True)
+    copied_from = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta(RouteListSerializer.Meta):
         fields = list(RouteListSerializer.Meta.fields) + ['stops', 'copied_from']

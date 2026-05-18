@@ -18,8 +18,8 @@ export const routesService = {
         return Array.isArray(data) ? data : (data.results ?? []);
     },
 
-    async detail(slug: string): Promise<RouteDetail> {
-        const {data} = await api.get<RouteDetail>(`/routes/${slug}/`);
+    async detail(id: number): Promise<RouteDetail> {
+        const {data} = await api.get<RouteDetail>(`/routes/${id}/`);
         return data;
     },
 
@@ -28,36 +28,36 @@ export const routesService = {
         return data;
     },
 
-    async update(slug: string, payload: Partial<RouteWritePayload>): Promise<RouteDetail> {
-        const {data} = await api.patch<RouteDetail>(`/routes/${slug}/`, payload);
+    async update(id: number, payload: Partial<RouteWritePayload>): Promise<RouteDetail> {
+        const {data} = await api.patch<RouteDetail>(`/routes/${id}/`, payload);
         return data;
     },
 
-    async archive(slug: string): Promise<void> {
-        await api.delete(`/routes/${slug}/`);
+    async archive(id: number): Promise<void> {
+        await api.delete(`/routes/${id}/`);
     },
 
-    async submit(slug: string): Promise<RouteDetail> {
-        const {data} = await api.post<RouteDetail>(`/routes/${slug}/submit/`);
+    async submit(id: number): Promise<RouteDetail> {
+        const {data} = await api.post<RouteDetail>(`/routes/${id}/submit/`);
         return data;
     },
 
-    async copy(slug: string): Promise<RouteDetail> {
-        const {data} = await api.post<RouteDetail>(`/routes/${slug}/copy/`);
+    async copy(id: number): Promise<RouteDetail> {
+        const {data} = await api.post<RouteDetail>(`/routes/${id}/copy/`);
         return data;
     },
 
-    async addStop(slug: string, payload: {cultural_object: number; note?: string}): Promise<RouteStop> {
-        const {data} = await api.post<RouteStop>(`/routes/${slug}/stops/`, payload);
+    async addStop(id: number, payload: {cultural_object: number; note?: string}): Promise<RouteStop> {
+        const {data} = await api.post<RouteStop>(`/routes/${id}/stops/`, payload);
         return data;
     },
 
-    async removeStop(slug: string, stopId: number): Promise<void> {
-        await api.delete(`/routes/${slug}/stops/${stopId}/`);
+    async removeStop(id: number, stopId: number): Promise<void> {
+        await api.delete(`/routes/${id}/stops/${stopId}/`);
     },
 
-    async reorder(slug: string, items: ReorderItem[]): Promise<void> {
-        await api.post(`/routes/${slug}/reorder/`, {order: items});
+    async reorder(id: number, items: ReorderItem[]): Promise<void> {
+        await api.post(`/routes/${id}/reorder/`, {order: items});
     },
 
     async listMine(status?: RouteStatus): Promise<RouteListItem[]> {
@@ -67,8 +67,8 @@ export const routesService = {
         return data;
     },
 
-    exportUrl(slug: string, format: 'gpx' | 'kml'): string {
+    exportUrl(id: number, format: 'gpx' | 'kml'): string {
         const base = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000/api';
-        return `${base}/routes/${slug}/export/?fmt=${format}`;
+        return `${base}/routes/${id}/export/?fmt=${format}`;
     },
 };

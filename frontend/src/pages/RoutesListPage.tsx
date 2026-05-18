@@ -82,7 +82,7 @@ export default function RoutesListPage() {
                         {routes.map(r => (
                             <Link
                                 key={r.id}
-                                to={`/routes/${r.slug}`}
+                                to={`/routes/${r.id}`}
                                 className="block border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg overflow-hidden hover:border-amber-400 dark:hover:border-amber-500 transition-colors"
                             >
                                 {r.cover_photo ? (
