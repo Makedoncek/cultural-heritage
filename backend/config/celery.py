@@ -14,4 +14,8 @@ app.conf.beat_schedule = {
         'task': 'objects.tasks.cleanup_rejected_photos',
         'schedule': crontab(hour=3, minute=0),
     },
+    'cleanup-processed-inaccuracy-reports-weekly': {
+        'task': 'objects.tasks.cleanup_processed_inaccuracy_reports',
+        'schedule': crontab(hour=4, minute=0, day_of_week=1),
+    },
 }

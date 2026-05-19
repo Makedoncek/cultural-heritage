@@ -3,8 +3,12 @@ import logging
 from celery import shared_task
 from django.utils import timezone
 
+from datetime import timedelta
+
 from . import cloudinary_service
-from .models import ObjectPhoto
+from .models import InaccuracyReport, ObjectPhoto
+
+INACCURACY_REPORT_RETENTION_DAYS = 30
 
 logger = logging.getLogger(__name__)
 
@@ -52,4 +56,22 @@ def cleanup_rejected_photos():
             continue
         deleted_count += 1
     logger.info(f'cleanup_rejected_photos: deleted {deleted_count} photos')
+    return deleted_count
+
+
+@shared_task
+def cleanup_processed_inaccuracy_reports():
+    """Видаляє repords зі статусом resolved/dismissed, оброблені понад
+    INACCURACY_REPORT_RETENTION_DAYS днів тому.
+
+    Залишаємо у БД лише pending + свіжо-оброблені (≤ retention) — щоб адмін
+    бачив нещодавні рішення, але не накопичував архів вирішених проблем.
+    """
+    cutoff = timezone.now() - timedelta(days=INACCURACY_REPORT_RETENTION_DAYS)
+    expired = InaccuracyReport.objects.filter(
+        status__in=[InaccuracyReport.Status.RESOLVED, InaccuracyReport.Status.DISMISSED],
+        resolved_at__lte=cutoff,
+    )
+    deleted_count, _ = expired.delete()
+    logger.info(f'cleanup_processed_inaccuracy_reports: deleted {deleted_count} reports')
     return deleted_count
