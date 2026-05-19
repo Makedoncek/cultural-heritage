@@ -866,6 +866,27 @@ def health_check(request):
     return Response({'status': 'ok', 'message': 'API is running'})
 
 
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def user_preference(request):
+    """Read or update current user's preference (language, etc.)."""
+    from .models import UserPreference
+    pref, _ = UserPreference.objects.get_or_create(
+        user=request.user,
+        defaults={'language': 'uk'},
+    )
+    if request.method == 'PATCH':
+        language = request.data.get('language')
+        if language not in dict(UserPreference.Language.choices):
+            return Response(
+                {'language': ['Invalid language. Allowed: uk, en.']},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        pref.language = language
+        pref.save(update_fields=['language', 'updated_at'])
+    return Response({'language': pref.language})
+
+
 class ObjectPhotoViewSet(viewsets.GenericViewSet):
     """Управління фото культурного об'єкта (nested під /api/objects/<object_pk>/photos/)."""
     serializer_class = ObjectPhotoSerializer

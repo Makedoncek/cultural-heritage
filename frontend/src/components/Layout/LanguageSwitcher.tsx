@@ -1,4 +1,6 @@
 import {useTranslation} from 'react-i18next';
+import {useAuth} from '../../context/AuthContext';
+import {preferenceService, type Language} from '../../services/preference.service';
 
 const LANGUAGES = [
     {code: 'uk', label: 'UA'},
@@ -7,12 +9,18 @@ const LANGUAGES = [
 
 export default function LanguageSwitcher() {
     const {i18n, t} = useTranslation();
+    const {isAuthenticated} = useAuth();
     const current = i18n.resolvedLanguage || 'uk';
 
     const select = (code: string) => {
         if (code === current) return;
         void i18n.changeLanguage(code);
         document.documentElement.lang = code;
+        if (isAuthenticated) {
+            preferenceService.update(code as Language).catch(() => {
+                /* server sync is best-effort — UI is already updated */
+            });
+        }
     };
 
     return (

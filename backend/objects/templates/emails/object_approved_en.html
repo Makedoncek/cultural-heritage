@@ -1,0 +1,13 @@
+{% extends "emails/base_email_en.html" %}
+{% block content %}
+<h2 style="color:#1f2937;font-size:20px;margin:0 0 16px;">Your object has been approved!</h2>
+<p style="color:#4b5563;font-size:16px;line-height:1.5;">
+    {{ user.username }}, your object <strong>"{{ object.title }}"</strong> has passed moderation and is now visible on the map.
+</p>
+<div style="text-align:center;margin:24px 0;">
+    <a href="{{ object_url }}"
+       style="display:inline-block;background:#d97706;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
+        View on the map
+    </a>
+</div>
+{% endblock %}

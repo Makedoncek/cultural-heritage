@@ -20,4 +20,5 @@ urlpatterns = [
     path('auth/password-reset/confirm/', views.password_reset_confirm, name='password_reset_confirm'),
     path('auth/resend-verification/', views.resend_verification, name='resend_verification'),
     path('health/', views.health_check, name='health_check'),
+    path('me/preference/', views.user_preference, name='user_preference'),
 ] + router.urls + photos_router.urls

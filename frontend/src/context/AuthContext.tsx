@@ -1,5 +1,7 @@
 import {createContext, useContext, useState, useEffect, type ReactNode} from 'react';
+import i18n from '../i18n';
 import {authService} from '../services/auth.service';
+import {preferenceService} from '../services/preference.service';
 import type {User, LoginData, RegisterData} from '../types';
 
 interface AuthContextType {
@@ -61,6 +63,11 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
 
         const payload = parseJwtPayload(tokens.access);
         setUser(userFromPayload(payload));
+
+        // Push current UI language to the server so emails arrive in the right language.
+        // Best-effort: silently ignore failures (e.g. legacy users without preference row).
+        const uiLang = i18n.resolvedLanguage === 'en' ? 'en' : 'uk';
+        preferenceService.update(uiLang).catch(() => {});
     };
 
     const register = async (userData: RegisterData) => {
