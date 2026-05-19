@@ -61,7 +61,13 @@
     "verifying": "Підтвердження пошти...",
     "verifyError": "Помилка верифікації.",
     "verifyNoToken": "Токен не надано.",
-    "tryAgain": "Спробувати знову"
+    "tryAgain": "Спробувати знову",
+    "addObjectTitle": "Додати культурний об'єкт",
+    "editObjectTitle": "Редагувати об'єкт",
+    "objectUpdated": "Об'єкт оновлено",
+    "objectUpdatedModeration": "Об'єкт оновлено і відправлено на повторну модерацію",
+    "uploadFailed": "не вдалося завантажити фото",
+    "notUploaded": "Не завантажено"
   },
   "home": {
     "searchPlaceholder": "Пошук за назвою...",
