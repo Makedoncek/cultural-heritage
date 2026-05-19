@@ -247,6 +247,7 @@
     "forbidden": "no upload permission",
     "notFound": "object not found",
     "throttled": "upload limit exceeded (20/hour)",
+    "throttledWithMinutes": "upload limit exceeded (20/hour). Try again in {{minutes}} min.",
     "fileTooLarge": "file too large",
     "serverError": "server error, try again later",
     "unknown": "unknown error"

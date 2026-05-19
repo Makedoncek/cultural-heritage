@@ -1,6 +1,7 @@
 import {useEffect} from 'react';
 import {Swiper, SwiperSlide} from 'swiper/react';
 import {Navigation, Keyboard} from 'swiper/modules';
+import {useTranslation} from 'react-i18next';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import type {ObjectPhoto} from '../../types';
@@ -12,6 +13,9 @@ interface Props {
 }
 
 export default function Lightbox({photos, initialIndex, onClose}: Props) {
+    const {t, i18n} = useTranslation();
+    const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
+
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -24,8 +28,8 @@ export default function Lightbox({photos, initialIndex, onClose}: Props) {
         <div className="fixed inset-0 z-[9999] bg-black/95 flex flex-col">
             <button
                 onClick={onClose}
-                className="absolute top-4 right-4 z-10 text-white text-3xl w-10 h-10 flex items-center justify-center"
-                aria-label="Закрити"
+                className="absolute top-4 right-4 z-10 text-white text-3xl w-10 h-10 flex items-center justify-center cursor-pointer"
+                aria-label="Close"
             >✕</button>
 
             <Swiper
@@ -48,7 +52,10 @@ export default function Lightbox({photos, initialIndex, onClose}: Props) {
                                 <p className="text-white mt-3 text-center px-4 max-w-[85vw]">{p.caption}</p>
                             )}
                             <p className="text-gray-400 text-xs mt-1">
-                                Завантажив: {p.uploaded_by.username} · {new Date(p.created_at).toLocaleDateString('uk-UA')}
+                                {t('photo.byUploaderDate', {
+                                    user: p.uploaded_by.username,
+                                    date: new Date(p.created_at).toLocaleDateString(dateLocale),
+                                })}
                             </p>
                         </div>
                     </SwiperSlide>
