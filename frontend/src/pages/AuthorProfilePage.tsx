@@ -2,6 +2,7 @@ import {useState, useEffect} from 'react';
 import {useParams, Link} from 'react-router';
 import {MapContainer, TileLayer} from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
+import {useTranslation} from 'react-i18next';
 import ObjectMarker from '../components/Map/ObjectMarker';
 import FavoriteButton from '../components/Objects/FavoriteButton';
 import {usersService} from '../services/users.service';
@@ -11,6 +12,8 @@ import '../utils/leaflet-fix';
 
 export default function AuthorProfilePage() {
     const {username} = useParams<{ username: string }>();
+    const {t, i18n} = useTranslation();
+    const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
     const {user, isAuthenticated} = useAuth();
     const [profile, setProfile] = useState<AuthorProfile | null>(null);
     const [objects, setObjects] = useState<CulturalObject[]>([]);
@@ -32,9 +35,9 @@ export default function AuthorProfilePage() {
                 setProfile(profileData);
                 setObjects(objectsData);
             })
-            .catch(() => setError('Користувача не знайдено.'))
+            .catch(() => setError(t('profile.userNotFound')))
             .finally(() => setLoading(false));
-    }, [username]);
+    }, [username, t]);
 
     const handleFollow = async () => {
         if (!username || !profile) return;
@@ -47,7 +50,7 @@ export default function AuthorProfilePage() {
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
-                    <p className="text-gray-600">Завантаження...</p>
+                    <p className="text-gray-600">{t('home.loading')}</p>
                 </div>
             </div>
         );
@@ -56,7 +59,7 @@ export default function AuthorProfilePage() {
     if (error || !profile) {
         return (
             <div className="flex-1 flex items-center justify-center">
-                <p className="text-red-600">{error ?? 'Помилка завантаження.'}</p>
+                <p className="text-red-600">{error ?? t('profile.loadError')}</p>
             </div>
         );
     }
@@ -77,17 +80,17 @@ export default function AuthorProfilePage() {
                                         : 'bg-amber-500 text-white hover:bg-amber-600'
                                 }`}
                             >
-                                {profile.is_followed ? 'Відписатися' : 'Підписатися'}
+                                {profile.is_followed ? t('subscriptions.unfollow') : t('subscriptions.follow')}
                             </button>
                         )}
                         {isOwnProfile && (
                             <span className="px-3 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
-                                Ваш профіль
+                                {t('profile.yourProfile')}
                             </span>
                         )}
                     </div>
                     <p className="text-gray-500 text-sm mb-1">
-                        На платформі з {new Date(profile.date_joined).toLocaleDateString('uk-UA')}
+                        {t('profile.onPlatformSince', {date: new Date(profile.date_joined).toLocaleDateString(dateLocale)})}
                     </p>
                     {isOwnProfile && profile.email && (
                         <p className="text-gray-500 text-sm mb-3">
@@ -97,15 +100,15 @@ export default function AuthorProfilePage() {
                     <div className="flex gap-6 text-sm">
                         <div>
                             <span className="font-semibold text-gray-900">{profile.approved_objects_count}</span>
-                            <span className="text-gray-500 ml-1">об'єктів</span>
+                            <span className="text-gray-500 ml-1">{t('profile.objectsCount')}</span>
                         </div>
                         <div>
                             <span className="font-semibold text-gray-900">{profile.total_favorites_received}</span>
-                            <span className="text-gray-500 ml-1">вподобань</span>
+                            <span className="text-gray-500 ml-1">{t('profile.likesCount')}</span>
                         </div>
                         <div>
                             <span className="font-semibold text-gray-900">{profile.followers_count}</span>
-                            <span className="text-gray-500 ml-1">підписників</span>
+                            <span className="text-gray-500 ml-1">{t('profile.followersCount')}</span>
                         </div>
                     </div>
                 </div>
@@ -134,10 +137,10 @@ export default function AuthorProfilePage() {
 
                 {/* Objects list */}
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                    Об'єкти автора
+                    {t('profile.authorObjects')}
                 </h2>
                 {objects.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">Ще немає опублікованих об'єктів</p>
+                    <p className="text-gray-500 text-center py-8">{t('profile.noPublishedObjects')}</p>
                 ) : (
                     <div className="space-y-3">
                         {objects.map(obj => (
@@ -150,12 +153,12 @@ export default function AuthorProfilePage() {
                                         <span className="text-gray-900 font-medium">{obj.title}</span>
                                         {obj.object_type === 'event' && (
                                             <span className="px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-800">
-                                                Подія
+                                                {t('object.objectType.event')}
                                             </span>
                                         )}
                                         {obj.status === 'pending' && (
                                             <span className="px-2 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-800">
-                                                На модерації
+                                                {t('object.moderationStatus.pending')}
                                             </span>
                                         )}
                                     </div>
@@ -178,7 +181,7 @@ export default function AuthorProfilePage() {
                                         to={`/objects/${obj.id}`}
                                         className="px-3 py-1.5 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600"
                                     >
-                                        Переглянути
+                                        {t('myObjects.view')}
                                     </Link>
                                 </div>
                             </div>

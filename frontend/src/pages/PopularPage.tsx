@@ -1,5 +1,6 @@
 import {useState, useEffect} from 'react';
 import {Link} from 'react-router';
+import {useTranslation} from 'react-i18next';
 import {objectsService} from '../services/objects.service';
 import {useAuth} from '../context/AuthContext';
 import FavoriteButton from '../components/Objects/FavoriteButton';
@@ -7,6 +8,7 @@ import CoverImage from '../components/Objects/CoverImage';
 import type {CulturalObject} from '../types';
 
 export default function PopularPage() {
+    const {t} = useTranslation();
     const [objects, setObjects] = useState<CulturalObject[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -15,16 +17,16 @@ export default function PopularPage() {
     useEffect(() => {
         objectsService.getPopular()
             .then(data => setObjects(data))
-            .catch(() => setError('Не вдалося завантажити популярні об\'єкти.'))
+            .catch(() => setError(t('popular.loadError')))
             .finally(() => setLoading(false));
-    }, []);
+    }, [t]);
 
     if (loading) {
         return (
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
-                    <p className="text-gray-600">Завантаження...</p>
+                    <p className="text-gray-600">{t('home.loading')}</p>
                 </div>
             </div>
         );
@@ -41,12 +43,12 @@ export default function PopularPage() {
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Популярне</h1>
-                <p className="text-gray-500 text-sm mb-6">Об'єкти з найбільшою кількістю вподобань</p>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('popular.title')}</h1>
+                <p className="text-gray-500 text-sm mb-6">{t('popular.subtitle')}</p>
 
                 {objects.length === 0 ? (
                     <div className="text-center py-12">
-                        <p className="text-gray-500">Ще немає об'єктів з вподобаннями</p>
+                        <p className="text-gray-500">{t('popular.empty')}</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
@@ -70,7 +72,7 @@ export default function PopularPage() {
                                             <span className="text-gray-900 font-medium">{obj.title}</span>
                                             {obj.object_type === 'event' && (
                                                 <span className="px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-800">
-                                                    Подія
+                                                    {t('object.objectType.event')}
                                                 </span>
                                             )}
                                         </div>
@@ -94,7 +96,7 @@ export default function PopularPage() {
                                         to={`/objects/${obj.id}`}
                                         className="px-3 py-1.5 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600"
                                     >
-                                        Переглянути
+                                        {t('myObjects.view')}
                                     </Link>
                                 </div>
                             </div>

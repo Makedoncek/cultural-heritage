@@ -1,16 +1,17 @@
 import {useState, useEffect} from 'react';
 import {Link} from 'react-router';
 import toast from 'react-hot-toast';
+import {useTranslation} from 'react-i18next';
 import {objectsService} from '../services/objects.service';
 import {photosService} from '../services/photos.service';
 import Lightbox from '../components/Objects/Lightbox';
 import CoverImage from '../components/Objects/CoverImage';
 import type {CulturalObjectWithMyPhotos, ObjectPhoto} from '../types';
 
-const STATUS_OVERLAY: Record<string, {label: string; cls: string} | null> = {
+const STATUS_OVERLAY_CLS: Record<string, string | null> = {
     approved: null,
-    pending: {label: 'На модерації', cls: 'bg-yellow-500/90'},
-    rejected: {label: 'Відхилено', cls: 'bg-red-600/90'},
+    pending: 'bg-yellow-500/90',
+    rejected: 'bg-red-600/90',
 };
 
 function countByStatus(photos: ObjectPhoto[]) {
@@ -28,6 +29,7 @@ interface PhotoCardProps {
 }
 
 function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardProps) {
+    const {t} = useTranslation();
     const [caption, setCaption] = useState(photo.caption);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -35,14 +37,14 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
     const dirty = caption !== original;
 
     const handleDelete = async () => {
-        if (!confirm('Видалити це фото? Дію не можна скасувати.')) return;
+        if (!confirm(t('photo.deletePhoto'))) return;
         setDeleting(true);
         try {
             await photosService.remove(objectId, photo.id);
             onDeleted(photo.id);
-            toast.success('Фото видалено');
+            toast.success(t('photo.deleted'));
         } catch {
-            toast.error('Не вдалося видалити фото');
+            toast.error(t('photo.deleteError'));
             setDeleting(false);
         }
     };
@@ -50,7 +52,7 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
     const handleSave = async () => {
         if (!dirty || saving) return;
         if (caption.length > 200) {
-            toast.error('Підпис не може перевищувати 200 символів');
+            toast.error(t('photo.captionMaxLength'));
             return;
         }
         setSaving(true);
@@ -59,16 +61,21 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
             onUpdated(updated);
             toast.success(
                 updated.status === 'pending' && photo.status !== 'pending'
-                    ? 'Підпис оновлено. Фото на повторну модерацію.'
-                    : 'Підпис оновлено'
+                    ? t('photo.captionUpdatedModeration')
+                    : t('photo.captionUpdated')
             );
         } catch {
-            toast.error('Не вдалося оновити підпис');
+            toast.error(t('photo.captionUpdateError'));
             setCaption(original);
         } finally {
             setSaving(false);
         }
     };
+
+    const overlayCls = STATUS_OVERLAY_CLS[photo.status];
+    const overlayLabel = photo.status === 'pending' ? t('photo.underReview')
+        : photo.status === 'rejected' ? t('photo.rejected')
+        : null;
 
     return (
         <div className={`w-40 shrink-0 ${deleting ? 'opacity-50' : ''}`}>
@@ -77,7 +84,7 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
                     type="button"
                     onClick={onOpen}
                     className="relative w-40 h-32 block rounded overflow-hidden border border-gray-200 hover:border-amber-400 cursor-pointer"
-                    title="Переглянути"
+                    title={t('myPhotos.viewLabel')}
                 >
                     <img
                         src={photo.thumbnail_url}
@@ -85,12 +92,12 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
                         loading="lazy"
                         className="w-full h-full object-cover"
                     />
-                    {STATUS_OVERLAY[photo.status] && (
+                    {overlayCls && overlayLabel && (
                         <span
-                            className={`absolute bottom-0 left-0 right-0 ${STATUS_OVERLAY[photo.status]!.cls} text-white text-[10px] font-semibold text-center py-0.5 uppercase tracking-wide`}
+                            className={`absolute bottom-0 left-0 right-0 ${overlayCls} text-white text-[10px] font-semibold text-center py-0.5 uppercase tracking-wide`}
                             aria-label={photo.status}
                         >
-                            {STATUS_OVERLAY[photo.status]!.label}
+                            {overlayLabel}
                         </span>
                     )}
                 </button>
@@ -99,8 +106,8 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
                     onClick={handleDelete}
                     disabled={deleting || saving}
                     className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs cursor-pointer disabled:opacity-50"
-                    aria-label="Видалити фото"
-                    title="Видалити фото"
+                    aria-label={t('myPhotos.deletePhotoTitle')}
+                    title={t('myPhotos.deletePhotoTitle')}
                 >✕</button>
             </div>
             <input
@@ -110,23 +117,24 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
                 onBlur={handleSave}
                 onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
                 maxLength={200}
-                placeholder="Без підпису"
+                placeholder={t('myPhotos.noCaption')}
                 disabled={saving}
                 className={`mt-1 w-full text-xs border rounded px-2 py-1 disabled:bg-gray-50 ${
                     dirty ? 'border-amber-400' : 'border-gray-200'
                 }`}
             />
             {dirty && !saving && (
-                <p className="text-[10px] text-amber-700 mt-0.5">Enter або клік-out → зберегти</p>
+                <p className="text-[10px] text-amber-700 mt-0.5">{t('photo.captionSavePrompt')}</p>
             )}
             {saving && (
-                <p className="text-[10px] text-gray-500 mt-0.5">Збереження…</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">{t('photo.captionSaving')}</p>
             )}
         </div>
     );
 }
 
 export default function MyPhotosPage() {
+    const {t} = useTranslation();
     const [items, setItems] = useState<CulturalObjectWithMyPhotos[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -135,9 +143,9 @@ export default function MyPhotosPage() {
     useEffect(() => {
         objectsService.getWithMyPhotos()
             .then(data => setItems(data.results))
-            .catch(() => setError('Не вдалося завантажити список.'))
+            .catch(() => setError(t('myPhotos.loadError')))
             .finally(() => setLoading(false));
-    }, []);
+    }, [t]);
 
     const handlePhotoUpdated = (objectId: number, updated: ObjectPhoto) => {
         setItems(prev => prev.map(obj => {
@@ -155,7 +163,7 @@ export default function MyPhotosPage() {
                 if (obj.id !== objectId) return obj;
                 return {...obj, my_photos: obj.my_photos.filter(p => p.id !== photoId)};
             })
-            .filter(obj => obj.my_photos.length > 0)  // прибираємо об'єкт без фото
+            .filter(obj => obj.my_photos.length > 0)
         );
     };
 
@@ -164,7 +172,7 @@ export default function MyPhotosPage() {
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
-                    <p className="text-gray-600">Завантаження...</p>
+                    <p className="text-gray-600">{t('home.loading')}</p>
                 </div>
             </div>
         );
@@ -181,16 +189,14 @@ export default function MyPhotosPage() {
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-3xl mx-auto px-4 py-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Мої фото</h1>
-                <p className="text-sm text-gray-500 mb-6">
-                    Об'єкти, до яких ви додавали фото. Підпис можна редагувати — затверджене фото після зміни знов піде на модерацію.
-                </p>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('myPhotos.title')}</h1>
+                <p className="text-sm text-gray-500 mb-6">{t('myPhotos.subtitleEditable')}</p>
 
                 {items.length === 0 ? (
                     <div className="text-center py-12">
-                        <p className="text-gray-500 mb-4">Ви ще не додавали фото до жодного об'єкта</p>
+                        <p className="text-gray-500 mb-4">{t('myPhotos.empty')}</p>
                         <Link to="/" className="text-amber-600 hover:text-amber-800 underline">
-                            Перейти на карту
+                            {t('myPhotos.goToMap')}
                         </Link>
                     </div>
                 ) : (
@@ -219,20 +225,20 @@ export default function MyPhotosPage() {
                                                 {obj.title}
                                             </Link>
                                             <div className="text-xs text-gray-500 mt-1">
-                                                {obj.tags.map(t => t.icon).join(' ')} · автор {obj.author_name}
+                                                {obj.tags.map(t => t.icon).join(' ')} · {t('myPhotos.authorByLine', {name: obj.author_name})}
                                             </div>
                                             <div className="flex flex-wrap gap-2 mt-2 text-xs">
                                                 <span className="text-gray-700">
-                                                    Моїх фото: <strong>{obj.my_photos.length}</strong>
+                                                    {t('myPhotos.myPhotosCount')} <strong>{obj.my_photos.length}</strong>
                                                 </span>
                                                 {counts.approved > 0 && (
-                                                    <span className="text-green-700">✓ {counts.approved} затверджено</span>
+                                                    <span className="text-green-700">✓ {t('myPhotos.approvedCount', {count: counts.approved})}</span>
                                                 )}
                                                 {counts.pending > 0 && (
-                                                    <span className="text-yellow-700">⏳ {counts.pending} на модерації</span>
+                                                    <span className="text-yellow-700">⏳ {t('myPhotos.pendingCount', {count: counts.pending})}</span>
                                                 )}
                                                 {counts.rejected > 0 && (
-                                                    <span className="text-red-700">✕ {counts.rejected} відхилено</span>
+                                                    <span className="text-red-700">✕ {t('myPhotos.rejectedCount', {count: counts.rejected})}</span>
                                                 )}
                                             </div>
                                         </div>

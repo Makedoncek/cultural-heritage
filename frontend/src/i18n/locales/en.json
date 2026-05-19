@@ -220,26 +220,45 @@
     "approvedCount": "{{count}} approved",
     "pendingCount": "{{count}} under review",
     "rejectedCount": "{{count}} rejected",
-    "loadError": "Failed to load the list."
+    "loadError": "Failed to load the list.",
+    "noCaption": "No caption",
+    "viewLabel": "View",
+    "deletePhotoTitle": "Delete photo",
+    "subtitleEditable": "Objects you've uploaded photos to. You can edit the caption — an approved photo will go back to moderation after editing.",
+    "authorByLine": "by {{name}}"
   },
   "favorites": {
-    "title": "Favorites"
+    "title": "Favorites",
+    "empty": "You haven't favorited any objects yet",
+    "goToMap": "Go to map",
+    "loadError": "Failed to load favorites."
   },
   "popular": {
-    "title": "Popular"
+    "title": "Popular",
+    "subtitle": "Objects with the most likes",
+    "empty": "No objects with likes yet",
+    "loadError": "Failed to load popular objects."
   },
   "subscriptions": {
     "title": "Subscriptions",
+    "subtitle": "Authors you follow",
+    "empty": "You don't follow any authors yet",
+    "loadError": "Failed to load subscriptions.",
     "follow": "Follow",
     "unfollow": "Unfollow",
-    "followersCount": "{{count}} followers"
+    "followersCount": "{{count}} followers",
+    "objectsCount": "{{count}} objects"
   },
   "profile": {
     "yourProfile": "Your profile",
     "onPlatformSince": "On the platform since {{date}}",
     "objectsCount": "objects",
     "likesCount": "likes",
-    "followersCount": "followers"
+    "followersCount": "followers",
+    "authorObjects": "Author's objects",
+    "noPublishedObjects": "No published objects yet",
+    "userNotFound": "User not found.",
+    "loadError": "Loading error."
   },
   "errors": {
     "networkError": "no connection",

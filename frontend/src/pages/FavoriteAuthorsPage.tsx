@@ -1,9 +1,11 @@
 import {useState, useEffect} from 'react';
 import {Link} from 'react-router';
+import {useTranslation} from 'react-i18next';
 import {usersService} from '../services/users.service';
 import type {AuthorProfile} from '../types';
 
 export default function FavoriteAuthorsPage() {
+    const {t} = useTranslation();
     const [authors, setAuthors] = useState<AuthorProfile[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -11,9 +13,9 @@ export default function FavoriteAuthorsPage() {
     useEffect(() => {
         usersService.getFavoriteAuthors()
             .then(data => setAuthors(data))
-            .catch(() => setError('Не вдалося завантажити підписки.'))
+            .catch(() => setError(t('subscriptions.loadError')))
             .finally(() => setLoading(false));
-    }, []);
+    }, [t]);
 
     const handleUnfollow = async (username: string) => {
         await usersService.toggleFollow(username);
@@ -25,7 +27,7 @@ export default function FavoriteAuthorsPage() {
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
-                    <p className="text-gray-600">Завантаження...</p>
+                    <p className="text-gray-600">{t('home.loading')}</p>
                 </div>
             </div>
         );
@@ -42,12 +44,12 @@ export default function FavoriteAuthorsPage() {
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Підписки</h1>
-                <p className="text-gray-500 text-sm mb-6">Автори, на яких ви підписані</p>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('subscriptions.title')}</h1>
+                <p className="text-gray-500 text-sm mb-6">{t('subscriptions.subtitle')}</p>
 
                 {authors.length === 0 ? (
                     <div className="text-center py-12">
-                        <p className="text-gray-500">Ви ще не підписані на жодного автора</p>
+                        <p className="text-gray-500">{t('subscriptions.empty')}</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
@@ -64,15 +66,15 @@ export default function FavoriteAuthorsPage() {
                                         {author.username}
                                     </Link>
                                     <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-                                        <span>{author.approved_objects_count} об'єктів</span>
-                                        <span>{author.followers_count} підписників</span>
+                                        <span>{t('subscriptions.objectsCount', {count: author.approved_objects_count})}</span>
+                                        <span>{t('subscriptions.followersCount', {count: author.followers_count})}</span>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => handleUnfollow(author.username)}
                                     className="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 cursor-pointer"
                                 >
-                                    Відписатися
+                                    {t('subscriptions.unfollow')}
                                 </button>
                             </div>
                         ))}

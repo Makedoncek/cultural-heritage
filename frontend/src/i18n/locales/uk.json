@@ -220,26 +220,45 @@
     "approvedCount": "{{count}} затверджено",
     "pendingCount": "{{count}} на модерації",
     "rejectedCount": "{{count}} відхилено",
-    "loadError": "Не вдалося завантажити список."
+    "loadError": "Не вдалося завантажити список.",
+    "noCaption": "Без підпису",
+    "viewLabel": "Переглянути",
+    "deletePhotoTitle": "Видалити фото",
+    "subtitleEditable": "Об'єкти, до яких ви додавали фото. Підпис можна редагувати — затверджене фото після зміни знов піде на модерацію.",
+    "authorByLine": "автор {{name}}"
   },
   "favorites": {
-    "title": "Обране"
+    "title": "Обране",
+    "empty": "У вас ще немає обраних об'єктів",
+    "goToMap": "Перейти до карти",
+    "loadError": "Не вдалося завантажити обране."
   },
   "popular": {
-    "title": "Популярне"
+    "title": "Популярне",
+    "subtitle": "Об'єкти з найбільшою кількістю вподобань",
+    "empty": "Ще немає об'єктів з вподобаннями",
+    "loadError": "Не вдалося завантажити популярні об'єкти."
   },
   "subscriptions": {
     "title": "Підписки",
+    "subtitle": "Автори, на яких ви підписані",
+    "empty": "Ви ще не підписані на жодного автора",
+    "loadError": "Не вдалося завантажити підписки.",
     "follow": "Підписатись",
     "unfollow": "Відписатись",
-    "followersCount": "{{count}} підписників"
+    "followersCount": "{{count}} підписників",
+    "objectsCount": "{{count}} об'єктів"
   },
   "profile": {
     "yourProfile": "Ваш профіль",
     "onPlatformSince": "На платформі з {{date}}",
     "objectsCount": "об'єктів",
     "likesCount": "вподобань",
-    "followersCount": "підписників"
+    "followersCount": "підписників",
+    "authorObjects": "Об'єкти автора",
+    "noPublishedObjects": "Ще немає опублікованих об'єктів",
+    "userNotFound": "Користувача не знайдено.",
+    "loadError": "Помилка завантаження."
   },
   "errors": {
     "networkError": "немає з'єднання",
