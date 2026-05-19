@@ -37,6 +37,15 @@ export const routesService = {
         await api.delete(`/routes/${id}/`);
     },
 
+    async restore(id: number): Promise<RouteDetail> {
+        const {data} = await api.post<RouteDetail>(`/routes/${id}/restore/`);
+        return data;
+    },
+
+    async hardDelete(id: number): Promise<void> {
+        await api.delete(`/routes/${id}/hard-delete/`);
+    },
+
     async submit(id: number): Promise<RouteDetail> {
         const {data} = await api.post<RouteDetail>(`/routes/${id}/submit/`);
         return data;

@@ -595,6 +595,34 @@ class ObjectViewSet(viewsets.ModelViewSet):
         instance.archive()
         return Response({'detail': _("Об'єкт архівовано")}, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def restore(self, request, pk=None):
+        """Author or admin restores archived object → status='pending' (requires re-approval)."""
+        try:
+            instance = CulturalObject.objects.get(pk=pk)
+        except CulturalObject.DoesNotExist:
+            return Response({'detail': _('Не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+        if instance.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору чи адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        if instance.status != CulturalObject.Status.ARCHIVED:
+            return Response({'detail': _('Об\'єкт не в архіві.')}, status=status.HTTP_400_BAD_REQUEST)
+        instance.restore()
+        return Response({'detail': _("Об'єкт відновлено")}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['delete'], url_path='hard-delete', permission_classes=[IsAuthenticated])
+    def hard_delete(self, request, pk=None):
+        """Author or admin permanently deletes object (regardless of status)."""
+        try:
+            instance = CulturalObject.objects.get(pk=pk)
+        except CulturalObject.DoesNotExist:
+            return Response({'detail': _('Не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+        if instance.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору чи адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @extend_schema(
         tags=['Objects'],
         summary='My objects',
@@ -630,7 +658,6 @@ class ObjectViewSet(viewsets.ModelViewSet):
                    .select_related('author')
                    .prefetch_related('tags')
                    .filter(author=request.user)
-                   .exclude(status='archived')
                    .order_by('-created_at'))
 
         page = self.paginate_queryset(objects)
@@ -1550,6 +1577,38 @@ class RouteViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_403_FORBIDDEN)
         instance.status = Route.Status.ARCHIVED
         instance.save(update_fields=['status', 'updated_at'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['post'])
+    def restore(self, request, pk=None):
+        """Author or admin restores archived route → status='draft'."""
+        from .models import Route
+        from .serializers import RouteDetailSerializer
+        try:
+            instance = Route.objects.get(pk=pk)
+        except Route.DoesNotExist:
+            return Response({'detail': _('Не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+        if instance.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору чи адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        if instance.status != Route.Status.ARCHIVED:
+            return Response({'detail': _('Маршрут не в архіві.')}, status=status.HTTP_400_BAD_REQUEST)
+        instance.status = Route.Status.DRAFT
+        instance.save(update_fields=['status', 'updated_at'])
+        return Response(RouteDetailSerializer(instance, context={'request': request}).data)
+
+    @action(detail=True, methods=['delete'], url_path='hard-delete')
+    def hard_delete(self, request, pk=None):
+        """Author or admin permanently deletes route (regardless of status)."""
+        from .models import Route
+        try:
+            instance = Route.objects.get(pk=pk)
+        except Route.DoesNotExist:
+            return Response({'detail': _('Не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+        if instance.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору чи адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post'])

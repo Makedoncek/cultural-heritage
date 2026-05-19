@@ -123,7 +123,7 @@ export default function AddEditRoutePage() {
             if (!isEdit) {
                 navigate(`/routes/${r.id}/edit`, {replace: true});
             } else {
-                setRoute(r);
+                navigate('/my-routes');
             }
         }
     };
@@ -352,28 +352,8 @@ export default function AddEditRoutePage() {
                             📋 Зупинки маршруту ({stops.length}/50)
                         </h2>
 
-                        {stops.length === 0 ? (
-                            <p className="text-gray-500 dark:text-stone-400 text-sm mb-4">
-                                Поки що немає зупинок. Додай через пошук нижче.
-                            </p>
-                        ) : (
-                            <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                                <SortableContext items={stops.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                                    <div className="space-y-2 mb-4">
-                                        {stops.map(s => (
-                                            <SortableStopItem
-                                                key={s.id}
-                                                stop={s}
-                                                onRemove={() => handleRemoveStop(s.id)}
-                                            />
-                                        ))}
-                                    </div>
-                                </SortableContext>
-                            </DndContext>
-                        )}
-
                         {stops.length < 50 && (
-                            <div className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg p-3">
+                            <div className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg p-3 mb-4">
                                 <p className="text-sm font-medium text-gray-700 dark:text-stone-200 mb-2">
                                     + Додати зупинку
                                 </p>
@@ -415,6 +395,26 @@ export default function AddEditRoutePage() {
                                     </div>
                                 )}
                             </div>
+                        )}
+
+                        {stops.length === 0 ? (
+                            <p className="text-gray-500 dark:text-stone-400 text-sm">
+                                Поки що немає зупинок. Додай через пошук вище.
+                            </p>
+                        ) : (
+                            <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                <SortableContext items={stops.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                                    <div className="space-y-2">
+                                        {stops.map(s => (
+                                            <SortableStopItem
+                                                key={s.id}
+                                                stop={s}
+                                                onRemove={() => handleRemoveStop(s.id)}
+                                            />
+                                        ))}
+                                    </div>
+                                </SortableContext>
+                            </DndContext>
                         )}
                     </div>
                 )}

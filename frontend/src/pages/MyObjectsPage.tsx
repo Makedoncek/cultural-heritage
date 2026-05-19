@@ -24,10 +24,37 @@ export default function MyObjectsPage() {
         setDeletingId(id);
         try {
             await objectsService.delete(id);
-            setObjects(prev => prev.filter(obj => obj.id !== id));
+            setObjects(prev => prev.map(obj => obj.id === id ? {...obj, status: 'archived'} : obj));
             toast.success(t('object.archived'));
         } catch {
             setError(t('object.deleteError'));
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    const handleRestore = async (id: number) => {
+        setDeletingId(id);
+        try {
+            await objectsService.restore(id);
+            setObjects(prev => prev.map(obj => obj.id === id ? {...obj, status: 'pending'} : obj));
+            toast.success('Об\'єкт відновлено');
+        } catch {
+            toast.error('Не вдалося відновити');
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    const handleHardDelete = async (id: number) => {
+        if (!confirm('Видалити назавжди? Цю дію не можна скасувати.')) return;
+        setDeletingId(id);
+        try {
+            await objectsService.hardDelete(id);
+            setObjects(prev => prev.filter(obj => obj.id !== id));
+            toast.success('Видалено назавжди');
+        } catch {
+            toast.error('Не вдалося видалити');
         } finally {
             setDeletingId(null);
         }
@@ -127,25 +154,46 @@ export default function MyObjectsPage() {
                                     </div>
                                 </div>
                                 <div className="flex gap-2 flex-wrap shrink-0">
-                                    <Link
-                                        to={`/objects/${obj.id}`}
-                                        className="px-3 py-1.5 text-sm bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg"
-                                    >
-                                        {t('myObjects.view')}
-                                    </Link>
-                                    <Link
-                                        to={`/objects/${obj.id}/edit`}
-                                        className="px-3 py-1.5 text-sm border border-gray-300 dark:border-stone-600 text-gray-700 dark:text-stone-200 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-800"
-                                    >
-                                        {t('object.edit')}
-                                    </Link>
-                                    <button
-                                        onClick={() => handleDelete(obj.id)}
-                                        disabled={deletingId === obj.id}
-                                        className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 cursor-pointer disabled:opacity-50"
-                                    >
-                                        {deletingId === obj.id ? t('object.deleting') : t('object.delete')}
-                                    </button>
+                                    {obj.status === 'archived' ? (
+                                        <>
+                                            <button
+                                                onClick={() => handleRestore(obj.id)}
+                                                disabled={deletingId === obj.id}
+                                                className="px-3 py-1.5 text-sm bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg cursor-pointer disabled:opacity-50"
+                                            >
+                                                ↩ Відновити
+                                            </button>
+                                            <button
+                                                onClick={() => handleHardDelete(obj.id)}
+                                                disabled={deletingId === obj.id}
+                                                className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg cursor-pointer disabled:opacity-50"
+                                            >
+                                                🗑 Видалити назавжди
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Link
+                                                to={`/objects/${obj.id}`}
+                                                className="px-3 py-1.5 text-sm bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg"
+                                            >
+                                                {t('myObjects.view')}
+                                            </Link>
+                                            <Link
+                                                to={`/objects/${obj.id}/edit`}
+                                                className="px-3 py-1.5 text-sm border border-gray-300 dark:border-stone-600 text-gray-700 dark:text-stone-200 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-800"
+                                            >
+                                                {t('object.edit')}
+                                            </Link>
+                                            <button
+                                                onClick={() => handleDelete(obj.id)}
+                                                disabled={deletingId === obj.id}
+                                                className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 cursor-pointer disabled:opacity-50"
+                                            >
+                                                {deletingId === obj.id ? t('object.deleting') : t('object.delete')}
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         ))}

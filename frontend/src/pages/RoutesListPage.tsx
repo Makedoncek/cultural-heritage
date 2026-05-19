@@ -56,17 +56,17 @@ export default function RoutesListPage() {
                     Кураторські туристичні маршрути культурною спадщиною України з експортом GPX/KML.
                 </p>
 
-                <div className="flex items-center gap-3 mb-6">
-                    <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-stone-200 cursor-pointer">
+                <div className="flex items-center gap-4 mb-6">
+                    <label className="inline-flex items-center gap-2 text-base text-gray-700 dark:text-stone-200 cursor-pointer">
                         <input
                             type="checkbox"
                             checked={featuredOnly}
                             onChange={(e) => setFeaturedOnly(e.target.checked)}
-                            className="w-4 h-4 accent-amber-500 cursor-pointer"
+                            className="w-5 h-5 accent-amber-500 cursor-pointer"
                         />
                         ⭐ Тільки рекомендовані
                     </label>
-                    <Link to="/my-routes" className="text-sm text-amber-700 dark:text-amber-400 hover:underline">
+                    <Link to="/my-routes" className="text-base text-amber-700 dark:text-amber-400 hover:underline">
                         📋 Мої маршрути →
                     </Link>
                 </div>

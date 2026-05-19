@@ -25,6 +25,12 @@ export const objectsService = {
     delete: (id: number) =>
         api.delete(`/objects/${id}/`).then(res => res.data),
 
+    restore: (id: number) =>
+        api.post(`/objects/${id}/restore/`).then(res => res.data),
+
+    hardDelete: (id: number) =>
+        api.delete(`/objects/${id}/hard-delete/`).then(res => res.data),
+
     getMy: () =>
         api.get<PaginatedResponse<CulturalObject>>('/objects/my/').then(res => res.data),
 

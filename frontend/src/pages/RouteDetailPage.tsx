@@ -57,6 +57,10 @@ export default function RouteDetailPage() {
 
     const handleSubmit = async () => {
         if (!route) return;
+        if (route.stops_count < 2) {
+            toast.error('Маршрут має містити щонайменше 2 зупинки');
+            return;
+        }
         setActionLoading(true);
         try {
             const updated = await routesService.submit(route.id);
@@ -130,8 +134,8 @@ export default function RouteDetailPage() {
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">
                         🗺 {route.title}
                     </h1>
-                    <div className="flex gap-1.5">
-                        <span className={`px-2 py-1 text-xs font-medium rounded ${
+                    <div className="flex gap-2">
+                        <span className={`px-3 py-1.5 text-base font-medium rounded-lg ${
                             route.visibility === 'public'
                                 ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
                                 : 'bg-gray-100 dark:bg-stone-800 text-gray-700 dark:text-stone-300'
@@ -139,7 +143,7 @@ export default function RouteDetailPage() {
                             {route.visibility === 'public' ? '🌐 Публічний' : '🔒 Особистий'}
                         </span>
                         {route.visibility === 'public' && route.status !== 'approved' && (
-                            <span className="px-2 py-1 text-xs font-medium rounded bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">
+                            <span className="px-3 py-1.5 text-base font-medium rounded-lg bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">
                                 {route.status === 'draft' ? 'Чернетка' : route.status === 'pending' ? 'На модерації' : 'В архіві'}
                             </span>
                         )}
@@ -184,7 +188,7 @@ export default function RouteDetailPage() {
                     {isOwner && route.visibility === 'public' && route.status === 'draft' && (
                         <button
                             onClick={handleSubmit}
-                            disabled={actionLoading || route.stops_count < 2}
+                            disabled={actionLoading}
                             className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-400 text-white dark:text-stone-900 rounded-lg cursor-pointer disabled:opacity-50"
                             title={route.stops_count < 2 ? 'Маршрут має містити щонайменше 2 зупинки' : ''}
                         >

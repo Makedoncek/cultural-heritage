@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react';
 import {Link} from 'react-router';
 import {useTranslation} from 'react-i18next';
+import toast from 'react-hot-toast';
 import {routesService} from '../services/routes.service';
 import type {RouteListItem, RouteStatus} from '../types/routes';
 
@@ -34,6 +35,48 @@ export default function MyRoutesPage() {
     const [routes, setRoutes] = useState<RouteListItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [actionId, setActionId] = useState<number | null>(null);
+
+    const handleRestore = async (id: number) => {
+        setActionId(id);
+        try {
+            const updated = await routesService.restore(id);
+            setRoutes(prev => prev.map(r => r.id === id ? {...r, status: updated.status} : r));
+            toast.success('Маршрут відновлено');
+        } catch {
+            toast.error('Не вдалося відновити');
+        } finally {
+            setActionId(null);
+        }
+    };
+
+    const handleHardDelete = async (id: number) => {
+        if (!confirm('Видалити маршрут назавжди? Цю дію не можна скасувати.')) return;
+        setActionId(id);
+        try {
+            await routesService.hardDelete(id);
+            setRoutes(prev => prev.filter(r => r.id !== id));
+            toast.success('Видалено назавжди');
+        } catch {
+            toast.error('Не вдалося видалити');
+        } finally {
+            setActionId(null);
+        }
+    };
+
+    const handleArchive = async (id: number) => {
+        if (!confirm('Перенести маршрут до архіву?')) return;
+        setActionId(id);
+        try {
+            await routesService.archive(id);
+            setRoutes(prev => prev.map(r => r.id === id ? {...r, status: 'archived'} : r));
+            toast.success('Маршрут архівовано');
+        } catch {
+            toast.error('Не вдалося архівувати');
+        } finally {
+            setActionId(null);
+        }
+    };
 
     useEffect(() => {
         routesService.listMine()
@@ -112,19 +155,47 @@ export default function MyRoutesPage() {
                                 <p className="text-xs text-gray-500 dark:text-stone-400">
                                     {r.stops_count} зупинок · оновлено {new Date(r.updated_at).toLocaleDateString(dateLocale)}
                                 </p>
-                                <div className="flex gap-2 mt-2 text-xs">
-                                    <Link
-                                        to={`/routes/${r.id}/edit`}
-                                        className="text-amber-700 dark:text-amber-400 hover:underline"
-                                    >
-                                        Редагувати
-                                    </Link>
-                                    <Link
-                                        to={`/routes/${r.id}`}
-                                        className="text-amber-700 dark:text-amber-400 hover:underline"
-                                    >
-                                        Переглянути
-                                    </Link>
+                                <div className="flex gap-3 mt-2 text-xs flex-wrap">
+                                    {r.status === 'archived' ? (
+                                        <>
+                                            <button
+                                                onClick={() => handleRestore(r.id)}
+                                                disabled={actionId === r.id}
+                                                className="text-amber-700 dark:text-amber-400 hover:underline cursor-pointer disabled:opacity-50"
+                                            >
+                                                ↩ Відновити
+                                            </button>
+                                            <button
+                                                onClick={() => handleHardDelete(r.id)}
+                                                disabled={actionId === r.id}
+                                                className="text-red-600 dark:text-red-400 hover:underline cursor-pointer disabled:opacity-50"
+                                            >
+                                                🗑 Видалити назавжди
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Link
+                                                to={`/routes/${r.id}/edit`}
+                                                className="text-amber-700 dark:text-amber-400 hover:underline"
+                                            >
+                                                Редагувати
+                                            </Link>
+                                            <Link
+                                                to={`/routes/${r.id}`}
+                                                className="text-amber-700 dark:text-amber-400 hover:underline"
+                                            >
+                                                Переглянути
+                                            </Link>
+                                            <button
+                                                onClick={() => handleArchive(r.id)}
+                                                disabled={actionId === r.id}
+                                                className="text-red-600 dark:text-red-400 hover:underline cursor-pointer disabled:opacity-50"
+                                            >
+                                                В архів
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         ))}
