@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import {Marker, Popup} from 'react-leaflet';
 import {useNavigate} from 'react-router';
+import {useTranslation} from 'react-i18next';
 import CoverImage from '../Objects/CoverImage';
 import type {CulturalObject} from '../../types';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -42,9 +43,9 @@ const eventIcon = new L.Icon({
     iconRetinaUrl: `data:image/svg+xml,${eventMarkerSvg}`,
 });
 
-function formatDateRange(start: string | null, end: string | null): string | null {
+function formatDateRange(start: string | null, end: string | null, locale: string): string | null {
     if (!start || !end) return null;
-    const fmt = (d: string) => new Date(d).toLocaleString('uk-UA', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'});
+    const fmt = (d: string) => new Date(d).toLocaleString(locale, {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'});
     return `${fmt(start)} — ${fmt(end)}`;
 }
 
@@ -54,10 +55,12 @@ interface ObjectMarkerProps {
 
 export default function ObjectMarker({object}: ObjectMarkerProps) {
     const navigate = useNavigate();
+    const {t, i18n} = useTranslation();
+    const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
     const isPending = object.status === 'pending';
     const isEvent = object.object_type === 'event';
     const icon = isPending ? pendingIcon : isEvent ? eventIcon : defaultIcon;
-    const dateRange = isEvent ? formatDateRange(object.event_start_date, object.event_end_date) : null;
+    const dateRange = isEvent ? formatDateRange(object.event_start_date, object.event_end_date, dateLocale) : null;
 
     return (
         <Marker
@@ -76,12 +79,12 @@ export default function ObjectMarker({object}: ObjectMarkerProps) {
                 <h3 className="font-bold text-sm mb-1">{object.title}</h3>
                 {isPending && (
                     <span className="inline-block px-1.5 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs mb-2">
-                        На модерації
+                        {t('object.moderationStatus.pending')}
                     </span>
                 )}
                 {isEvent && (
                     <span className="inline-block px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded text-xs mb-2">
-                        Подія
+                        {t('object.objectType.event')}
                     </span>
                 )}
                 {dateRange && (
@@ -103,7 +106,7 @@ export default function ObjectMarker({object}: ObjectMarkerProps) {
                     onClick={() => navigate(`/objects/${object.id}`)}
                     className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
                 >
-                    Детальніше
+                    {t('home.details')}
                 </button>
             </Popup>
         </Marker>

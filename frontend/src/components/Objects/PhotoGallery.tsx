@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import {useTranslation} from 'react-i18next';
 import type {ObjectPhoto} from '../../types';
 import Lightbox from './Lightbox';
 
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export default function PhotoGallery({photos}: Props) {
+    const {t} = useTranslation();
     const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
     if (photos.length === 0) return null;
@@ -35,7 +37,7 @@ export default function PhotoGallery({photos}: Props) {
                             <img src={p.thumbnail_url} alt="" className="w-full h-full object-cover"/>
                             {p.status === 'pending' && (
                                 <span className="absolute bottom-0 left-0 right-0 bg-yellow-500 text-white text-[10px] text-center">
-                                    На модерації
+                                    {t('photo.underReview')}
                                 </span>
                             )}
                         </div>
