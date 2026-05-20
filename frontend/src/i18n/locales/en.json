@@ -8,6 +8,7 @@
     "favorites": "Favorites",
     "subscriptions": "Subscriptions",
     "addObject": "Add object",
+    "admin": "Admin",
     "login": "Log in",
     "register": "Sign up",
     "logout": "Log out",
@@ -337,8 +338,15 @@
       "submitFailed": "Failed to submit",
       "submitMinStops": "Route must contain at least 2 stops",
       "copied": "Copied to your drafts",
-      "copyFailed": "Failed to copy"
+      "copyFailed": "Failed to copy",
+      "noteSaved": "Note saved",
+      "noteSaveFailed": "Failed to save note"
     },
+    "searchPlaceholder": "Search by title or description...",
+    "anyDuration": "Any duration",
+    "durationShort": "Under 2 hours",
+    "durationMedium": "2-5 hours",
+    "durationLong": "Over 5 hours",
     "edit": {
       "titleNew": "Create route",
       "titleEdit": "Edit route",
@@ -362,7 +370,10 @@
       "emptyStops": "No stops yet. Add via the search above.",
       "removeStopConfirm": "Remove this stop?",
       "dragHint": "Drag to reorder",
-      "archivedObjectWarn": "⚠ Archived object"
+      "archivedObjectWarn": "⚠ Archived object",
+      "notePlaceholder": "What's interesting here? (optional)",
+      "noteSaveBtn": "Save",
+      "noteSaving": "..."
     },
     "detail": {
       "back": "← To routes",

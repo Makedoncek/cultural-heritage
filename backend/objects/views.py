@@ -1514,13 +1514,24 @@ class RouteViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             # Public catalog: only public routes that have been approved.
             qs = qs.filter(visibility=Route.Visibility.PUBLIC, status=Route.Status.APPROVED)
-            if self.request.query_params.get('is_featured') == 'true':
+            params = self.request.query_params
+            if params.get('is_featured') == 'true':
                 qs = qs.filter(is_featured=True)
-            tag_ids = self.request.query_params.get('tags')
+            tag_ids = params.get('tags')
             if tag_ids:
                 ids = [int(t) for t in tag_ids.split(',') if t.isdigit()]
                 if ids:
                     qs = qs.filter(tags__id__in=ids).distinct()
+            search = (params.get('search') or '').strip()
+            if search:
+                qs = qs.filter(Q(title__icontains=search) | Q(description__icontains=search))
+            # Duration filter (minutes). Treats null estimated_duration_minutes as 0.
+            dmin = params.get('duration_min')
+            dmax = params.get('duration_max')
+            if dmin and dmin.isdigit():
+                qs = qs.filter(estimated_duration_minutes__gte=int(dmin))
+            if dmax and dmax.isdigit():
+                qs = qs.filter(estimated_duration_minutes__lte=int(dmax))
             return qs
 
         if self.action == 'retrieve':
@@ -1538,7 +1549,7 @@ class RouteViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ('create', 'update', 'partial_update', 'destroy',
-                           'submit', 'copy', 'add_stop', 'reorder', 'remove_stop'):
+                           'submit', 'copy', 'add_stop', 'reorder', 'stop_detail'):
             return [IsAuthenticated()]
         return [AllowAny()]
 
@@ -1731,9 +1742,11 @@ class RouteViewSet(viewsets.ModelViewSet):
         RouteStop.objects.bulk_update(stops, ['order'])
         return Response({'detail': 'ok'})
 
-    @action(detail=True, methods=['delete'], url_path=r'stops/(?P<stop_pk>\d+)')
-    def remove_stop(self, request, pk=None, stop_pk=None):
+    @action(detail=True, methods=['patch', 'delete'], url_path=r'stops/(?P<stop_pk>\d+)')
+    def stop_detail(self, request, pk=None, stop_pk=None):
+        """PATCH updates RouteStop (note), DELETE removes it. Author or admin only."""
         from .models import RouteStop
+        from .serializers import RouteStopSerializer
         route = self.get_object()
         if route.author_id != request.user.id and not request.user.is_staff:
             return Response({'detail': _('Не можна редагувати чужий маршрут.')},
@@ -1742,8 +1755,14 @@ class RouteViewSet(viewsets.ModelViewSet):
             stop = RouteStop.objects.get(pk=stop_pk, route=route)
         except RouteStop.DoesNotExist:
             return Response({'detail': _('Зупинку не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
-        stop.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if request.method == 'DELETE':
+            stop.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        # PATCH
+        if 'note' in request.data:
+            stop.note = str(request.data['note'])[:500]
+            stop.save(update_fields=['note'])
+        return Response(RouteStopSerializer(stop).data)
 
     @action(detail=True, methods=['get'], url_path='export')
     def export(self, request, pk=None):

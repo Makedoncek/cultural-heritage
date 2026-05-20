@@ -7,6 +7,9 @@ import type {
 interface ListFilters {
     is_featured?: boolean;
     tags?: number[];
+    search?: string;
+    duration_min?: number;
+    duration_max?: number;
 }
 
 export const routesService = {
@@ -14,6 +17,9 @@ export const routesService = {
         const params: Record<string, string> = {};
         if (filters.is_featured) params.is_featured = 'true';
         if (filters.tags?.length) params.tags = filters.tags.join(',');
+        if (filters.search?.trim()) params.search = filters.search.trim();
+        if (filters.duration_min != null) params.duration_min = String(filters.duration_min);
+        if (filters.duration_max != null) params.duration_max = String(filters.duration_max);
         const {data} = await api.get<RouteListItem[] | {results: RouteListItem[]}>('/routes/', {params});
         return Array.isArray(data) ? data : (data.results ?? []);
     },
@@ -63,6 +69,11 @@ export const routesService = {
 
     async removeStop(id: number, stopId: number): Promise<void> {
         await api.delete(`/routes/${id}/stops/${stopId}/`);
+    },
+
+    async updateStop(id: number, stopId: number, payload: {note?: string}): Promise<RouteStop> {
+        const {data} = await api.patch<RouteStop>(`/routes/${id}/stops/${stopId}/`, payload);
+        return data;
     },
 
     async reorder(id: number, items: ReorderItem[]): Promise<void> {

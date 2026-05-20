@@ -11,38 +11,107 @@ import {tagsService} from '../services/tags.service';
 import type {RouteDetail, RouteStop, RouteVisibility} from '../types/routes';
 import type {CulturalObject, Tag} from '../types';
 
-function SortableStopItem({stop, onRemove, dragHint, archivedHint}: {stop: RouteStop; onRemove: () => void; dragHint: string; archivedHint: string}) {
+function SortableStopItem({
+    stop, onRemove, onNoteSave, dragHint, archivedHint, notePlaceholder, saveLabel, savingLabel,
+}: {
+    stop: RouteStop;
+    onRemove: () => void;
+    onNoteSave: (note: string) => Promise<void>;
+    dragHint: string;
+    archivedHint: string;
+    notePlaceholder: string;
+    saveLabel: string;
+    savingLabel: string;
+}) {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({id: stop.id});
+    const [expanded, setExpanded] = useState(false);
+    const [noteDraft, setNoteDraft] = useState(stop.note || '');
+    const [savingNote, setSavingNote] = useState(false);
+
+    useEffect(() => {
+        setNoteDraft(stop.note || '');
+    }, [stop.note]);
+
+    const dirty = noteDraft !== (stop.note || '');
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
     };
+
+    const handleSave = async () => {
+        setSavingNote(true);
+        try {
+            await onNoteSave(noteDraft);
+            setExpanded(false);
+        } finally {
+            setSavingNote(false);
+        }
+    };
+
     return (
         <div
             ref={setNodeRef}
             style={style}
-            className="flex items-center gap-2 border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg px-3 py-2"
+            className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg"
         >
-            <span {...attributes} {...listeners} className="cursor-grab text-gray-400 dark:text-stone-500 text-lg select-none" title={dragHint}>⋮⋮</span>
-            <div className="shrink-0 w-7 h-7 rounded-full bg-amber-600 dark:bg-amber-500 text-white dark:text-stone-900 flex items-center justify-center font-bold text-sm">
-                {stop.order}
+            <div className="flex items-center gap-2 px-3 py-2">
+                <span {...attributes} {...listeners} className="cursor-grab text-gray-400 dark:text-stone-500 text-lg select-none" title={dragHint}>⋮⋮</span>
+                <div className="shrink-0 w-7 h-7 rounded-full bg-amber-600 dark:bg-amber-500 text-white dark:text-stone-900 flex items-center justify-center font-bold text-sm">
+                    {stop.order}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-stone-100 truncate">
+                        {stop.object_title}
+                    </p>
+                    {stop.is_unavailable && (
+                        <p className="text-xs text-red-600 dark:text-red-400">{archivedHint}</p>
+                    )}
+                    {!expanded && stop.note && (
+                        <p className="text-xs text-gray-600 dark:text-stone-400 italic mt-0.5 line-clamp-2">
+                            {stop.note}
+                        </p>
+                    )}
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setExpanded(e => !e)}
+                    className={`shrink-0 text-sm px-2 cursor-pointer ${stop.note ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-stone-500'} hover:text-amber-800 dark:hover:text-amber-300`}
+                    title={notePlaceholder}
+                >
+                    📝
+                </button>
+                <button
+                    type="button"
+                    onClick={onRemove}
+                    className="shrink-0 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm px-2 cursor-pointer"
+                >
+                    ✕
+                </button>
             </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-stone-100 truncate">
-                    {stop.object_title}
-                </p>
-                {stop.is_unavailable && (
-                    <p className="text-xs text-red-600 dark:text-red-400">{archivedHint}</p>
-                )}
-            </div>
-            <button
-                type="button"
-                onClick={onRemove}
-                className="shrink-0 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm px-2 cursor-pointer"
-            >
-                ✕
-            </button>
+            {expanded && (
+                <div className="px-3 pb-2 border-t border-gray-100 dark:border-stone-700">
+                    <textarea
+                        value={noteDraft}
+                        onChange={(e) => setNoteDraft(e.target.value)}
+                        maxLength={500}
+                        rows={2}
+                        placeholder={notePlaceholder}
+                        className="w-full mt-2 bg-white dark:bg-stone-800 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-stone-100 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+                    />
+                    <div className="flex justify-between items-center mt-1">
+                        <span className="text-xs text-gray-400 dark:text-stone-500">{noteDraft.length} / 500</span>
+                        <button
+                            type="button"
+                            onClick={handleSave}
+                            disabled={!dirty || savingNote}
+                            className="px-2.5 py-1 text-xs bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded cursor-pointer disabled:opacity-50"
+                        >
+                            {savingNote ? savingLabel : saveLabel}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -423,8 +492,21 @@ export default function AddEditRoutePage() {
                                                 key={s.id}
                                                 stop={s}
                                                 onRemove={() => handleRemoveStop(s.id)}
+                                                onNoteSave={async (note) => {
+                                                    if (!route) return;
+                                                    try {
+                                                        const updated = await routesService.updateStop(route.id, s.id, {note});
+                                                        setStops(prev => prev.map(x => x.id === s.id ? {...x, note: updated.note} : x));
+                                                        toast.success(t('routes.toast.noteSaved'));
+                                                    } catch {
+                                                        toast.error(t('routes.toast.noteSaveFailed'));
+                                                    }
+                                                }}
                                                 dragHint={t('routes.edit.dragHint')}
                                                 archivedHint={t('routes.edit.archivedObjectWarn')}
+                                                notePlaceholder={t('routes.edit.notePlaceholder')}
+                                                saveLabel={t('routes.edit.noteSaveBtn')}
+                                                savingLabel={t('routes.edit.noteSaving')}
                                             />
                                         ))}
                                     </div>

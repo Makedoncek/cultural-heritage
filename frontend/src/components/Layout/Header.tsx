@@ -10,6 +10,8 @@ const linkClass = ({isActive}: { isActive: boolean }) =>
         ? 'text-amber-700 dark:text-amber-400 font-semibold'
         : 'text-gray-700 dark:text-stone-300 hover:text-amber-700 dark:hover:text-amber-400';
 
+const ADMIN_URL = (import.meta.env.VITE_API_URL as string || 'http://localhost:8000/api').replace(/\/api\/?$/, '/admin/');
+
 export default function Header() {
     const {user, isAuthenticated, loading, logout} = useAuth();
     const {t} = useTranslation();
@@ -41,6 +43,17 @@ export default function Header() {
                                     <NavLink to="/favorites" className={linkClass}>{t('nav.favorites')}</NavLink>
                                     <NavLink to="/favorite-authors" className={linkClass}>{t('nav.subscriptions')}</NavLink>
                                     <NavLink to="/objects/add" className={linkClass}>{t('nav.addObject')}</NavLink>
+                                    {user?.is_staff && (
+                                        <a
+                                            href={ADMIN_URL}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-purple-700 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 font-medium"
+                                            title="Django admin"
+                                        >
+                                            🛠 {t('nav.admin')}
+                                        </a>
+                                    )}
                                     <Link to={`/authors/${user?.username}`} className="text-amber-800 dark:text-amber-300 font-medium hover:text-amber-600 dark:hover:text-amber-200">{user?.username}</Link>
                                     <ThemeSwitcher/>
                                     <LanguageSwitcher/>
@@ -105,6 +118,17 @@ export default function Header() {
                                      onClick={() => setMenuOpen(false)}>{t('nav.subscriptions')}</NavLink>
                             <NavLink to="/objects/add" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>{t('nav.addObject')}</NavLink>
+                            {user?.is_staff && (
+                                <a
+                                    href={ADMIN_URL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-purple-700 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 font-medium"
+                                    onClick={() => setMenuOpen(false)}
+                                >
+                                    🛠 {t('nav.admin')}
+                                </a>
+                            )}
                             <div className="border-t border-gray-100 dark:border-stone-700 pt-3 flex items-center justify-between gap-2">
                                 <Link to={`/authors/${user?.username}`} className="text-amber-800 dark:text-amber-300 font-medium hover:text-amber-600 dark:hover:text-amber-200 flex-1" onClick={() => setMenuOpen(false)}>{user?.username}</Link>
                                 <ThemeSwitcher/>

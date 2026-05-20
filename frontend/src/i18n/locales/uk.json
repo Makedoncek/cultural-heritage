@@ -8,6 +8,7 @@
     "favorites": "Обране",
     "subscriptions": "Підписки",
     "addObject": "Додати об'єкт",
+    "admin": "Адмінка",
     "login": "Увійти",
     "register": "Реєстрація",
     "logout": "Вийти",
@@ -337,8 +338,15 @@
       "submitFailed": "Не вдалося надіслати",
       "submitMinStops": "Маршрут має містити щонайменше 2 зупинки",
       "copied": "Скопійовано у ваші чернетки",
-      "copyFailed": "Не вдалося скопіювати"
+      "copyFailed": "Не вдалося скопіювати",
+      "noteSaved": "Нотатку збережено",
+      "noteSaveFailed": "Не вдалося зберегти нотатку"
     },
+    "searchPlaceholder": "Пошук за назвою чи описом...",
+    "anyDuration": "Будь-яка тривалість",
+    "durationShort": "До 2 годин",
+    "durationMedium": "2-5 годин",
+    "durationLong": "Понад 5 годин",
     "edit": {
       "titleNew": "Створити маршрут",
       "titleEdit": "Редагувати маршрут",
@@ -362,7 +370,10 @@
       "emptyStops": "Поки що немає зупинок. Додай через пошук вище.",
       "removeStopConfirm": "Видалити цю зупинку?",
       "dragHint": "Перетягніть для зміни порядку",
-      "archivedObjectWarn": "⚠ Архівований об'єкт"
+      "archivedObjectWarn": "⚠ Архівований об'єкт",
+      "notePlaceholder": "Що тут цікавого? (опціонально)",
+      "noteSaveBtn": "Зберегти",
+      "noteSaving": "..."
     },
     "detail": {
       "back": "← До маршрутів",

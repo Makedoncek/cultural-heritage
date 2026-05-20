@@ -2,7 +2,18 @@ import {useEffect, useState} from 'react';
 import {Link} from 'react-router';
 import {useTranslation} from 'react-i18next';
 import {routesService} from '../services/routes.service';
+import {tagsService} from '../services/tags.service';
 import type {RouteListItem} from '../types/routes';
+import type {Tag} from '../types';
+
+type DurationBucket = '' | 'short' | 'medium' | 'long';
+
+const DURATION_BUCKETS: Record<DurationBucket, {min?: number; max?: number}> = {
+    '': {},
+    short: {max: 119},          // <2 год
+    medium: {min: 120, max: 300}, // 2-5 год
+    long: {min: 301},           // >5 год
+};
 
 export default function RoutesListPage() {
     const {t, i18n} = useTranslation();
@@ -11,14 +22,39 @@ export default function RoutesListPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [featuredOnly, setFeaturedOnly] = useState(false);
+    const [search, setSearch] = useState('');
+    const [searchInput, setSearchInput] = useState('');
+    const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+    const [duration, setDuration] = useState<DurationBucket>('');
+    const [allTags, setAllTags] = useState<Tag[]>([]);
+
+    useEffect(() => {
+        tagsService.getAll().then(r => setAllTags(r.results)).catch(() => {});
+    }, []);
 
     useEffect(() => {
         setLoading(true);
-        routesService.list({is_featured: featuredOnly || undefined})
+        const bucket = DURATION_BUCKETS[duration];
+        routesService.list({
+            is_featured: featuredOnly || undefined,
+            tags: selectedTagIds.length ? selectedTagIds : undefined,
+            search: search || undefined,
+            duration_min: bucket.min,
+            duration_max: bucket.max,
+        })
             .then(setRoutes)
             .catch(() => setError(t('routes.loadError')))
             .finally(() => setLoading(false));
-    }, [featuredOnly, t]);
+    }, [featuredOnly, selectedTagIds, search, duration, t]);
+
+    const toggleTag = (id: number) => {
+        setSelectedTagIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    };
+
+    const onSearchSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setSearch(searchInput.trim());
+    };
 
     if (loading) {
         return (
@@ -56,19 +92,78 @@ export default function RoutesListPage() {
                     {t('routes.subtitle')}
                 </p>
 
-                <div className="flex items-center gap-4 mb-6">
-                    <label className="inline-flex items-center gap-2 text-base text-gray-700 dark:text-stone-200 cursor-pointer">
+                <div className="space-y-3 mb-6">
+                    <form onSubmit={onSearchSubmit} className="flex gap-2">
                         <input
-                            type="checkbox"
-                            checked={featuredOnly}
-                            onChange={(e) => setFeaturedOnly(e.target.checked)}
-                            className="w-5 h-5 accent-amber-500 cursor-pointer"
+                            type="search"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            placeholder={t('routes.searchPlaceholder')}
+                            className="flex-1 bg-white dark:bg-stone-800 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
                         />
-                        ⭐ {t('routes.featuredOnly')}
-                    </label>
-                    <Link to="/my-routes" className="text-base text-amber-700 dark:text-amber-400 hover:underline">
-                        📋 {t('routes.myRoutes')}
-                    </Link>
+                        <button
+                            type="submit"
+                            className="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg cursor-pointer"
+                        >
+                            🔍
+                        </button>
+                        {search && (
+                            <button
+                                type="button"
+                                onClick={() => { setSearch(''); setSearchInput(''); }}
+                                className="px-3 py-2 text-sm border border-gray-300 dark:border-stone-600 text-gray-700 dark:text-stone-200 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-800 cursor-pointer"
+                            >
+                                ✕
+                            </button>
+                        )}
+                    </form>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <label className="inline-flex items-center gap-2 text-base text-gray-700 dark:text-stone-200 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={featuredOnly}
+                                onChange={(e) => setFeaturedOnly(e.target.checked)}
+                                className="w-5 h-5 accent-amber-500 cursor-pointer"
+                            />
+                            ⭐ {t('routes.featuredOnly')}
+                        </label>
+                        <select
+                            value={duration}
+                            onChange={(e) => setDuration(e.target.value as DurationBucket)}
+                            className="bg-white dark:bg-stone-800 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-stone-100 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+                        >
+                            <option value="">⏱ {t('routes.anyDuration')}</option>
+                            <option value="short">{t('routes.durationShort')}</option>
+                            <option value="medium">{t('routes.durationMedium')}</option>
+                            <option value="long">{t('routes.durationLong')}</option>
+                        </select>
+                        <Link to="/my-routes" className="text-base text-amber-700 dark:text-amber-400 hover:underline">
+                            📋 {t('routes.myRoutes')}
+                        </Link>
+                    </div>
+
+                    {allTags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                            {allTags.map(tag => {
+                                const selected = selectedTagIds.includes(tag.id);
+                                return (
+                                    <button
+                                        key={tag.id}
+                                        type="button"
+                                        onClick={() => toggleTag(tag.id)}
+                                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border transition-colors cursor-pointer ${
+                                            selected
+                                                ? 'bg-amber-100 dark:bg-amber-900/40 border-amber-400 dark:border-amber-600 text-amber-800 dark:text-amber-300'
+                                                : 'bg-white dark:bg-stone-800 border-gray-200 dark:border-stone-700 text-gray-600 dark:text-stone-300 hover:border-gray-400 dark:hover:border-stone-500'
+                                        }`}
+                                    >
+                                        {tag.icon} {tag.name}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 {routes.length === 0 ? (
