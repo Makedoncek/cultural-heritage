@@ -16,9 +16,9 @@ export default function RoutesListPage() {
         setLoading(true);
         routesService.list({is_featured: featuredOnly || undefined})
             .then(setRoutes)
-            .catch(() => setError('Не вдалося завантажити маршрути.'))
+            .catch(() => setError(t('routes.loadError')))
             .finally(() => setLoading(false));
-    }, [featuredOnly]);
+    }, [featuredOnly, t]);
 
     if (loading) {
         return (
@@ -43,17 +43,17 @@ export default function RoutesListPage() {
             <div className="max-w-4xl mx-auto px-4 py-6">
                 <div className="flex flex-wrap items-center justify-between mb-2 gap-3">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">
-                        🗺 Маршрути культурної спадщини
+                        🗺 {t('routes.title')}
                     </h1>
                     <Link
                         to="/routes/add"
                         className="px-4 py-2 bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 text-sm font-medium rounded-lg"
                     >
-                        + Створити маршрут
+                        {t('routes.createButton')}
                     </Link>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-stone-400 mb-4">
-                    Кураторські туристичні маршрути культурною спадщиною України з експортом GPX/KML.
+                    {t('routes.subtitle')}
                 </p>
 
                 <div className="flex items-center gap-4 mb-6">
@@ -64,17 +64,17 @@ export default function RoutesListPage() {
                             onChange={(e) => setFeaturedOnly(e.target.checked)}
                             className="w-5 h-5 accent-amber-500 cursor-pointer"
                         />
-                        ⭐ Тільки рекомендовані
+                        ⭐ {t('routes.featuredOnly')}
                     </label>
                     <Link to="/my-routes" className="text-base text-amber-700 dark:text-amber-400 hover:underline">
-                        📋 Мої маршрути →
+                        📋 {t('routes.myRoutes')}
                     </Link>
                 </div>
 
                 {routes.length === 0 ? (
                     <div className="text-center py-12">
                         <p className="text-gray-500 dark:text-stone-400">
-                            Поки що немає опублікованих маршрутів. Створи перший!
+                            {t('routes.empty')}
                         </p>
                     </div>
                 ) : (
@@ -102,13 +102,13 @@ export default function RoutesListPage() {
                                             {r.title}
                                         </h2>
                                         {r.is_featured && (
-                                            <span className="text-amber-500 dark:text-amber-400 text-sm shrink-0" title="Рекомендований">⭐</span>
+                                            <span className="text-amber-500 dark:text-amber-400 text-sm shrink-0" title={t('routes.featured')}>⭐</span>
                                         )}
                                     </div>
                                     <p className="text-xs text-gray-500 dark:text-stone-400 mb-2">
-                                        @{r.author_name} · {r.stops_count} зупинок
+                                        @{r.author_name} · {r.stops_count} {t('routes.stops')}
                                         {r.estimated_duration_minutes != null && r.estimated_duration_minutes > 0 && (
-                                            <> · ~{Math.round(r.estimated_duration_minutes / 60)} год</>
+                                            <> · ~{Math.round(r.estimated_duration_minutes / 60)} {t('routes.hours')}</>
                                         )}
                                     </p>
                                     <p className="text-sm text-gray-700 dark:text-stone-300 line-clamp-2">

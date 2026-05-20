@@ -546,7 +546,6 @@ class ObjectViewSet(viewsets.ModelViewSet):
         base_qs = (CulturalObject.objects
                    .select_related('author')
                    .prefetch_related('tags')
-                   .exclude(status='archived')
                    .annotate(favorites_count=Count('favorited_by', distinct=True))
                    .annotate(_cover_thumbnail_url=Subquery(cover_thumb_sq))
                    .order_by('-created_at'))
@@ -555,6 +554,16 @@ class ObjectViewSet(viewsets.ModelViewSet):
             base_qs = base_qs.annotate(
                 _is_favorited=Exists(Favorite.objects.filter(user=user, cultural_object=OuterRef('pk')))
             )
+
+        # Author/admin can retrieve their own archived objects; list/other actions exclude archived.
+        if self.action == 'retrieve':
+            if user.is_staff:
+                return base_qs
+            if user.is_authenticated:
+                return base_qs.filter(Q(status='approved') | Q(author=user)).distinct().order_by('-created_at')
+            return base_qs.filter(status='approved')
+
+        base_qs = base_qs.exclude(status='archived')
 
         if user.is_staff:
             return base_qs

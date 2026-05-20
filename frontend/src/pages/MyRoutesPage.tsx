@@ -12,21 +12,9 @@ const STATUS_BADGE: Record<RouteStatus, string> = {
     archived: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
 };
 
-const STATUS_LABEL: Record<RouteStatus, string> = {
-    draft: 'Чернетка',
-    pending: 'На модерації',
-    approved: 'Опубліковано',
-    archived: 'Архів',
-};
-
 const VISIBILITY_BADGE = {
     private: 'bg-gray-100 text-gray-700 dark:bg-stone-800 dark:text-stone-300',
     public: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-} as const;
-
-const VISIBILITY_LABEL = {
-    private: '🔒 Особистий',
-    public: '🌐 Публічний',
 } as const;
 
 export default function MyRoutesPage() {
@@ -42,37 +30,37 @@ export default function MyRoutesPage() {
         try {
             const updated = await routesService.restore(id);
             setRoutes(prev => prev.map(r => r.id === id ? {...r, status: updated.status} : r));
-            toast.success('Маршрут відновлено');
+            toast.success(t('routes.toast.restored'));
         } catch {
-            toast.error('Не вдалося відновити');
+            toast.error(t('routes.toast.restoreFailed'));
         } finally {
             setActionId(null);
         }
     };
 
     const handleHardDelete = async (id: number) => {
-        if (!confirm('Видалити маршрут назавжди? Цю дію не можна скасувати.')) return;
+        if (!confirm(t('routes.confirm.hardDelete'))) return;
         setActionId(id);
         try {
             await routesService.hardDelete(id);
             setRoutes(prev => prev.filter(r => r.id !== id));
-            toast.success('Видалено назавжди');
+            toast.success(t('routes.toast.hardDeleted'));
         } catch {
-            toast.error('Не вдалося видалити');
+            toast.error(t('routes.toast.hardDeleteFailed'));
         } finally {
             setActionId(null);
         }
     };
 
     const handleArchive = async (id: number) => {
-        if (!confirm('Перенести маршрут до архіву?')) return;
+        if (!confirm(t('routes.confirm.archive'))) return;
         setActionId(id);
         try {
             await routesService.archive(id);
             setRoutes(prev => prev.map(r => r.id === id ? {...r, status: 'archived'} : r));
-            toast.success('Маршрут архівовано');
+            toast.success(t('routes.toast.archived'));
         } catch {
-            toast.error('Не вдалося архівувати');
+            toast.error(t('routes.toast.archiveFailed'));
         } finally {
             setActionId(null);
         }
@@ -81,9 +69,9 @@ export default function MyRoutesPage() {
     useEffect(() => {
         routesService.listMine()
             .then(setRoutes)
-            .catch(() => setError('Не вдалося завантажити маршрути.'))
+            .catch(() => setError(t('routes.loadError')))
             .finally(() => setLoading(false));
-    }, []);
+    }, [t]);
 
     if (loading) {
         return (
@@ -108,23 +96,23 @@ export default function MyRoutesPage() {
             <div className="max-w-2xl mx-auto px-4 py-6">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">
-                        Мої маршрути
+                        {t('routes.myRoutesTitle')}
                     </h1>
                     <Link
                         to="/routes/add"
                         className="px-4 py-2 bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 text-sm font-medium rounded-lg"
                     >
-                        + Створити
+                        {t('routes.createShort')}
                     </Link>
                 </div>
 
                 {routes.length === 0 ? (
                     <div className="text-center py-12">
                         <p className="text-gray-500 dark:text-stone-400 mb-4">
-                            У вас ще немає маршрутів
+                            {t('routes.emptyMine')}
                         </p>
                         <Link to="/routes/add" className="text-amber-600 dark:text-amber-400 hover:underline">
-                            Створити перший маршрут
+                            {t('routes.createFirst')}
                         </Link>
                     </div>
                 ) : (
@@ -143,56 +131,56 @@ export default function MyRoutesPage() {
                                     </Link>
                                     <div className="flex gap-1 shrink-0">
                                         <span className={`px-2 py-0.5 text-xs font-medium rounded ${VISIBILITY_BADGE[r.visibility]}`}>
-                                            {VISIBILITY_LABEL[r.visibility]}
+                                            {t(`routes.visibility.${r.visibility}`)}
                                         </span>
                                         {r.visibility === 'public' && (
                                             <span className={`px-2 py-0.5 text-xs font-medium rounded ${STATUS_BADGE[r.status]}`}>
-                                                {STATUS_LABEL[r.status]}
+                                                {t(`routes.status.${r.status}`)}
                                             </span>
                                         )}
                                     </div>
                                 </div>
                                 <p className="text-xs text-gray-500 dark:text-stone-400">
-                                    {r.stops_count} зупинок · оновлено {new Date(r.updated_at).toLocaleDateString(dateLocale)}
+                                    {r.stops_count} {t('routes.stops')} · {new Date(r.updated_at).toLocaleDateString(dateLocale)}
                                 </p>
-                                <div className="flex gap-3 mt-2 text-xs flex-wrap">
+                                <div className="flex gap-2 mt-3 flex-wrap">
                                     {r.status === 'archived' ? (
                                         <>
                                             <button
                                                 onClick={() => handleRestore(r.id)}
                                                 disabled={actionId === r.id}
-                                                className="text-amber-700 dark:text-amber-400 hover:underline cursor-pointer disabled:opacity-50"
+                                                className="px-3 py-1.5 text-sm bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg cursor-pointer disabled:opacity-50"
                                             >
-                                                ↩ Відновити
+                                                {t('routes.actions.restore')}
                                             </button>
                                             <button
                                                 onClick={() => handleHardDelete(r.id)}
                                                 disabled={actionId === r.id}
-                                                className="text-red-600 dark:text-red-400 hover:underline cursor-pointer disabled:opacity-50"
+                                                className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg cursor-pointer disabled:opacity-50"
                                             >
-                                                🗑 Видалити назавжди
+                                                {t('routes.actions.hardDelete')}
                                             </button>
                                         </>
                                     ) : (
                                         <>
                                             <Link
-                                                to={`/routes/${r.id}/edit`}
-                                                className="text-amber-700 dark:text-amber-400 hover:underline"
+                                                to={`/routes/${r.id}`}
+                                                className="px-3 py-1.5 text-sm bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg"
                                             >
-                                                Редагувати
+                                                {t('routes.actions.view')}
                                             </Link>
                                             <Link
-                                                to={`/routes/${r.id}`}
-                                                className="text-amber-700 dark:text-amber-400 hover:underline"
+                                                to={`/routes/${r.id}/edit`}
+                                                className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white rounded-lg"
                                             >
-                                                Переглянути
+                                                {t('routes.actions.edit')}
                                             </Link>
                                             <button
                                                 onClick={() => handleArchive(r.id)}
                                                 disabled={actionId === r.id}
-                                                className="text-red-600 dark:text-red-400 hover:underline cursor-pointer disabled:opacity-50"
+                                                className="px-3 py-1.5 text-sm bg-stone-200 hover:bg-stone-300 dark:bg-stone-700 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 rounded-lg cursor-pointer disabled:opacity-50"
                                             >
-                                                В архів
+                                                {t('routes.actions.archive')}
                                             </button>
                                         </>
                                     )}

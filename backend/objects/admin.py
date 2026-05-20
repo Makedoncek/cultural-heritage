@@ -443,6 +443,10 @@ class RouteStopInline(SortableTabularInline):
     fields = ['order', 'cultural_object', 'note']
     raw_id_fields = ['cultural_object']
     ordering = ['order']
+    ordering_field = 'order'
+
+    class Media:
+        css = {'all': ('admin/css/route_stop_inline_sortable.css',)}
 
 
 @admin.register(Route)

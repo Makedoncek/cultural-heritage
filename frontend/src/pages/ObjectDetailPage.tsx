@@ -13,6 +13,7 @@ import PlanVisitToggleButton from '../components/Objects/PlanVisitToggleButton';
 import PhotoGallery from '../components/Objects/PhotoGallery';
 import PhotoUploader, {type PendingPhoto} from '../components/Objects/PhotoUploader';
 import ReportInaccuracyButton from '../components/Objects/ReportInaccuracyButton';
+import AddToRouteButton from '../components/Objects/AddToRouteButton';
 import type {CulturalObjectDetail} from '../types';
 import '../utils/leaflet-fix';
 
@@ -172,6 +173,9 @@ export default function ObjectDetailPage() {
                                             initialPlanned={object.is_planned ?? false}
                                         />
                                     </>
+                                )}
+                                {(object.status === 'approved' || isAuthor) && object.status !== 'archived' && (
+                                    <AddToRouteButton objectId={object.id}/>
                                 )}
                             </>
                         )}

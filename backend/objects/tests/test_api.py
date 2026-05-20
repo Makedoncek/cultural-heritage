@@ -248,7 +248,8 @@ class ObjectCRUDTest(APITestCase):
         self.assertIn('My Object 1', titles)
         self.assertNotIn('Other User Object', titles)
 
-    def test_my_objects_excludes_archived(self):
+    def test_my_objects_includes_archived(self):
+        """Author should see own archived objects in /my/ so they can restore or hard-delete them."""
         obj1 = CulturalObject.objects.create(
             title="Active",
             latitude=50.0,
@@ -272,7 +273,7 @@ class ObjectCRUDTest(APITestCase):
         titles = [o['title'] for o in response.data.get('results', response.data)]
 
         self.assertIn('Active', titles)
-        self.assertNotIn('Archived', titles)
+        self.assertIn('Archived', titles)
 
     def test_my_objects_requires_authentication(self):
         self.client.force_authenticate(user=None)

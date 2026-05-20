@@ -141,7 +141,12 @@ export default function MyObjectsPage() {
                             >
                                 <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-gray-900 dark:text-stone-100 font-medium">{obj.title}</span>
+                                        <Link
+                                            to={`/objects/${obj.id}`}
+                                            className="text-gray-900 dark:text-stone-100 font-medium hover:text-amber-700 dark:hover:text-amber-300"
+                                        >
+                                            {obj.title}
+                                        </Link>
                                         <span className={`px-2.5 py-0.5 text-xs font-medium rounded ${STATUS_COLORS[obj.status]}`}>
                                             {t(`object.moderationStatus.${obj.status}`)}
                                         </span>
@@ -181,16 +186,16 @@ export default function MyObjectsPage() {
                                             </Link>
                                             <Link
                                                 to={`/objects/${obj.id}/edit`}
-                                                className="px-3 py-1.5 text-sm border border-gray-300 dark:border-stone-600 text-gray-700 dark:text-stone-200 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-800"
+                                                className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white rounded-lg"
                                             >
                                                 {t('object.edit')}
                                             </Link>
                                             <button
                                                 onClick={() => handleDelete(obj.id)}
                                                 disabled={deletingId === obj.id}
-                                                className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 cursor-pointer disabled:opacity-50"
+                                                className="px-3 py-1.5 text-sm bg-stone-200 hover:bg-stone-300 dark:bg-stone-700 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 rounded-lg cursor-pointer disabled:opacity-50"
                                             >
-                                                {deletingId === obj.id ? t('object.deleting') : t('object.delete')}
+                                                {deletingId === obj.id ? t('object.deleting') : `📦 ${t('object.delete')}`}
                                             </button>
                                         </>
                                     )}

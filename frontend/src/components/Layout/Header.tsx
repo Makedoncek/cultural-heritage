@@ -93,6 +93,8 @@ export default function Header() {
                                      onClick={() => setMenuOpen(false)}>{t('nav.map')}</NavLink>
                             <NavLink to="/popular" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>{t('nav.popular')}</NavLink>
+                            <NavLink to="/routes" className={linkClass}
+                                     onClick={() => setMenuOpen(false)}>🗺 {t('nav.routes')}</NavLink>
                             <NavLink to="/my-objects" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>{t('nav.myObjects')}</NavLink>
                             <NavLink to="/my-photos" className={linkClass}
@@ -122,6 +124,8 @@ export default function Header() {
                         <>
                             <NavLink to="/popular" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>{t('nav.popular')}</NavLink>
+                            <NavLink to="/routes" className={linkClass}
+                                     onClick={() => setMenuOpen(false)}>🗺 {t('nav.routes')}</NavLink>
                             <div className="flex items-center gap-2">
                                 <ThemeSwitcher/>
                                 <LanguageSwitcher/>

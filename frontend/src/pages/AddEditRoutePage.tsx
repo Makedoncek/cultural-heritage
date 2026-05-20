@@ -11,7 +11,7 @@ import {tagsService} from '../services/tags.service';
 import type {RouteDetail, RouteStop, RouteVisibility} from '../types/routes';
 import type {CulturalObject, Tag} from '../types';
 
-function SortableStopItem({stop, onRemove}: {stop: RouteStop; onRemove: () => void}) {
+function SortableStopItem({stop, onRemove, dragHint, archivedHint}: {stop: RouteStop; onRemove: () => void; dragHint: string; archivedHint: string}) {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({id: stop.id});
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -24,7 +24,7 @@ function SortableStopItem({stop, onRemove}: {stop: RouteStop; onRemove: () => vo
             style={style}
             className="flex items-center gap-2 border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg px-3 py-2"
         >
-            <span {...attributes} {...listeners} className="cursor-grab text-gray-400 dark:text-stone-500 text-lg select-none" title="Перетягніть для зміни порядку">⋮⋮</span>
+            <span {...attributes} {...listeners} className="cursor-grab text-gray-400 dark:text-stone-500 text-lg select-none" title={dragHint}>⋮⋮</span>
             <div className="shrink-0 w-7 h-7 rounded-full bg-amber-600 dark:bg-amber-500 text-white dark:text-stone-900 flex items-center justify-center font-bold text-sm">
                 {stop.order}
             </div>
@@ -33,7 +33,7 @@ function SortableStopItem({stop, onRemove}: {stop: RouteStop; onRemove: () => vo
                     {stop.object_title}
                 </p>
                 {stop.is_unavailable && (
-                    <p className="text-xs text-red-600 dark:text-red-400">⚠ Архівований об'єкт</p>
+                    <p className="text-xs text-red-600 dark:text-red-400">{archivedHint}</p>
                 )}
             </div>
             <button
@@ -86,13 +86,13 @@ export default function AddEditRoutePage() {
                 setSelectedTags(r.tags.map(t => t.id));
                 setStops(r.stops);
             })
-            .catch(() => toast.error('Не вдалося завантажити маршрут'))
+            .catch(() => toast.error(t('routes.toast.loadFailed')))
             .finally(() => setLoading(false));
-    }, [isEdit, routeId]);
+    }, [isEdit, routeId, t]);
 
     const handleSaveBasics = async (): Promise<RouteDetail | null> => {
         if (!title.trim() || !description.trim()) {
-            toast.error('Заповніть назву і опис');
+            toast.error(t('routes.toast.fillTitleDescription'));
             return null;
         }
         const payload = {
@@ -109,7 +109,7 @@ export default function AddEditRoutePage() {
             return await routesService.create(payload);
         } catch (e) {
             const detail = (e as {response?: {data?: {detail?: string}}}).response?.data?.detail;
-            toast.error(detail || 'Не вдалося зберегти');
+            toast.error(detail || t('routes.toast.saveFailed'));
             return null;
         }
     };
@@ -119,8 +119,21 @@ export default function AddEditRoutePage() {
         const r = await handleSaveBasics();
         setSaving(false);
         if (r) {
-            toast.success('Збережено');
+            toast.success(t('routes.toast.saved'));
             if (!isEdit) {
+                // If user came from object page with pre-selected stop — add it now
+                const pendingStopId = sessionStorage.getItem('routeFirstStopObjectId');
+                if (pendingStopId) {
+                    sessionStorage.removeItem('routeFirstStopObjectId');
+                    try {
+                        const stop = await routesService.addStop(r.id, {cultural_object: Number(pendingStopId)});
+                        r.stops = [stop];
+                        setStops([stop]);
+                    } catch {
+                        toast.error(t('routes.toast.stopAddFailed'));
+                    }
+                    setRoute(r);
+                }
                 navigate(`/routes/${r.id}/edit`, {replace: true});
             } else {
                 navigate('/my-routes');
@@ -139,7 +152,7 @@ export default function AddEditRoutePage() {
             const usedIds = new Set(stops.map(s => s.object_id));
             setSearchResults(res.results.filter(o => !usedIds.has(o.id)).slice(0, 8));
         } catch {
-            toast.error('Помилка пошуку');
+            toast.error(t('routes.toast.searchFailed'));
         } finally {
             setSearching(false);
         }
@@ -159,22 +172,22 @@ export default function AddEditRoutePage() {
             setStops(prev => [...prev, newStop]);
             setSearch('');
             setSearchResults([]);
-            toast.success('Зупинку додано');
+            toast.success(t('routes.toast.stopAdded'));
         } catch (e) {
             const detail = (e as {response?: {data?: {detail?: string}}}).response?.data?.detail;
-            toast.error(detail || 'Не вдалося додати зупинку');
+            toast.error(detail || t('routes.toast.stopAddFailed'));
         }
     };
 
     const handleRemoveStop = async (stopId: number) => {
         if (!route) return;
-        if (!confirm('Видалити цю зупинку?')) return;
+        if (!confirm(t('routes.edit.removeStopConfirm'))) return;
         try {
             await routesService.removeStop(route.id, stopId);
             setStops(prev => prev.filter(s => s.id !== stopId).map((s, i) => ({...s, order: i + 1})));
-            toast.success('Видалено');
+            toast.success(t('routes.toast.stopRemoved'));
         } catch {
-            toast.error('Не вдалося видалити');
+            toast.error(t('routes.toast.stopRemoveFailed'));
         }
     };
 
@@ -188,7 +201,7 @@ export default function AddEditRoutePage() {
         try {
             await routesService.reorder(route.id, reordered.map(s => ({id: s.id, order: s.order})));
         } catch {
-            toast.error('Не вдалося зберегти порядок');
+            toast.error(t('routes.toast.reorderFailed'));
         }
     };
 
@@ -209,17 +222,17 @@ export default function AddEditRoutePage() {
             <div className="max-w-2xl mx-auto px-4 py-6">
                 <Link to={isEdit && route ? `/routes/${route.id}` : '/my-routes'}
                       className="text-sm text-amber-700 dark:text-amber-400 hover:underline mb-2 inline-block">
-                    ← Назад
+                    {t('routes.edit.back')}
                 </Link>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100 mb-4">
-                    {isEdit ? 'Редагувати маршрут' : 'Створити маршрут'}
+                    {isEdit ? t('routes.edit.titleEdit') : t('routes.edit.titleNew')}
                 </h1>
 
                 <div className="space-y-4">
                     {/* Title */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-1">
-                            Назва *
+                            {t('routes.edit.name')} *
                         </label>
                         <input
                             type="text"
@@ -233,7 +246,7 @@ export default function AddEditRoutePage() {
                     {/* Visibility */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-2">
-                            Тип маршруту
+                            {t('routes.edit.visibility')}
                         </label>
                         <div className="grid grid-cols-2 gap-2">
                             <button
@@ -245,9 +258,9 @@ export default function AddEditRoutePage() {
                                         : 'bg-white dark:bg-stone-800 border-gray-200 dark:border-stone-700 text-gray-600 dark:text-stone-300 hover:border-gray-400 dark:hover:border-stone-500'
                                 }`}
                             >
-                                🔒 Особистий
+                                {t('routes.visibility.private')}
                                 <span className="block text-xs font-normal mt-0.5 opacity-80">
-                                    Тільки для мене, без модерації
+                                    {t('routes.edit.privateHint')}
                                 </span>
                             </button>
                             <button
@@ -259,20 +272,20 @@ export default function AddEditRoutePage() {
                                         : 'bg-white dark:bg-stone-800 border-gray-200 dark:border-stone-700 text-gray-600 dark:text-stone-300 hover:border-gray-400 dark:hover:border-stone-500'
                                 }`}
                             >
-                                🌐 Публічний
+                                {t('routes.visibility.public')}
                                 <span className="block text-xs font-normal mt-0.5 opacity-80">
-                                    Для всіх, потребує модерації
+                                    {t('routes.edit.publicHint')}
                                 </span>
                             </button>
                         </div>
                         {isEdit && route && route.visibility === 'public' && visibility === 'private' && (
                             <p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
-                                ⚠ При зміні на «Особистий» маршрут буде прихований з публічного каталогу.
+                                {t('routes.edit.warnToPrivate')}
                             </p>
                         )}
                         {isEdit && route && route.visibility === 'private' && visibility === 'public' && (
                             <p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
-                                ℹ При зміні на «Публічний» маршрут піде у чернетки і потребуватиме модерації.
+                                {t('routes.edit.warnToPublic')}
                             </p>
                         )}
                     </div>
@@ -280,7 +293,7 @@ export default function AddEditRoutePage() {
                     {/* Description */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-1">
-                            Опис *
+                            {t('routes.edit.description')} *
                         </label>
                         <textarea
                             value={description}
@@ -295,7 +308,7 @@ export default function AddEditRoutePage() {
                     {/* Duration */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-1">
-                            Орієнтовна тривалість (годин)
+                            {t('routes.edit.duration')}
                         </label>
                         <input
                             type="number"
@@ -311,7 +324,7 @@ export default function AddEditRoutePage() {
                     {allTags.length > 0 && (
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-2">
-                                Теги
+                                {t('routes.edit.tags')}
                             </label>
                             <div className="flex flex-wrap gap-2">
                                 {allTags.map(tag => {
@@ -341,7 +354,7 @@ export default function AddEditRoutePage() {
                         disabled={saving}
                         className="px-4 py-2 bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg cursor-pointer disabled:opacity-50"
                     >
-                        {saving ? 'Збереження...' : isEdit ? 'Зберегти зміни' : 'Створити чернетку'}
+                        {saving ? t('routes.edit.saving') : isEdit ? t('routes.edit.saveBtn') : t('routes.edit.createBtn')}
                     </button>
                 </div>
 
@@ -349,13 +362,13 @@ export default function AddEditRoutePage() {
                 {route && (
                     <div className="mt-8">
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-stone-100 mb-3">
-                            📋 Зупинки маршруту ({stops.length}/50)
+                            {t('routes.edit.stopsHeader')} ({stops.length}/50)
                         </h2>
 
                         {stops.length < 50 && (
                             <div className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg p-3 mb-4">
                                 <p className="text-sm font-medium text-gray-700 dark:text-stone-200 mb-2">
-                                    + Додати зупинку
+                                    {t('routes.edit.addStopHeader')}
                                 </p>
                                 <div className="flex gap-2 mb-2">
                                     <input
@@ -363,7 +376,7 @@ export default function AddEditRoutePage() {
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
                                         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearchObjects(); } }}
-                                        placeholder="Назва об'єкта..."
+                                        placeholder={t('routes.edit.objectPlaceholder')}
                                         className="flex-1 bg-white dark:bg-stone-800 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-stone-100 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
                                     />
                                     <button
@@ -372,7 +385,7 @@ export default function AddEditRoutePage() {
                                         disabled={searching || search.trim().length < 2}
                                         className="px-3 py-1.5 text-sm bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded cursor-pointer disabled:opacity-50"
                                     >
-                                        {searching ? '...' : 'Пошук'}
+                                        {searching ? '...' : t('routes.edit.searchBtn')}
                                     </button>
                                 </div>
                                 {searchResults.length > 0 && (
@@ -399,7 +412,7 @@ export default function AddEditRoutePage() {
 
                         {stops.length === 0 ? (
                             <p className="text-gray-500 dark:text-stone-400 text-sm">
-                                Поки що немає зупинок. Додай через пошук вище.
+                                {t('routes.edit.emptyStops')}
                             </p>
                         ) : (
                             <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -410,6 +423,8 @@ export default function AddEditRoutePage() {
                                                 key={s.id}
                                                 stop={s}
                                                 onRemove={() => handleRemoveStop(s.id)}
+                                                dragHint={t('routes.edit.dragHint')}
+                                                archivedHint={t('routes.edit.archivedObjectWarn')}
                                             />
                                         ))}
                                     </div>

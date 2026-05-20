@@ -51,24 +51,24 @@ export default function RouteDetailPage() {
         if (routeId == null) return;
         routesService.detail(routeId)
             .then(setRoute)
-            .catch(() => setError('Не вдалося завантажити маршрут.'))
+            .catch(() => setError(t('routes.toast.loadFailed')))
             .finally(() => setLoading(false));
-    }, [routeId]);
+    }, [routeId, t]);
 
     const handleSubmit = async () => {
         if (!route) return;
         if (route.stops_count < 2) {
-            toast.error('Маршрут має містити щонайменше 2 зупинки');
+            toast.error(t('routes.toast.submitMinStops'));
             return;
         }
         setActionLoading(true);
         try {
             const updated = await routesService.submit(route.id);
             setRoute(updated);
-            toast.success('Маршрут надіслано на модерацію');
+            toast.success(t('routes.toast.submitted'));
         } catch (e) {
             const detail = (e as {response?: {data?: {detail?: string}}}).response?.data?.detail;
-            toast.error(detail || 'Не вдалося надіслати');
+            toast.error(detail || t('routes.toast.submitFailed'));
         } finally {
             setActionLoading(false);
         }
@@ -79,10 +79,10 @@ export default function RouteDetailPage() {
         setActionLoading(true);
         try {
             const copy = await routesService.copy(route.id);
-            toast.success('Скопійовано у ваші чернетки');
+            toast.success(t('routes.toast.copied'));
             navigate(`/routes/${copy.id}/edit`);
         } catch {
-            toast.error('Не вдалося скопіювати');
+            toast.error(t('routes.toast.copyFailed'));
         } finally {
             setActionLoading(false);
         }
@@ -90,14 +90,14 @@ export default function RouteDetailPage() {
 
     const handleArchive = async () => {
         if (!route) return;
-        if (!confirm('Архівувати цей маршрут?')) return;
+        if (!confirm(t('routes.detail.archiveConfirm'))) return;
         setActionLoading(true);
         try {
             await routesService.archive(route.id);
-            toast.success('Маршрут архівовано');
+            toast.success(t('routes.toast.archived'));
             navigate('/my-routes');
         } catch {
-            toast.error('Не вдалося архівувати');
+            toast.error(t('routes.toast.archiveFailed'));
         } finally {
             setActionLoading(false);
         }
@@ -116,7 +116,7 @@ export default function RouteDetailPage() {
     if (error || !route) {
         return (
             <div className="flex-1 flex items-center justify-center">
-                <p className="text-red-600">{error ?? 'Не знайдено'}</p>
+                <p className="text-red-600">{error ?? t('routes.detail.notFound')}</p>
             </div>
         );
     }
@@ -127,7 +127,7 @@ export default function RouteDetailPage() {
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-4xl mx-auto px-4 py-6">
                 <Link to="/routes" className="text-sm text-amber-700 dark:text-amber-400 hover:underline mb-2 inline-block">
-                    ← До маршрутів
+                    {t('routes.detail.back')}
                 </Link>
 
                 <div className="flex items-start justify-between flex-wrap gap-2 mb-2">
@@ -140,11 +140,11 @@ export default function RouteDetailPage() {
                                 ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
                                 : 'bg-gray-100 dark:bg-stone-800 text-gray-700 dark:text-stone-300'
                         }`}>
-                            {route.visibility === 'public' ? '🌐 Публічний' : '🔒 Особистий'}
+                            {t(`routes.visibility.${route.visibility}`)}
                         </span>
                         {route.visibility === 'public' && route.status !== 'approved' && (
                             <span className="px-3 py-1.5 text-base font-medium rounded-lg bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">
-                                {route.status === 'draft' ? 'Чернетка' : route.status === 'pending' ? 'На модерації' : 'В архіві'}
+                                {t(`routes.status.${route.status}`)}
                             </span>
                         )}
                     </div>
@@ -154,9 +154,9 @@ export default function RouteDetailPage() {
                     <Link to={`/authors/${route.author_name}`} className="hover:text-amber-700 dark:hover:text-amber-300">
                         @{route.author_name}
                     </Link>
-                    {' · '}{route.stops_count} зупинок
+                    {' · '}{route.stops_count} {t('routes.stops')}
                     {route.estimated_duration_minutes != null && route.estimated_duration_minutes > 0 && (
-                        <> · ~{Math.round(route.estimated_duration_minutes / 60)} год</>
+                        <> · ~{Math.round(route.estimated_duration_minutes / 60)} {t('routes.hours')}</>
                     )}
                     {' · '}{new Date(route.updated_at).toLocaleDateString(dateLocale)}
                 </p>
@@ -182,7 +182,7 @@ export default function RouteDetailPage() {
                             disabled={actionLoading}
                             className="px-3 py-1.5 text-sm bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/60 cursor-pointer disabled:opacity-50"
                         >
-                            📋 Скопіювати в мої
+                            {t('routes.detail.copyBtn')}
                         </button>
                     )}
                     {isOwner && route.visibility === 'public' && route.status === 'draft' && (
@@ -190,9 +190,9 @@ export default function RouteDetailPage() {
                             onClick={handleSubmit}
                             disabled={actionLoading}
                             className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-400 text-white dark:text-stone-900 rounded-lg cursor-pointer disabled:opacity-50"
-                            title={route.stops_count < 2 ? 'Маршрут має містити щонайменше 2 зупинки' : ''}
+                            title={route.stops_count < 2 ? t('routes.toast.submitMinStops') : ''}
                         >
-                            ✓ Подати на модерацію
+                            {t('routes.detail.submitBtn')}
                         </button>
                     )}
                     {canEdit && (
@@ -201,30 +201,30 @@ export default function RouteDetailPage() {
                                 to={`/routes/${route.id}/edit`}
                                 className="px-3 py-1.5 text-sm bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg"
                             >
-                                Редагувати
+                                {t('routes.detail.editBtn')}
                             </Link>
                             <button
                                 onClick={handleArchive}
                                 disabled={actionLoading}
                                 className="px-3 py-1.5 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg cursor-pointer disabled:opacity-50"
                             >
-                                Архівувати
+                                {t('routes.detail.archiveBtn')}
                             </button>
                         </>
                     )}
                     <a
                         href={routesService.exportUrl(route.id, 'gpx')}
                         className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-stone-800 text-gray-700 dark:text-stone-200 border border-gray-300 dark:border-stone-600 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-700"
-                        title="GPS Exchange Format — для Garmin, OsmAnd, Maps.me, Strava"
+                        title={t('routes.detail.gpxTitle')}
                     >
-                        📥 GPX
+                        {t('routes.detail.gpxBtn')}
                     </a>
                     <a
                         href={routesService.exportUrl(route.id, 'kml')}
                         className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-stone-800 text-gray-700 dark:text-stone-200 border border-gray-300 dark:border-stone-600 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-700"
-                        title="Keyhole Markup Language — для Google Earth, Google My Maps"
+                        title={t('routes.detail.kmlTitle')}
                     >
-                        📥 KML
+                        {t('routes.detail.kmlBtn')}
                     </a>
                 </div>
 
@@ -247,11 +247,11 @@ export default function RouteDetailPage() {
                                         <strong>{s.order}. {s.object_title}</strong>
                                         {s.is_unavailable && (
                                             <p style={{color: '#dc2626', fontSize: '12px', margin: '4px 0 0'}}>
-                                                ⚠ Об'єкт тимчасово недоступний
+                                                {t('routes.detail.stopUnavailable')}
                                             </p>
                                         )}
                                         <p style={{margin: '4px 0 0'}}>
-                                            <Link to={`/objects/${s.object_id}`}>Деталі →</Link>
+                                            <Link to={`/objects/${s.object_id}`}>{t('routes.detail.stopDetails')}</Link>
                                         </p>
                                     </Popup>
                                 </Marker>
@@ -269,7 +269,7 @@ export default function RouteDetailPage() {
 
                 {/* Stops list */}
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-stone-100 mb-3">
-                    📋 Зупинки маршруту ({route.stops.length})
+                    {t('routes.detail.stopsHeader')} ({route.stops.length})
                 </h2>
                 <div className="space-y-2">
                     {route.stops.map(s => (
@@ -293,7 +293,7 @@ export default function RouteDetailPage() {
                                 </Link>
                                 {s.is_unavailable && (
                                     <p className="text-xs text-red-600 dark:text-red-400">
-                                        ⚠ Об'єкт тимчасово недоступний
+                                        {t('routes.detail.stopUnavailable')}
                                     </p>
                                 )}
                                 {s.note && (
@@ -308,7 +308,7 @@ export default function RouteDetailPage() {
 
                 {route.copied_from && (
                     <p className="text-xs text-gray-500 dark:text-stone-400 mt-4">
-                        Створено як копія маршруту{' '}
+                        {t('routes.detail.copiedFrom')}{' '}
                         <Link to={`/routes/${route.copied_from}`} className="text-amber-700 dark:text-amber-400 hover:underline">
                             #{route.copied_from}
                         </Link>
