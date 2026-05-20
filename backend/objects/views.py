@@ -870,22 +870,36 @@ def health_check(request):
 @api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def user_preference(request):
-    """Read or update current user's preference (language, etc.)."""
+    """Read or update current user's preference (language, theme)."""
     from .models import UserPreference
-    pref, _ = UserPreference.objects.get_or_create(
+    pref, _created = UserPreference.objects.get_or_create(
         user=request.user,
         defaults={'language': 'uk'},
     )
     if request.method == 'PATCH':
-        language = request.data.get('language')
-        if language not in dict(UserPreference.Language.choices):
-            return Response(
-                {'language': [_('Невірна мова. Доступні: uk, en.')]},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        pref.language = language
-        pref.save(update_fields=['language', 'updated_at'])
-    return Response({'language': pref.language})
+        update_fields = []
+        if 'language' in request.data:
+            language = request.data.get('language')
+            if language not in dict(UserPreference.Language.choices):
+                return Response(
+                    {'language': [_('Невірна мова. Доступні: uk, en.')]},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            pref.language = language
+            update_fields.append('language')
+        if 'theme' in request.data:
+            theme = request.data.get('theme')
+            if theme not in dict(UserPreference.Theme.choices):
+                return Response(
+                    {'theme': [_('Невірна тема. Доступні: light, dark.')]},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            pref.theme = theme
+            update_fields.append('theme')
+        if update_fields:
+            update_fields.append('updated_at')
+            pref.save(update_fields=update_fields)
+    return Response({'language': pref.language, 'theme': pref.theme})
 
 
 class ObjectPhotoViewSet(viewsets.GenericViewSet):

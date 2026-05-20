@@ -23,6 +23,30 @@ const userFromPayload = (payload: { user_id: number; username?: string, is_staff
     is_staff: payload.is_staff ?? false,
 });
 
+// Pull server-stored preferences and apply them locally.
+// Used on login (push wins for theme/lang user just picked) and on app boot if already logged in.
+const syncPreferencesFromServer = async (pushLocal: boolean) => {
+    try {
+        if (pushLocal) {
+            // User has an explicit local choice — push it to server so it persists across devices.
+            const uiLang = i18n.resolvedLanguage === 'en' ? 'en' : 'uk';
+            const uiTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            await preferenceService.update({language: uiLang, theme: uiTheme});
+            return;
+        }
+        const pref = await preferenceService.get();
+        if (pref.language && pref.language !== i18n.resolvedLanguage) {
+            await i18n.changeLanguage(pref.language);
+            document.documentElement.lang = pref.language;
+        }
+        if (pref.theme) {
+            window.dispatchEvent(new CustomEvent('theme:apply', {detail: pref.theme}));
+        }
+    } catch {
+        // Best-effort sync — silent on failure (e.g. legacy user without preference row).
+    }
+};
+
 export const AuthProvider = ({children}: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
@@ -45,6 +69,8 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
                 const payload = parseJwtPayload(token);
                 if (payload.exp * 1000 > Date.now()) {
                     setUser(userFromPayload(payload));
+                    // Returning user — server is source of truth for preferences.
+                    void syncPreferencesFromServer(false);
                 } else {
                     clearAuth();
                 }
@@ -64,10 +90,9 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
         const payload = parseJwtPayload(tokens.access);
         setUser(userFromPayload(payload));
 
-        // Push current UI language to the server so emails arrive in the right language.
-        // Best-effort: silently ignore failures (e.g. legacy users without preference row).
-        const uiLang = i18n.resolvedLanguage === 'en' ? 'en' : 'uk';
-        preferenceService.update(uiLang).catch(() => {});
+        // Fresh login: push the currently-selected UI prefs so they persist server-side
+        // (this is what most users expect — "I picked dark, now keep it on other devices").
+        void syncPreferencesFromServer(true);
     };
 
     const register = async (userData: RegisterData) => {

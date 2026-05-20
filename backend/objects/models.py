@@ -336,11 +336,15 @@ class ObjectPhoto(models.Model):
 
 
 class UserPreference(models.Model):
-    """Налаштування користувача — мова інтерфейсу і email-сповіщень."""
+    """Налаштування користувача — мова інтерфейсу, email-сповіщень і тема."""
 
     class Language(models.TextChoices):
         UK = 'uk', 'Українська'
         EN = 'en', 'English'
+
+    class Theme(models.TextChoices):
+        LIGHT = 'light', 'Light'
+        DARK = 'dark', 'Dark'
 
     user = models.OneToOneField(
         User,
@@ -352,7 +356,12 @@ class UserPreference(models.Model):
         choices=Language.choices,
         default=Language.UK,
     )
+    theme = models.CharField(
+        max_length=5,
+        choices=Theme.choices,
+        default=Theme.LIGHT,
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'{self.user.username}: lang={self.language}'
+        return f'{self.user.username}: lang={self.language}, theme={self.theme}'

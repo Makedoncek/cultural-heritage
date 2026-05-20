@@ -63,3 +63,6 @@ msgstr "You can't follow yourself."
 
 msgid "Невірна мова. Доступні: uk, en."
 msgstr "Invalid language. Allowed: uk, en."
+
+msgid "Невірна тема. Доступні: light, dark."
+msgstr "Invalid theme. Allowed: light, dark."
