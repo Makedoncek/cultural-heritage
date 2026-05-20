@@ -1,0 +1,65 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+
+# objects/validators.py
+msgid "Координати знаходяться за межами території України."
+msgstr "Coordinates are outside the territory of Ukraine."
+
+msgid "Файл перевищує %(size)s MB."
+msgstr "File exceeds %(size)s MB."
+
+msgid "Файл не є валідним зображенням."
+msgstr "File is not a valid image."
+
+msgid "Формат %(fmt)s не підтримується. Дозволені: %(allowed)s."
+msgstr "Format %(fmt)s is not supported. Allowed: %(allowed)s."
+
+# objects/views.py — auth endpoints
+msgid "Реєстрація успішна! Перевірте вашу електронну пошту для підтвердження."
+msgstr "Registration successful! Check your email to confirm your account."
+
+msgid "Токен не надано."
+msgstr "No token provided."
+
+msgid "Недійсне або прострочене посилання."
+msgstr "Invalid or expired link."
+
+msgid "Користувача не знайдено."
+msgstr "User not found."
+
+msgid "Пошту вже підтверджено."
+msgstr "Email already confirmed."
+
+msgid "Пошту успішно підтверджено! Тепер ви можете увійти у свій аккаунт."
+msgstr "Email confirmed successfully! You can now log in to your account."
+
+msgid "Якщо цю адресу зареєстровано, ми надіслали лист із інструкціями."
+msgstr "If this address is registered, we have sent an email with instructions."
+
+msgid "Усі поля є обов'язковими."
+msgstr "All fields are required."
+
+msgid "Паролі не збігаються."
+msgstr "Passwords do not match."
+
+msgid "Пароль має містити щонайменше 8 символів."
+msgstr "Password must contain at least 8 characters."
+
+msgid "Пароль успішно змінено!"
+msgstr "Password changed successfully!"
+
+msgid "Якщо цю адресу електронної пошти зареєстровано, ми надіслали лист для підтвердження."
+msgstr "If this email address is registered, we have sent a verification email."
+
+msgid "Об'єкт архівовано"
+msgstr "Object archived"
+
+msgid "Не можна підписатися на себе."
+msgstr "You can't follow yourself."
+
+msgid "Невірна мова. Доступні: uk, en."
+msgstr "Invalid language. Allowed: uk, en."

@@ -2,6 +2,7 @@ from rest_framework import status, viewsets, filters
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample, inline_serializer
 from rest_framework import serializers as s
 from .filters import ObjectFilter
@@ -85,7 +86,7 @@ def register(request):
         send_verification_email.delay(user.id)
 
         return Response({
-            'message': 'Реєстрація успішна! Перевірте вашу електронну пошту для підтвердження.',
+            'message': _('Реєстрація успішна! Перевірте вашу електронну пошту для підтвердження.'),
         }, status=status.HTTP_201_CREATED)
 
     return Response(
@@ -109,23 +110,23 @@ def register(request):
 def verify_email(request):
     token = request.query_params.get('token')
     if not token:
-        return Response({'error': 'Токен не надано.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': _('Токен не надано.')}, status=status.HTTP_400_BAD_REQUEST)
 
     user_pk = verify_email_token(token)
     if user_pk is None:
-        return Response({'error': 'Недійсне або прострочене посилання.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': _('Недійсне або прострочене посилання.')}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         user = User.objects.get(pk=user_pk)
     except User.DoesNotExist:
-        return Response({'error': 'Користувача не знайдено.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': _('Користувача не знайдено.')}, status=status.HTTP_400_BAD_REQUEST)
 
     if user.is_active:
-        return Response({'message': 'Пошту вже підтверджено.'})
+        return Response({'message': _('Пошту вже підтверджено.')})
 
     user.is_active = True
     user.save(update_fields=['is_active'])
-    return Response({'message': 'Пошту успішно підтверджено! Тепер ви можете увійти у свій аккаунт.'})
+    return Response({'message': _('Пошту успішно підтверджено! Тепер ви можете увійти у свій аккаунт.')})
 
 
 @extend_schema(
@@ -145,7 +146,7 @@ def password_reset_request(request):
             send_password_reset_email.delay(user.id)
         except User.DoesNotExist:
             pass
-    return Response({'message': 'Якщо цю адресу зареєстровано, ми надіслали лист із інструкціями.'})
+    return Response({'message': _('Якщо цю адресу зареєстровано, ми надіслали лист із інструкціями.')})
 
 
 @extend_schema(
@@ -172,21 +173,21 @@ def password_reset_confirm(request):
     password2 = request.data.get('password2', '')
 
     if not all([uid, token, password, password2]):
-        return Response({'error': 'Усі поля є обов\'язковими.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': _('Усі поля є обов\'язковими.')}, status=status.HTTP_400_BAD_REQUEST)
 
     if password != password2:
-        return Response({'error': 'Паролі не збігаються.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': _('Паролі не збігаються.')}, status=status.HTTP_400_BAD_REQUEST)
 
     if len(password) < 8:
-        return Response({'error': 'Пароль має містити щонайменше 8 символів.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': _('Пароль має містити щонайменше 8 символів.')}, status=status.HTTP_400_BAD_REQUEST)
 
     user = verify_password_reset_token(uid, token)
     if user is None:
-        return Response({'error': 'Недійсне або прострочене посилання.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': _('Недійсне або прострочене посилання.')}, status=status.HTTP_400_BAD_REQUEST)
 
     user.set_password(password)
     user.save(update_fields=['password'])
-    return Response({'message': 'Пароль успішно змінено!'})
+    return Response({'message': _('Пароль успішно змінено!')})
 
 
 @extend_schema(
@@ -206,7 +207,7 @@ def resend_verification(request):
             send_verification_email.delay(user.id)
         except User.DoesNotExist:
             pass
-    return Response({'message': 'Якщо цю адресу електронної пошти зареєстровано, ми надіслали лист для підтвердження.'})
+    return Response({'message': _('Якщо цю адресу електронної пошти зареєстровано, ми надіслали лист для підтвердження.')})
 
 
 @extend_schema_view(
@@ -591,7 +592,7 @@ class ObjectViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.archive()
-        return Response({'detail': "Об'єкт архівовано"}, status=status.HTTP_200_OK)
+        return Response({'detail': _("Об'єкт архівовано")}, status=status.HTTP_200_OK)
 
     @extend_schema(
         tags=['Objects'],
@@ -764,7 +765,7 @@ class UserProfileViewSet(viewsets.GenericViewSet):
         try:
             user = self.get_queryset().get(username=username)
         except User.DoesNotExist:
-            return Response({'detail': 'Користувача не знайдено.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'detail': _('Користувача не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.get_serializer(user)
         return Response(serializer.data)
@@ -780,7 +781,7 @@ class UserProfileViewSet(viewsets.GenericViewSet):
         try:
             author = User.objects.get(username=username, is_active=True)
         except User.DoesNotExist:
-            return Response({'detail': 'Користувача не знайдено.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'detail': _('Користувача не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
 
         qs = (CulturalObject.objects
               .select_related('author')
@@ -817,10 +818,10 @@ class UserProfileViewSet(viewsets.GenericViewSet):
         try:
             author = User.objects.get(username=username, is_active=True)
         except User.DoesNotExist:
-            return Response({'detail': 'Користувача не знайдено.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'detail': _('Користувача не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
 
         if request.user == author:
-            return Response({'detail': 'Не можна підписатися на себе.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': _('Не можна підписатися на себе.')}, status=status.HTTP_400_BAD_REQUEST)
 
         fav, created = FavoriteAuthor.objects.get_or_create(user=request.user, author=author)
         if not created:
@@ -879,7 +880,7 @@ def user_preference(request):
         language = request.data.get('language')
         if language not in dict(UserPreference.Language.choices):
             return Response(
-                {'language': ['Invalid language. Allowed: uk, en.']},
+                {'language': [_('Невірна мова. Доступні: uk, en.')]},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         pref.language = language
