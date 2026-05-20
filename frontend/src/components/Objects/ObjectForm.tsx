@@ -22,7 +22,7 @@ const inputClass = (hasError: boolean) =>
     }`;
 
 export default function ObjectForm({initialData, onSubmit, submitLabel, submittingLabel, children}: ObjectFormProps) {
-    const {t} = useTranslation();
+    const {t, i18n} = useTranslation();
     const [tags, setTags] = useState<Tag[]>([]);
     const [tagsLoading, setTagsLoading] = useState(true);
 
@@ -70,7 +70,7 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
             })
             .catch(() => {})
             .finally(() => setTagsLoading(false));
-    }, [objectType, setValue]);
+    }, [objectType, setValue, i18n.language]);
 
     const toggleTag = (tagId: number) => {
         const current = selectedTags || [];

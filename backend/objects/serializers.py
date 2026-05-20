@@ -87,10 +87,19 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
     class Meta:
         model = Tag
         fields = ['id', 'name', 'slug', 'icon', 'tag_type']
         read_only_fields = ['id', 'name', 'slug', 'icon', 'tag_type']
+
+    def get_name(self, obj):
+        """Return English name when the request locale is English; otherwise fall back to `name`."""
+        from django.utils.translation import get_language
+        if get_language() == 'en' and getattr(obj, 'name_en', ''):
+            return obj.name_en
+        return obj.name
 
 
 class FavoriteMixin(serializers.Serializer):

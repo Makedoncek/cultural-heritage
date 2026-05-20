@@ -25,7 +25,7 @@ export default function HomePage() {
     const [searchFocused, setSearchFocused] = useState(false);
     const [flyTo, setFlyTo] = useState<FlyToTarget | null>(null);
     const navigate = useNavigate();
-    const {t} = useTranslation();
+    const {t, i18n} = useTranslation();
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +38,7 @@ export default function HomePage() {
             setSelectedTags(prev => prev.length === 0 ? prev : []);
         }).catch(() => {});
         setEventStatus(prev => (objectType !== 'event' && prev !== 'all' ? 'all' : prev));
-    }, [objectType]);
+    }, [objectType, i18n.language]);
 
     useEffect(() => {
         debounceRef.current = setTimeout(() => setDebouncedSearch(search.length >= 3 ? search : ''), 1000);
