@@ -1,5 +1,6 @@
 import {useState, useEffect, useCallback, useRef} from 'react';
 import {useNavigate} from 'react-router';
+import {useTranslation} from 'react-i18next';
 import {objectsService} from '../services/objects.service';
 import {tagsService} from '../services/tags.service';
 import MapView from '../components/Map/MapView';
@@ -24,6 +25,7 @@ export default function HomePage() {
     const [searchFocused, setSearchFocused] = useState(false);
     const [flyTo, setFlyTo] = useState<FlyToTarget | null>(null);
     const navigate = useNavigate();
+    const {t, i18n} = useTranslation();
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -31,47 +33,64 @@ export default function HomePage() {
         const tagType = objectType === 'all' ? undefined : objectType;
         tagsService.getAll(tagType).then(res => {
             setTags(res.results);
-            setSelectedTags([]);
+            // Зберігаємо ту саму array-reference коли список і так порожній,
+            // інакше useEffect нижче тригериться повторно і дублює fetch.
+            setSelectedTags(prev => prev.length === 0 ? prev : []);
         }).catch(() => {});
-        if (objectType !== 'event') setEventStatus('all');
-    }, [objectType]);
+        setEventStatus(prev => (objectType !== 'event' && prev !== 'all' ? 'all' : prev));
+    }, [objectType, i18n.language]);
 
     useEffect(() => {
         debounceRef.current = setTimeout(() => setDebouncedSearch(search.length >= 3 ? search : ''), 1000);
         return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
     }, [search]);
 
-    const fetchObjects = useCallback(async (tagIds: number[], searchQuery: string, type: string, evStatus: string) => {
+    const fetchObjects = useCallback(async (
+        tagIds: number[],
+        searchQuery: string,
+        type: string,
+        evStatus: string,
+        signal: AbortSignal,
+    ) => {
         setLoading(true);
         setError(null);
 
         try {
-            const allObjects: CulturalObject[] = [];
-            let page = 1;
-            let hasNext = true;
             const params: Record<string, string | number> = {};
             if (tagIds.length > 0) params.tags = tagIds.join(',');
             if (searchQuery) params.search = searchQuery;
             if (type !== 'all') params.object_type = type;
             if (type === 'event' && evStatus !== 'all') params.event_status = evStatus;
 
-            while (hasNext) {
-                const response = await objectsService.getAll({...params, page});
-                allObjects.push(...response.results);
-                hasNext = response.next !== null;
-                page++;
+            const first = await objectsService.getAll({...params, page: 1}, signal);
+            const pageSize = first.results.length || 100;
+            const totalPages = Math.ceil(first.count / pageSize);
+
+            if (totalPages <= 1) {
+                setObjects(first.results);
+                return;
             }
 
-            setObjects(allObjects);
-        } catch {
-            setError('Не вдалося завантажити культурні об\'єкти.');
+            const rest = await Promise.all(
+                Array.from({length: totalPages - 1}, (_, i) =>
+                    objectsService.getAll({...params, page: i + 2}, signal)
+                )
+            );
+
+            setObjects([...first.results, ...rest.flatMap(r => r.results)]);
+        } catch (err) {
+            // Скасований запит (StrictMode-double-effect, зміна фільтрів під час loading) — мовчки ігноруємо
+            if ((err as {code?: string})?.code === 'ERR_CANCELED') return;
+            setError(t('home.loadError'));
         } finally {
-            setLoading(false);
+            if (!signal.aborted) setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        fetchObjects(selectedTags, debouncedSearch, objectType, eventStatus);
+        const controller = new AbortController();
+        fetchObjects(selectedTags, debouncedSearch, objectType, eventStatus, controller.signal);
+        return () => controller.abort();
     }, [selectedTags, debouncedSearch, objectType, eventStatus, fetchObjects]);
 
     const handleTagToggle = (tagId: number) => {
@@ -89,7 +108,7 @@ export default function HomePage() {
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
-                    <p className="text-gray-600">Завантаження...</p>
+                    <p className="text-gray-600">{t('home.loading')}</p>
                 </div>
             </div>
         );
@@ -104,7 +123,7 @@ export default function HomePage() {
                         onClick={() => fetchObjects(selectedTags, debouncedSearch, objectType, eventStatus)}
                         className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 cursor-pointer"
                     >
-                        Спробувати знову
+                        {t('home.retry')}
                     </button>
                 </div>
             </div>
@@ -116,15 +135,15 @@ export default function HomePage() {
             {!sidebarOpen && (
                 <button
                     onClick={() => setSidebarOpen(true)}
-                    className="md:hidden absolute top-3 right-3 z-[1000] bg-white rounded-lg shadow-md px-3 py-2 text-sm font-medium text-amber-700 border border-amber-200 cursor-pointer"
+                    className="md:hidden absolute top-3 right-3 z-[1000] bg-white dark:bg-stone-800 rounded-lg shadow-md px-3 py-2 text-sm font-medium text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-stone-600 cursor-pointer"
                 >
-                    ☰ Фільтри
+                    ☰ {t('home.filtersLabel')}
                 </button>
             )}
 
             <aside
                 className={`
-                    absolute md:relative z-[1001] bg-white border-r border-gray-200 shadow-lg md:shadow-none
+                    absolute md:relative z-[1001] bg-white dark:bg-stone-900 border-r border-gray-200 dark:border-stone-700 shadow-lg md:shadow-none
                     w-60 overflow-y-auto flex-shrink-0
                     transition-transform duration-200
                     h-full
@@ -134,10 +153,10 @@ export default function HomePage() {
             >
                 <div className="p-4 pt-3">
                     <div className="flex items-center justify-between md:hidden mb-3">
-                        <span className="text-sm font-semibold text-gray-700">Фільтри</span>
+                        <span className="text-sm font-semibold text-gray-700 dark:text-stone-200">{t('home.filtersLabel')}</span>
                         <button
                             onClick={() => setSidebarOpen(false)}
-                            className="text-gray-400 hover:text-gray-600 cursor-pointer text-lg leading-none"
+                            className="text-gray-400 dark:text-stone-500 hover:text-gray-600 dark:hover:text-stone-300 cursor-pointer text-lg leading-none"
                         >
                             ✕
                         </button>
@@ -154,23 +173,23 @@ export default function HomePage() {
                                     setSearchFocused(false);
                                 }
                             }}
-                            placeholder="Пошук за назвою..."
-                            className="w-full px-3 py-2 pr-8 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-amber-500"
+                            placeholder={t('home.searchPlaceholder')}
+                            className="w-full px-3 py-2 pr-8 text-sm border border-gray-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-gray-900 dark:text-stone-100 placeholder-gray-400 dark:placeholder-stone-500 rounded-lg focus:outline-none focus:border-amber-500"
                         />
                         {search && (
                             <button
                                 onClick={() => setSearch('')}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-stone-500 hover:text-gray-600 dark:hover:text-stone-300 cursor-pointer"
                             >
                                 ✕
                             </button>
                         )}
                         {search.length >= 3 && searchFocused && objects.length > 0 && (
-                            <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
+                            <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-stone-800 border border-gray-200 dark:border-stone-700 rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
                                 {objects.slice(0, 7).map(obj => (
                                     <div
                                         key={obj.id}
-                                className="flex items-center gap-2 px-3 py-2 hover:bg-amber-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                                className="flex items-center gap-2 px-3 py-2 hover:bg-amber-50 dark:hover:bg-stone-700 cursor-pointer text-sm border-b border-gray-100 dark:border-stone-700 last:border-b-0"
                                         onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => {
                                             setFlyTo({latitude: Number(obj.latitude), longitude: Number(obj.longitude)});
@@ -179,14 +198,14 @@ export default function HomePage() {
                                         }}
                                     >
                                         <span>{obj.tags[0]?.icon || '📍'}</span>
-                                        <span className="flex-1 truncate text-gray-700">{obj.title}</span>
+                                        <span className="flex-1 truncate text-gray-700 dark:text-stone-200">{obj.title}</span>
                                         <button
                                             onMouseDown={(e) => e.preventDefault()}
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 navigate(`/objects/${obj.id}`);
                                             }}
-                                            className="text-amber-500 hover:text-amber-700 hover:bg-amber-50 cursor-pointer text-sm flex-shrink-0 px-2 py-1 rounded"
+                                            className="text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-stone-700 cursor-pointer text-sm flex-shrink-0 px-2 py-1 rounded"
                                             title="Детальніше"
                                         >
                                             ➜
@@ -199,11 +218,11 @@ export default function HomePage() {
                     <TypeFilter value={objectType} onChange={setObjectType}/>
                     {objectType === 'event' && (
                         <>
-                            <hr className="my-3 border-gray-200"/>
+                            <hr className="my-3 border-gray-200 dark:border-stone-700"/>
                             <EventStatusFilter value={eventStatus} onChange={setEventStatus}/>
                         </>
                     )}
-                    <hr className="my-3 border-gray-200"/>
+                    <hr className="my-3 border-gray-200 dark:border-stone-700"/>
                     <TagFilter
                         tags={tags}
                         selectedTags={selectedTags}
@@ -218,6 +237,26 @@ export default function HomePage() {
                     <MapView objects={objects} flyTo={flyTo}/>
                 </ErrorBoundary>
 
+                {!loading && objects.length > 0 && (
+                    <div className="absolute top-20 left-3 md:top-3 md:left-auto md:right-3 z-[400] bg-white/95 dark:bg-stone-900/95 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 text-sm border border-gray-200 dark:border-stone-700">
+                        <div className="flex items-center gap-2">
+                            <span className="text-gray-500 dark:text-stone-400">{t('home.objectsOnMap')}</span>
+                            <span className="font-bold text-gray-900 dark:text-stone-100">{objects.length}</span>
+                        </div>
+                        {(() => {
+                            const events = objects.filter(o => o.object_type === 'event').length;
+                            const permanent = objects.length - events;
+                            if (events === 0 || permanent === 0) return null;
+                            return (
+                                <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-stone-400">
+                                    <span>{t('home.monuments')}: <span className="text-gray-700 dark:text-stone-200 font-medium">{permanent}</span></span>
+                                    <span>{t('home.events')}: <span className="text-gray-700 dark:text-stone-200 font-medium">{events}</span></span>
+                                </div>
+                            );
+                        })()}
+                    </div>
+                )}
+
                 {loading && objects.length > 0 && (
                     <div className="absolute inset-0 z-[500] flex items-center justify-center bg-black/10 pointer-events-none">
                         <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
@@ -226,8 +265,8 @@ export default function HomePage() {
 
                 {!loading && objects.length === 0 && (
                     <div className="absolute inset-0 z-[500] flex items-center justify-center pointer-events-none">
-                        <div className="bg-white/90 rounded-lg px-6 py-4 shadow-md">
-                            <p className="text-gray-600">Нічого не знайдено</p>
+                        <div className="bg-white/90 dark:bg-stone-900/95 rounded-lg px-6 py-4 shadow-md border border-gray-200 dark:border-stone-700">
+                            <p className="text-gray-600 dark:text-stone-300">{t('home.nothingFound')}</p>
                         </div>
                     </div>
                 )}

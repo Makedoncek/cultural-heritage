@@ -43,8 +43,8 @@ export default function FavoriteButton({objectId, initialFavorited, initialCount
             disabled={loading}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                 isFavorited
-                    ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
-                    : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-200'
+                    ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 border border-red-200 dark:border-red-800'
+                    : 'bg-gray-50 dark:bg-stone-800 text-gray-500 dark:text-stone-300 hover:bg-gray-100 dark:hover:bg-stone-700 border border-gray-200 dark:border-stone-600'
             }`}
             title={isFavorited ? 'Видалити з обраного' : 'Додати до обраного'}
         >

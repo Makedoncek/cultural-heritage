@@ -1,6 +1,7 @@
 import {useState, useEffect, useRef, type ReactNode} from 'react';
 import {useForm} from 'react-hook-form';
 import {AxiosError} from 'axios';
+import {useTranslation} from 'react-i18next';
 import {tagsService} from '../../services/tags.service';
 import LocationPicker from '../Map/LocationPicker';
 import type {Tag, ObjectFormData, CulturalObjectWrite} from '../../types';
@@ -16,11 +17,12 @@ interface ObjectFormProps {
 const URL_PATTERN = /^https?:\/\/.+/;
 
 const inputClass = (hasError: boolean) =>
-    `w-full border rounded-lg px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-colors ${
-        hasError ? 'border-red-400' : 'border-gray-200'
+    `w-full border rounded-lg px-3 py-2.5 bg-white dark:bg-stone-800 text-gray-900 dark:text-stone-100 placeholder-gray-400 dark:placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-colors ${
+        hasError ? 'border-red-400' : 'border-gray-200 dark:border-stone-700'
     }`;
 
 export default function ObjectForm({initialData, onSubmit, submitLabel, submittingLabel, children}: ObjectFormProps) {
+    const {t, i18n} = useTranslation();
     const [tags, setTags] = useState<Tag[]>([]);
     const [tagsLoading, setTagsLoading] = useState(true);
 
@@ -61,8 +63,6 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
         tagsService.getAll(tagType)
             .then(data => {
                 setTags(data.results);
-                // Скидати лише при справжній зміні типу — щоб edit-форма не втратила initialData.tags
-                // і StrictMode-double-invoke не зачепив (на mount-і ref=null, ніколи не скидаємо).
                 if (loadedTagTypeRef.current !== null && loadedTagTypeRef.current !== tagType) {
                     setValue('tags', []);
                 }
@@ -70,14 +70,14 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
             })
             .catch(() => {})
             .finally(() => setTagsLoading(false));
-    }, [objectType, setValue]);
+    }, [objectType, setValue, i18n.language]);
 
     const toggleTag = (tagId: number) => {
         const current = selectedTags || [];
         if (current.includes(tagId)) {
             const updated = current.filter(id => id !== tagId);
             setValue('tags', updated);
-            if (updated.length === 0) setError('tags', {message: 'Оберіть хоча б один тег'});
+            if (updated.length === 0) setError('tags', {message: t('form.tagsRequired')});
             else clearErrors('tags');
         } else if (current.length < 5) {
             setValue('tags', [...current, tagId]);
@@ -87,11 +87,11 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
 
     const handleFormSubmit = async (data: ObjectFormData) => {
         if (!data.latitude || !data.longitude) {
-            setError('latitude', {message: 'Оберіть місце на карті'});
+            setError('latitude', {message: t('form.locationRequired')});
             return;
         }
         if (!data.tags || data.tags.length === 0) {
-            setError('tags', {message: 'Оберіть хоча б один тег'});
+            setError('tags', {message: t('form.tagsRequired')});
             return;
         }
 
@@ -127,7 +127,7 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
                     }
                 }
             } else {
-                setError('root', {message: 'Не вдалося зберегти. Спробуйте пізніше.'});
+                setError('root', {message: t('form.saveError')});
             }
         }
     };
@@ -136,42 +136,42 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
 
             <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                    Назва *
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-1">
+                    {t('form.title')} *
                 </label>
                 <input
                     id="title"
                     type="text"
                     className={inputClass(!!errors.title)}
-                    {...register('title', {required: 'Це поле обов\'язкове'})}
+                    {...register('title', {required: t('auth.required')})}
                 />
-                {errors.title && <p className="text-red-600 text-sm mt-1">{errors.title.message}</p>}
+                {errors.title && <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.title.message}</p>}
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Тип об'єкта</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-1">{t('form.objectType')}</label>
                 <div className="flex gap-2">
                     <button
                         type="button"
                         onClick={() => setValue('object_type', 'permanent')}
                         className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
                             objectType === 'permanent'
-                                ? 'bg-amber-100 border-amber-400 text-amber-800'
-                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400'
+                                ? 'bg-amber-100 dark:bg-amber-900/40 border-amber-400 dark:border-amber-600 text-amber-800 dark:text-amber-300'
+                                : 'bg-white dark:bg-stone-800 border-gray-200 dark:border-stone-700 text-gray-600 dark:text-stone-300 hover:border-gray-400 dark:hover:border-stone-500'
                         }`}
                     >
-                        📍 Пам'ятка
+                        {t('form.permanent')}
                     </button>
                     <button
                         type="button"
                         onClick={() => setValue('object_type', 'event')}
                         className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
                             objectType === 'event'
-                                ? 'bg-purple-100 border-purple-400 text-purple-800'
-                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400'
+                                ? 'bg-purple-100 dark:bg-purple-900/40 border-purple-400 dark:border-purple-600 text-purple-800 dark:text-purple-300'
+                                : 'bg-white dark:bg-stone-800 border-gray-200 dark:border-stone-700 text-gray-600 dark:text-stone-300 hover:border-gray-400 dark:hover:border-stone-500'
                         }`}
                     >
-                        🎉 Подія
+                        {t('form.event')}
                     </button>
                 </div>
             </div>
@@ -179,55 +179,55 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
             {objectType === 'event' && (
                 <div className="grid grid-cols-2 gap-3">
                     <div>
-                        <label htmlFor="event_start_date" className="block text-sm font-medium text-gray-700 mb-1">
-                            Дата початку *
+                        <label htmlFor="event_start_date" className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-1">
+                            {t('form.eventStart')} *
                         </label>
                         <input
                             id="event_start_date"
                             type="datetime-local"
                             className={inputClass(!!errors.event_start_date)}
                             {...register('event_start_date', {
-                                required: objectType === 'event' ? 'Вкажіть дату початку' : false,
+                                required: objectType === 'event' ? t('form.eventStartRequired') : false,
                             })}
                         />
-                        {errors.event_start_date && <p className="text-red-600 text-sm mt-1">{errors.event_start_date.message}</p>}
+                        {errors.event_start_date && <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.event_start_date.message}</p>}
                     </div>
                     <div>
-                        <label htmlFor="event_end_date" className="block text-sm font-medium text-gray-700 mb-1">
-                            Дата завершення *
+                        <label htmlFor="event_end_date" className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-1">
+                            {t('form.eventEnd')} *
                         </label>
                         <input
                             id="event_end_date"
                             type="datetime-local"
                             className={inputClass(!!errors.event_end_date)}
                             {...register('event_end_date', {
-                                required: objectType === 'event' ? 'Вкажіть дату завершення' : false,
+                                required: objectType === 'event' ? t('form.eventEndRequired') : false,
                             })}
                         />
-                        {errors.event_end_date && <p className="text-red-600 text-sm mt-1">{errors.event_end_date.message}</p>}
+                        {errors.event_end_date && <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.event_end_date.message}</p>}
                     </div>
                 </div>
             )}
 
             <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                    Опис *
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-1">
+                    {t('form.description')} *
                 </label>
                 <textarea
                     id="description"
                     rows={5}
                     className={inputClass(!!errors.description)}
-                    {...register('description', {required: 'Це поле обов\'язкове'})}
+                    {...register('description', {required: t('auth.required')})}
                 />
-                {errors.description && <p className="text-red-600 text-sm mt-1">{errors.description.message}</p>}
+                {errors.description && <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.description.message}</p>}
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Теги * <span className="font-normal text-gray-500">Обрано: {selectedTags?.length || 0}/5</span>
+                <label className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-1">
+                    {t('form.tags')} * <span className="font-normal text-gray-500 dark:text-stone-400">{t('form.tagsCount', {count: selectedTags?.length || 0})}</span>
                 </label>
                 {tagsLoading ? (
-                    <p className="text-sm text-gray-400">Завантаження тегів...</p>
+                    <p className="text-sm text-gray-400 dark:text-stone-500">{t('form.tagsLoading')}</p>
                 ) : (
                     <div className="flex flex-wrap gap-2">
                         {tags.map(tag => {
@@ -239,8 +239,8 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
                                     onClick={() => toggleTag(tag.id)}
                                     className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm border transition-colors cursor-pointer ${
                                         selected
-                                            ? 'bg-amber-100 border-amber-400 text-amber-800'
-                                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400'
+                                            ? 'bg-amber-100 dark:bg-amber-900/40 border-amber-400 dark:border-amber-600 text-amber-800 dark:text-amber-300'
+                                            : 'bg-white dark:bg-stone-800 border-gray-200 dark:border-stone-700 text-gray-600 dark:text-stone-300 hover:border-gray-400 dark:hover:border-stone-500'
                                     }`}
                                 >
                                     {tag.icon} {tag.name}
@@ -249,12 +249,12 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
                         })}
                     </div>
                 )}
-                {errors.tags && <p className="text-red-600 text-sm mt-1">{errors.tags.message}</p>}
+                {errors.tags && <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.tags.message}</p>}
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Місцезнаходження *
+                <label className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-1">
+                    {t('form.location')} *
                 </label>
                 <LocationPicker
                     value={latitude && longitude ? {latitude, longitude} : null}
@@ -268,11 +268,11 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
             </div>
 
             <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Посилання (необов'язково)</h3>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-stone-200 mb-2">{t('form.externalLinks')}</h3>
                 <div className="space-y-3">
                     <div>
-                        <label htmlFor="wikipedia_url" className="block text-sm text-gray-500 mb-1">
-                            Wikipedia URL
+                        <label htmlFor="wikipedia_url" className="block text-sm text-gray-500 dark:text-stone-400 mb-1">
+                            {t('form.wikipediaUrl')}
                         </label>
                         <input
                             id="wikipedia_url"
@@ -280,14 +280,14 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
                             placeholder="https://uk.wikipedia.org/wiki/..."
                             className={inputClass(!!errors.wikipedia_url)}
                             {...register('wikipedia_url', {
-                                validate: v => !v || URL_PATTERN.test(v) || 'Введіть коректне посилання (https://...)',
+                                validate: v => !v || URL_PATTERN.test(v) || t('form.urlInvalid'),
                             })}
                         />
-                        {errors.wikipedia_url && <p className="text-red-600 text-sm mt-1">{errors.wikipedia_url.message}</p>}
+                        {errors.wikipedia_url && <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.wikipedia_url.message}</p>}
                     </div>
                     <div>
-                        <label htmlFor="official_website" className="block text-sm text-gray-500 mb-1">
-                            Офіційний вебсайт
+                        <label htmlFor="official_website" className="block text-sm text-gray-500 dark:text-stone-400 mb-1">
+                            {t('form.officialWebsite')}
                         </label>
                         <input
                             id="official_website"
@@ -295,14 +295,14 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
                             placeholder="https://..."
                             className={inputClass(!!errors.official_website)}
                             {...register('official_website', {
-                                validate: v => !v || URL_PATTERN.test(v) || 'Введіть коректне посилання (https://...)',
+                                validate: v => !v || URL_PATTERN.test(v) || t('form.urlInvalid'),
                             })}
                         />
-                        {errors.official_website && <p className="text-red-600 text-sm mt-1">{errors.official_website.message}</p>}
+                        {errors.official_website && <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.official_website.message}</p>}
                     </div>
                     <div>
-                        <label htmlFor="google_maps_url" className="block text-sm text-gray-500 mb-1">
-                            Google Maps
+                        <label htmlFor="google_maps_url" className="block text-sm text-gray-500 dark:text-stone-400 mb-1">
+                            {t('form.googleMapsUrl')}
                         </label>
                         <input
                             id="google_maps_url"
@@ -310,10 +310,10 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
                             placeholder="https://maps.google.com/..."
                             className={inputClass(!!errors.google_maps_url)}
                             {...register('google_maps_url', {
-                                validate: v => !v || URL_PATTERN.test(v) || 'Введіть коректне посилання (https://...)',
+                                validate: v => !v || URL_PATTERN.test(v) || t('form.urlInvalid'),
                             })}
                         />
-                        {errors.google_maps_url && <p className="text-red-600 text-sm mt-1">{errors.google_maps_url.message}</p>}
+                        {errors.google_maps_url && <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.google_maps_url.message}</p>}
                     </div>
                 </div>
             </div>
@@ -321,8 +321,8 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
             {children}
 
             {errors.root && (
-                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                    <p className="text-red-700 text-sm text-center">{errors.root.message}</p>
+                <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
+                    <p className="text-red-700 dark:text-red-300 text-sm text-center">{errors.root.message}</p>
                 </div>
             )}
 
@@ -330,7 +330,7 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
             <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-amber-600 text-white py-2.5 rounded-lg font-medium hover:bg-amber-700 active:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full bg-amber-600 hover:bg-amber-700 active:bg-amber-800 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 py-2.5 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
             >
                 {isSubmitting ? submittingLabel : submitLabel}
             </button>

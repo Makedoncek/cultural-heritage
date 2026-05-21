@@ -24,6 +24,21 @@ EMAIL_RETRY_KWARGS = dict(
 signer = TimestampSigner()
 
 
+def _user_language(user) -> str:
+    """Return 'uk' or 'en' from the user's preference; default 'uk' if unset."""
+    try:
+        return user.preference.language
+    except Exception:
+        return 'uk'
+
+
+def _template_for(name: str, lang: str) -> str:
+    """Resolve email template name based on language. 'uk' uses the base name."""
+    if lang == 'en':
+        return f'emails/{name}_en.html'
+    return f'emails/{name}.html'
+
+
 # --- Email Verification ---
 
 def make_email_verification_token(user):
@@ -39,19 +54,26 @@ def verify_email_token(token, max_age=86400):
         return None
 
 
+VERIFY_SUBJECTS = {
+    'uk': 'CultureMap — Підтвердження електронної пошти',
+    'en': 'CultureMap — Email verification',
+}
+
+
 @shared_task(**EMAIL_RETRY_KWARGS)
 def send_verification_email(user_id):
     user = User.objects.get(pk=user_id)
     token = make_email_verification_token(user)
     verify_url = f"{settings.FRONTEND_URL}/verify-email?token={token}"
+    lang = _user_language(user)
 
-    html_message = render_to_string('emails/verify_email.html', {
+    html_message = render_to_string(_template_for('verify_email', lang), {
         'user': user,
         'verify_url': verify_url,
     })
 
     send_mail(
-        subject='CultureMap — Підтвердження електронної пошти',
+        subject=VERIFY_SUBJECTS.get(lang, VERIFY_SUBJECTS['uk']),
         message=strip_tags(html_message),
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user.email],
@@ -81,19 +103,26 @@ def verify_password_reset_token(uidb64, token):
     return None
 
 
+PASSWORD_RESET_SUBJECTS = {
+    'uk': 'CultureMap — Скидання пароля',
+    'en': 'CultureMap — Password reset',
+}
+
+
 @shared_task(**EMAIL_RETRY_KWARGS)
 def send_password_reset_email(user_id):
     user = User.objects.get(pk=user_id)
     uid, token = make_password_reset_token(user)
     reset_url = f"{settings.FRONTEND_URL}/reset-password?uid={uid}&token={token}"
+    lang = _user_language(user)
 
-    html_message = render_to_string('emails/password_reset.html', {
+    html_message = render_to_string(_template_for('password_reset', lang), {
         'user': user,
         'reset_url': reset_url,
     })
 
     send_mail(
-        subject='CultureMap — Скидання пароля',
+        subject=PASSWORD_RESET_SUBJECTS.get(lang, PASSWORD_RESET_SUBJECTS['uk']),
         message=strip_tags(html_message),
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user.email],
@@ -103,35 +132,34 @@ def send_password_reset_email(user_id):
 
 # --- Status Notification ---
 
+def _approved_subject(lang: str, title: str) -> str:
+    if lang == 'en':
+        return f'CultureMap — Your object "{title}" has been approved'
+    return f'CultureMap — Ваш об\'єкт «{title}» затверджено'
+
+
 @shared_task(**EMAIL_RETRY_KWARGS)
 def send_status_notification(obj_id, new_status):
     from .models import CulturalObject
     try:
         obj = CulturalObject.objects.select_related('author').get(pk=obj_id)
     except CulturalObject.DoesNotExist:
-        return  # об'єкт видалено — старий taзок з черги
+        return  # об'єкт видалено — старий task з черги
 
-    template_map = {
-        'approved': 'emails/object_approved.html',
-    }
-    template = template_map.get(new_status)
-    if not template:
+    if new_status != 'approved':
         return
 
+    lang = _user_language(obj.author)
     object_url = f"{settings.FRONTEND_URL}/objects/{obj.pk}"
 
-    html_message = render_to_string(template, {
+    html_message = render_to_string(_template_for('object_approved', lang), {
         'user': obj.author,
         'object': obj,
         'object_url': object_url,
     })
 
-    subject_map = {
-        'approved': f'CultureMap — Ваш об\'єкт «{obj.title}» затверджено',
-    }
-
     send_mail(
-        subject=subject_map[new_status],
+        subject=_approved_subject(lang, obj.title),
         message=strip_tags(html_message),
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[obj.author.email],
@@ -141,9 +169,23 @@ def send_status_notification(obj_id, new_status):
 
 # --- Follower Notifications ---
 
+def _follower_subject_and_labels(lang: str, author_username: str, obj_title: str, is_event: bool):
+    if lang == 'en':
+        type_label = 'event' if is_event else 'object'
+        type_short = 'event' if is_event else 'object'
+        subject = f'CultureMap — {author_username} published an {type_label} "{obj_title}"' if is_event \
+            else f'CultureMap — {author_username} published an {type_label} "{obj_title}"'
+        return subject, type_label, type_short
+    type_label = 'подію' if is_event else 'об\'єкт'
+    type_short = 'подія' if is_event else 'об\'єкт'
+    subject = f'CultureMap — {author_username} опублікував(ла) {type_label} «{obj_title}»'
+    return subject, type_label, type_short
+
+
 @shared_task(**EMAIL_RETRY_KWARGS)
 def send_follower_notifications(obj_id):
-    """Розсилає підписникам автора лист про нову публікацію (об'єкт або подію)."""
+    """Розсилає підписникам автора лист про нову публікацію (об'єкт або подію).
+    Кожному підписнику — у його обраній мові."""
     from .models import CulturalObject, FavoriteAuthor
     try:
         obj = CulturalObject.objects.select_related('author').get(pk=obj_id)
@@ -153,26 +195,27 @@ def send_follower_notifications(obj_id):
         FavoriteAuthor.objects
         .filter(author=obj.author)
         .exclude(user=obj.author)
-        .select_related('user')
+        .select_related('user', 'user__preference')
     )
 
     is_event = obj.object_type == CulturalObject.ObjectType.EVENT
-    object_type_label = 'подію' if is_event else 'об\'єкт'
-    object_type_short = 'подія' if is_event else 'об\'єкт'
     object_url = f"{settings.FRONTEND_URL}/objects/{obj.pk}"
-    subject = f'CultureMap — {obj.author.username} опублікував(ла) {object_type_label} «{obj.title}»'
 
     for fav in followers:
         user = fav.user
         if not user.email:
             continue
-        html_message = render_to_string('emails/follower_new_object.html', {
+        lang = _user_language(user)
+        subject, type_label, type_short = _follower_subject_and_labels(
+            lang, obj.author.username, obj.title, is_event,
+        )
+        html_message = render_to_string(_template_for('follower_new_object', lang), {
             'follower': user,
             'author': obj.author,
             'object': obj,
             'object_url': object_url,
-            'object_type_label': object_type_label,
-            'object_type_short': object_type_short,
+            'object_type_label': type_label,
+            'object_type_short': type_short,
         })
         send_mail(
             subject=subject,

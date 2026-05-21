@@ -32,6 +32,13 @@ class Tag(models.Model):
         help_text="Display name of the tag (e.g., 'Castle', 'Church')"
     )
 
+    name_en = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text="English translation; falls back to `name` when empty."
+    )
+
     slug = models.SlugField(
         max_length=100,
         unique=True,
@@ -244,7 +251,14 @@ class CulturalObject(models.Model):
 
     @property
     def cover_url(self):
-        """Thumbnail URL першого approved-фото (з урахуванням ordering: автор → контриб'ютори)."""
+        """Thumbnail URL першого approved-фото (з урахуванням ordering: автор → контриб'ютори).
+
+        Використовує annotated `_cover_thumbnail_url` з ObjectViewSet.get_queryset якщо доступне,
+        інакше робить окремий запит (fallback для одиночних викликів).
+        """
+        annotated = getattr(self, '_cover_thumbnail_url', None)
+        if annotated is not None or self._state.fields_cache.get('_cover_thumbnail_url') is not None:
+            return annotated
         first = self.photos.filter(status='approved').first()
         return first.thumbnail_url if first else None
 
@@ -319,3 +333,35 @@ class ObjectPhoto(models.Model):
 
     def __str__(self):
         return f'Photo {self.id} ({self.status}) for {self.cultural_object.title}'
+
+
+class UserPreference(models.Model):
+    """Налаштування користувача — мова інтерфейсу, email-сповіщень і тема."""
+
+    class Language(models.TextChoices):
+        UK = 'uk', 'Українська'
+        EN = 'en', 'English'
+
+    class Theme(models.TextChoices):
+        LIGHT = 'light', 'Light'
+        DARK = 'dark', 'Dark'
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='preference',
+    )
+    language = models.CharField(
+        max_length=2,
+        choices=Language.choices,
+        default=Language.UK,
+    )
+    theme = models.CharField(
+        max_length=5,
+        choices=Theme.choices,
+        default=Theme.LIGHT,
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.user.username}: lang={self.language}, theme={self.theme}'

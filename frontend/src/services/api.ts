@@ -1,4 +1,5 @@
 import axios from 'axios';
+import i18n from '../i18n';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
@@ -13,6 +14,8 @@ api.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        // Send current UI language so Django's LocaleMiddleware can localize API responses.
+        config.headers['Accept-Language'] = i18n.resolvedLanguage || 'uk';
         return config;
     },
     (error) => Promise.reject(error)

@@ -1,5 +1,6 @@
 import {AxiosError} from 'axios';
 import api from './api';
+import i18n from '../i18n';
 import type {ObjectPhoto, ReorderItem} from '../types';
 
 export function extractUploadError(err: unknown): string {
@@ -13,20 +14,20 @@ export function extractUploadError(err: unknown): string {
                 if (match) {
                     const seconds = parseInt(match[1], 10);
                     const minutes = Math.ceil(seconds / 60);
-                    return `перевищено ліміт завантажень (20/год). Спробуйте через ${minutes} хв.`;
+                    return i18n.t('errors.throttledWithMinutes', {minutes});
                 }
             }
-            return 'перевищено ліміт завантажень (20/год)';
+            return i18n.t('errors.throttled');
         }
-        if (err.code === 'ERR_NETWORK') return 'немає з\'єднання';
+        if (err.code === 'ERR_NETWORK') return i18n.t('errors.networkError');
         if (typeof detail === 'string' && detail.length > 0) return detail;
-        if (status === 413) return 'файл занадто великий';
-        if (status === 401) return 'потрібна авторизація';
-        if (status === 403) return 'немає прав на завантаження';
-        if (status === 404) return 'об\'єкт не знайдено';
-        if (status && status >= 500) return 'помилка сервера, спробуйте пізніше';
+        if (status === 413) return i18n.t('errors.fileTooLarge');
+        if (status === 401) return i18n.t('errors.unauthorized');
+        if (status === 403) return i18n.t('errors.forbidden');
+        if (status === 404) return i18n.t('errors.notFound');
+        if (status && status >= 500) return i18n.t('errors.serverError');
     }
-    return 'невідома помилка';
+    return i18n.t('errors.unknown');
 }
 
 export const photosService = {

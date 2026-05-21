@@ -1,8 +1,9 @@
 import '../../utils/leaflet-fix';
 import {useEffect} from 'react';
-import {MapContainer, TileLayer, useMap} from 'react-leaflet';
+import {MapContainer, useMap} from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import ObjectMarker from './ObjectMarker';
+import ThemedTileLayer from './ThemedTileLayer';
 import type {CulturalObject} from '../../types';
 import type {LatLngBoundsExpression} from 'leaflet';
 
@@ -41,10 +42,7 @@ export default function MapView({objects, flyTo = null}: MapViewProps) {
             className="absolute inset-0"
         >
             <FlyToHandler target={flyTo} />
-            <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            <ThemedTileLayer/>
             <MarkerClusterGroup chunkedLoading key={objects.map(o => o.id).join(',')}>
                 {objects.map(obj => (
                     <ObjectMarker key={obj.id} object={obj}/>

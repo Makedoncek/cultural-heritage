@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {useNavigate} from 'react-router';
 import toast from 'react-hot-toast';
+import {useTranslation} from 'react-i18next';
 import {objectsService} from '../services/objects.service';
 import {photosService, extractUploadError} from '../services/photos.service';
 import ObjectForm from '../components/Objects/ObjectForm';
@@ -11,6 +12,7 @@ const MAX_AUTHOR_PHOTOS = 5;
 
 export default function AddObjectPage() {
     const navigate = useNavigate();
+    const {t} = useTranslation();
     const [photos, setPhotos] = useState<PendingPhoto[]>([]);
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState({done: 0, total: 0});
@@ -19,7 +21,7 @@ export default function AddObjectPage() {
         const obj = await objectsService.create(data);
 
         if (photos.length === 0) {
-            toast.success('Об\'єкт надіслано на модерацію');
+            toast.success(t('object.sentForModeration'));
             navigate('/my-objects');
             return;
         }
@@ -27,8 +29,6 @@ export default function AddObjectPage() {
         setUploading(true);
         setProgress({done: 0, total: photos.length});
         const failures: {name: string; reason: string}[] = [];
-        // Sequential — щоб бекенд відхиляв надлишкові фото ДО Cloudinary
-        // (інакше parallel uploads витрачають bandwidth на файли, що не пройдуть лiміт).
         for (const p of photos) {
             try {
                 await photosService.upload(obj.id, p.file, p.caption);
@@ -40,7 +40,7 @@ export default function AddObjectPage() {
         setUploading(false);
 
         if (failures.length === 0) {
-            toast.success('Об\'єкт і фото надіслано на модерацію');
+            toast.success(t('object.createdWithPhotos'));
             navigate('/my-objects');
         } else {
             const message = failures.map(f => `«${f.name}»: ${f.reason}`).join('\n');
@@ -52,20 +52,20 @@ export default function AddObjectPage() {
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-6">Додати культурний об'єкт</h1>
-                <ObjectForm onSubmit={handleSubmit} submitLabel="Додати" submittingLabel="Додавання...">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100 mb-6">{t('auth.addObjectTitle')}</h1>
+                <ObjectForm onSubmit={handleSubmit} submitLabel={t('form.addSubmit')} submittingLabel={t('form.addSubmitting')}>
                     <div className="my-4">
                         <PhotoUploader
                             photos={photos}
                             onChange={setPhotos}
                             maxCount={MAX_AUTHOR_PHOTOS}
-                            label="Фото об'єкта (опційно)"
+                            label={t('photo.addPhotos')}
                         />
                     </div>
                 </ObjectForm>
                 {uploading && (
-                    <div className="mt-3 text-sm text-gray-700">
-                        Завантаження фото… {progress.done}/{progress.total}
+                    <div className="mt-3 text-sm text-gray-700 dark:text-stone-200">
+                        {t('photo.uploadProgress', {done: progress.done, total: progress.total})}
                     </div>
                 )}
             </div>

@@ -2,6 +2,7 @@ import {Routes, Route} from 'react-router';
 import {Toaster} from 'react-hot-toast';
 import Layout from './components/Layout/Layout';
 import RequireAuth from './components/RequireAuth';
+import {useTheme} from './context/ThemeContext';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -19,19 +20,21 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 
 function App() {
+    const {theme} = useTheme();
+    const isDark = theme === 'dark';
     return (
         <>
         <Toaster position="top-center" toastOptions={{
             style: {
                 borderRadius: '8px',
-                background: '#fffbeb',
-                color: '#92400e',
-                border: '1px solid #fbbf24',
+                background: isDark ? '#1c1917' : '#fffbeb',       /* stone-900 / amber-50 */
+                color: isDark ? '#fbbf24' : '#92400e',            /* amber-400 / amber-900 */
+                border: isDark ? '1px solid #44403c' : '1px solid #fbbf24',
                 maxWidth: '560px',
                 wordBreak: 'break-word',
                 whiteSpace: 'pre-line',
             },
-            success: {duration: 3000, iconTheme: {primary: '#d97706', secondary: '#fffbeb'}},
+            success: {duration: 3000, iconTheme: {primary: isDark ? '#f59e0b' : '#d97706', secondary: isDark ? '#1c1917' : '#fffbeb'}},
         }}/>
         <Routes>
             <Route path="/login" element={<LoginPage/>}/>

@@ -1,13 +1,25 @@
 """Signal handlers for status transitions and cascading cleanup."""
 import logging
 
+from django.conf import settings
+from django.contrib.auth.models import User
 from django.db.models.signals import pre_save, post_save, pre_delete
 from django.dispatch import receiver
 
 from . import cloudinary_service
-from .models import CulturalObject, ObjectPhoto
+from .models import CulturalObject, ObjectPhoto, UserPreference
 
 logger = logging.getLogger(__name__)
+
+
+@receiver(post_save, sender=User)
+def _create_user_preference(sender, instance, created, **kwargs):
+    """Auto-create a UserPreference row for every new user with the default language."""
+    if created:
+        UserPreference.objects.get_or_create(
+            user=instance,
+            defaults={'language': settings.LANGUAGE_CODE},
+        )
 
 
 @receiver(pre_save, sender=CulturalObject)
