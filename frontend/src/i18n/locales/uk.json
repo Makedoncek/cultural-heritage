@@ -392,5 +392,60 @@
       "stopDetails": "Деталі →",
       "copiedFrom": "Створено як копія маршруту"
     }
+  },
+  "audio": {
+    "sectionTitle": "Аудіо-наративи",
+    "addBtn": "+ Додати",
+    "empty": "Поки що немає аудіо-наративів. Будь першим хто додасть!",
+    "emptyForLang": "Немає аудіо цією мовою.",
+    "loading": "Завантаження...",
+    "filterAll": "Усі",
+    "deleteLink": "видалити",
+    "deleteConfirm": "Видалити це аудіо?",
+    "deleteSuccess": "Видалено",
+    "deleteError": "Не вдалося видалити",
+    "loadError": "Не вдалося завантажити аудіо",
+    "modal": {
+      "title": "Додати аудіо-нарратив",
+      "tabUpload": "📁 Завантажити",
+      "tabRecord": "🎙 Записати",
+      "fileLabel": "Файл (mp3, m4a, webm, ogg, wav, до 10 МБ)",
+      "fileTooBig": "Файл більший за 10 МБ",
+      "recordingDone": "Запис завершено",
+      "recordingFile": "✓ Запис: {{kb}} КБ",
+      "fileSize": "{{name}} ({{kb}} КБ)",
+      "titleLabel": "Назва",
+      "languageLabel": "Мова",
+      "narratorLabel": "Диктор (опціонально)",
+      "narratorPlaceholder": "Ім'я диктора",
+      "copyrightConfirm": "Підтверджую, що я є автором цього аудіо або маю право на його публікацію",
+      "cancel": "Скасувати",
+      "submit": "Завантажити",
+      "submitting": "Завантаження...",
+      "errSelectFile": "Оберіть або запишіть файл",
+      "errTitle": "Введіть назву",
+      "errCopyright": "Підтвердьте право на публікацію",
+      "uploadSuccess": "Завантажено. Очікує модерації.",
+      "uploadError": "Не вдалося завантажити"
+    },
+    "recorder": {
+      "start": "🎙 Почати запис",
+      "stop": "⏹ Зупинити",
+      "errPermission": "Доступ до мікрофона заборонено",
+      "errNoMic": "Мікрофон не знайдено",
+      "errGeneric": "Не вдалося розпочати запис"
+    },
+    "languages": {
+      "uk": "🇺🇦 Українська",
+      "en": "🇬🇧 English",
+      "pl": "🇵🇱 Polski",
+      "de": "🇩🇪 Deutsch"
+    },
+    "langShort": {
+      "uk": "🇺🇦 UA",
+      "en": "🇬🇧 EN",
+      "pl": "🇵🇱 PL",
+      "de": "🇩🇪 DE"
+    }
   }
 }

@@ -1,4 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
+import {useTranslation} from 'react-i18next';
 
 interface Props {
     onComplete: (blob: Blob, durationSec: number) => void;
@@ -6,6 +7,7 @@ interface Props {
 }
 
 export default function AudioRecorder({onComplete, maxDurationSec = 180}: Props) {
+    const {t} = useTranslation();
     const [recording, setRecording] = useState(false);
     const [elapsed, setElapsed] = useState(0);
     const [error, setError] = useState<string | null>(null);
@@ -47,9 +49,9 @@ export default function AudioRecorder({onComplete, maxDurationSec = 180}: Props)
             }, 250);
         } catch (e) {
             const name = (e as Error).name;
-            if (name === 'NotAllowedError') setError('Доступ до мікрофона заборонено');
-            else if (name === 'NotFoundError') setError('Мікрофон не знайдено');
-            else setError('Не вдалося розпочати запис');
+            if (name === 'NotAllowedError') setError(t('audio.recorder.errPermission'));
+            else if (name === 'NotFoundError') setError(t('audio.recorder.errNoMic'));
+            else setError(t('audio.recorder.errGeneric'));
         }
     };
 
@@ -75,7 +77,7 @@ export default function AudioRecorder({onComplete, maxDurationSec = 180}: Props)
                     onClick={start}
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center gap-2 cursor-pointer"
                 >
-                    🎙 Почати запис
+                    {t('audio.recorder.start')}
                 </button>
             ) : (
                 <>
@@ -90,7 +92,7 @@ export default function AudioRecorder({onComplete, maxDurationSec = 180}: Props)
                         onClick={stop}
                         className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg cursor-pointer"
                     >
-                        ⏹ Зупинити
+                        {t('audio.recorder.stop')}
                     </button>
                 </>
             )}

@@ -392,5 +392,60 @@
       "stopDetails": "Details →",
       "copiedFrom": "Created as a copy of route"
     }
+  },
+  "audio": {
+    "sectionTitle": "Audio narratives",
+    "addBtn": "+ Add",
+    "empty": "No audio narratives yet. Be the first to add one!",
+    "emptyForLang": "No audio in this language.",
+    "loading": "Loading...",
+    "filterAll": "All",
+    "deleteLink": "delete",
+    "deleteConfirm": "Delete this audio?",
+    "deleteSuccess": "Deleted",
+    "deleteError": "Failed to delete",
+    "loadError": "Failed to load audio",
+    "modal": {
+      "title": "Add audio narrative",
+      "tabUpload": "📁 Upload",
+      "tabRecord": "🎙 Record",
+      "fileLabel": "File (mp3, m4a, webm, ogg, wav, up to 10 MB)",
+      "fileTooBig": "File larger than 10 MB",
+      "recordingDone": "Recording finished",
+      "recordingFile": "✓ Recording: {{kb}} KB",
+      "fileSize": "{{name}} ({{kb}} KB)",
+      "titleLabel": "Title",
+      "languageLabel": "Language",
+      "narratorLabel": "Narrator (optional)",
+      "narratorPlaceholder": "Narrator name",
+      "copyrightConfirm": "I confirm that I am the author or have the right to publish this audio",
+      "cancel": "Cancel",
+      "submit": "Upload",
+      "submitting": "Uploading...",
+      "errSelectFile": "Select or record a file",
+      "errTitle": "Enter a title",
+      "errCopyright": "Confirm the right to publish",
+      "uploadSuccess": "Uploaded. Awaiting moderation.",
+      "uploadError": "Upload failed"
+    },
+    "recorder": {
+      "start": "🎙 Start recording",
+      "stop": "⏹ Stop",
+      "errPermission": "Microphone access denied",
+      "errNoMic": "Microphone not found",
+      "errGeneric": "Failed to start recording"
+    },
+    "languages": {
+      "uk": "🇺🇦 Українська",
+      "en": "🇬🇧 English",
+      "pl": "🇵🇱 Polski",
+      "de": "🇩🇪 Deutsch"
+    },
+    "langShort": {
+      "uk": "🇺🇦 UA",
+      "en": "🇬🇧 EN",
+      "pl": "🇵🇱 PL",
+      "de": "🇩🇪 DE"
+    }
   }
 }

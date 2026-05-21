@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import toast from 'react-hot-toast';
+import {useTranslation} from 'react-i18next';
 import {audioService} from '../../services/audio.service';
 import type {AudioLanguage, ObjectAudio} from '../../types/audio';
 import AudioPlayer from './AudioPlayer';
@@ -12,15 +13,8 @@ interface Props {
     coverUrl?: string | null;
 }
 
-const LANG_LABELS: Record<AudioLanguage | 'all', string> = {
-    all: 'Усі',
-    uk: '🇺🇦 UA',
-    en: '🇬🇧 EN',
-    pl: '🇵🇱 PL',
-    de: '🇩🇪 DE',
-};
-
 export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Props) {
+    const {t} = useTranslation();
     const {isAuthenticated, user} = useAuth();
     const [audios, setAudios] = useState<ObjectAudio[]>([]);
     const [loading, setLoading] = useState(true);
@@ -31,9 +25,9 @@ export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Pr
         setLoading(true);
         audioService.list(objectId)
             .then(setAudios)
-            .catch(() => toast.error('Не вдалося завантажити аудіо'))
+            .catch(() => toast.error(t('audio.loadError')))
             .finally(() => setLoading(false));
-    }, [objectId]);
+    }, [objectId, t]);
 
     const visible = filter === 'all' ? audios : audios.filter(a => a.language === filter);
     const availableLanguages = Array.from(new Set(audios.map(a => a.language)));
@@ -44,13 +38,13 @@ export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Pr
     };
 
     const handleDelete = async (audio: ObjectAudio) => {
-        if (!confirm('Видалити це аудіо?')) return;
+        if (!confirm(t('audio.deleteConfirm'))) return;
         try {
             await audioService.remove(objectId, audio.id);
             setAudios(prev => prev.filter(a => a.id !== audio.id));
-            toast.success('Видалено');
+            toast.success(t('audio.deleteSuccess'));
         } catch {
-            toast.error('Не вдалося видалити');
+            toast.error(t('audio.deleteError'));
         }
     };
 
@@ -58,7 +52,7 @@ export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Pr
         <div className="my-6">
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-stone-100">
-                    🎧 Аудіо-наративи {audios.length > 0 && <span className="text-sm text-gray-500 dark:text-stone-400 font-normal">({audios.length})</span>}
+                    🎧 {t('audio.sectionTitle')} {audios.length > 0 && <span className="text-sm text-gray-500 dark:text-stone-400 font-normal">({audios.length})</span>}
                 </h3>
                 {isAuthenticated && (
                     <button
@@ -66,7 +60,7 @@ export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Pr
                         onClick={() => setShowUpload(true)}
                         className="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg cursor-pointer"
                     >
-                        + Додати
+                        {t('audio.addBtn')}
                     </button>
                 )}
             </div>
@@ -84,17 +78,17 @@ export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Pr
                                     : 'border-gray-200 dark:border-stone-700 text-gray-600 dark:text-stone-300 hover:border-gray-400'
                             }`}
                         >
-                            {LANG_LABELS[l]}
+                            {l === 'all' ? t('audio.filterAll') : t(`audio.langShort.${l}`)}
                         </button>
                     ))}
                 </div>
             )}
 
             {loading ? (
-                <p className="text-sm text-gray-500 dark:text-stone-400">Завантаження...</p>
+                <p className="text-sm text-gray-500 dark:text-stone-400">{t('audio.loading')}</p>
             ) : visible.length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-stone-400">
-                    {audios.length === 0 ? 'Поки що немає аудіо-наративів. Будь першим хто додасть!' : 'Немає аудіо цією мовою.'}
+                    {audios.length === 0 ? t('audio.empty') : t('audio.emptyForLang')}
                 </p>
             ) : (
                 <div className="space-y-2">
@@ -123,7 +117,7 @@ export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Pr
                                             onClick={() => handleDelete(a)}
                                             className="ml-2 text-red-500 hover:underline cursor-pointer"
                                         >
-                                            видалити
+                                            {t('audio.deleteLink')}
                                         </button>
                                     )}
                                 </p>
