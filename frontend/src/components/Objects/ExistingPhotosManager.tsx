@@ -89,8 +89,8 @@ export default function ExistingPhotosManager({objectId, photos, onPhotosChange}
 
     return (
         <div className="my-4">
-            <h3 className="font-semibold text-sm mb-2">{t('photo.allPhotos')}</h3>
-            <p className="text-xs text-gray-500 mb-2">{t('photo.reorderHintFull')}</p>
+            <h3 className="font-semibold text-sm mb-2 text-gray-900 dark:text-stone-100">{t('photo.allPhotos')}</h3>
+            <p className="text-xs text-gray-500 dark:text-stone-400 mb-2">{t('photo.reorderHintFull')}</p>
             <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={photos.map(p => p.id)} strategy={horizontalListSortingStrategy}>
                     <div className="flex gap-2 overflow-x-auto pb-2">
@@ -106,7 +106,7 @@ export default function ExistingPhotosManager({objectId, photos, onPhotosChange}
                     </div>
                 </SortableContext>
             </DndContext>
-            {reordering && <p className="text-xs text-gray-500">{t('photo.savingOrder')}</p>}
+            {reordering && <p className="text-xs text-gray-500 dark:text-stone-400">{t('photo.savingOrder')}</p>}
         </div>
     );
 }

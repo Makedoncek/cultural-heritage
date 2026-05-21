@@ -122,7 +122,7 @@ export default function EditObjectPage() {
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
                     <p className="text-gray-600 text-lg">{t('object.notFound')}</p>
-                    <Link to="/" className="text-amber-600 hover:text-amber-800 underline">{t('object.backToMap')}</Link>
+                    <Link to="/" className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 underline">{t('object.backToMap')}</Link>
                 </div>
             </div>
         );
@@ -133,7 +133,7 @@ export default function EditObjectPage() {
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
                     <p className="text-red-600">{error}</p>
-                    <Link to="/" className="text-amber-600 hover:text-amber-800 underline">{t('object.backToMap')}</Link>
+                    <Link to="/" className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 underline">{t('object.backToMap')}</Link>
                 </div>
             </div>
         );
@@ -184,7 +184,7 @@ export default function EditObjectPage() {
                                 <span>{t('photo.sending')}</span>
                                 <span>{uploadProgress.done} / {uploadProgress.total}</span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div className="w-full bg-gray-200 dark:bg-stone-700 rounded-full h-2 overflow-hidden">
                                 <div
                                     className="bg-amber-600 h-2 transition-all duration-300"
                                     style={{width: `${(uploadProgress.done / uploadProgress.total) * 100}%`}}

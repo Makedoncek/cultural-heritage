@@ -50,7 +50,7 @@ function SortableItem({
                 onChange={(e) => onCaption(e.target.value)}
                 maxLength={200}
                 placeholder={captionPlaceholder}
-                className="mt-1 w-full text-xs border rounded px-1 py-0.5"
+                className="mt-1 w-full text-xs border border-gray-200 dark:border-stone-600 bg-white dark:bg-stone-800 text-gray-900 dark:text-stone-100 placeholder-gray-400 dark:placeholder-stone-500 rounded px-1 py-0.5"
             />
         </div>
     );
@@ -130,20 +130,20 @@ export default function PhotoUploader({photos, onChange, maxCount, label}: Props
 
     return (
         <div>
-            {label && <label className="block text-sm font-medium mb-2">{label}</label>}
+            {label && <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-stone-200">{label}</label>}
             <div
                 {...getRootProps()}
                 className={`border-2 border-dashed rounded p-6 text-center cursor-pointer ${
-                    isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                    isDragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'border-gray-300 dark:border-stone-600 bg-white dark:bg-stone-800'
                 }`}
             >
                 <input {...getInputProps()} />
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-stone-300">
                     {t('photo.dragOrClick', {count: maxCount})}<br/>
                     <span className="text-xs">{t('photo.limits', {size: MAX_SIZE_MB})}</span>
                 </p>
             </div>
-            {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
+            {error && <p className="text-red-600 dark:text-red-400 text-sm mt-2">{error}</p>}
 
             {photos.length > 0 && (
                 <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -162,7 +162,7 @@ export default function PhotoUploader({photos, onChange, maxCount, label}: Props
                                 />
                             ))}
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-stone-400 mt-1">
                             {t('photo.reorderHint')}
                         </p>
                     </SortableContext>

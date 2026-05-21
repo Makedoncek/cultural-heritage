@@ -19,7 +19,7 @@ export default function PhotoGallery({photos}: Props) {
         <div>
             <div
                 onClick={() => setLightboxIdx(0)}
-                className="cursor-pointer w-full aspect-video bg-gray-100 rounded overflow-hidden"
+                className="cursor-pointer w-full aspect-video bg-gray-100 dark:bg-stone-800 rounded overflow-hidden"
             >
                 <img src={cover.image_url} alt={cover.caption || ''} className="w-full h-full object-cover"/>
             </div>
