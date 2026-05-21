@@ -238,7 +238,7 @@ export default function HomePage() {
                 </ErrorBoundary>
 
                 {!loading && objects.length > 0 && (
-                    <div className="absolute top-3 left-3 md:left-auto md:right-3 z-[400] bg-white/95 dark:bg-stone-900/95 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 text-sm border border-gray-200 dark:border-stone-700">
+                    <div className="absolute top-20 left-3 md:top-3 md:left-auto md:right-3 z-[400] bg-white/95 dark:bg-stone-900/95 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 text-sm border border-gray-200 dark:border-stone-700">
                         <div className="flex items-center gap-2">
                             <span className="text-gray-500 dark:text-stone-400">{t('home.objectsOnMap')}</span>
                             <span className="font-bold text-gray-900 dark:text-stone-100">{objects.length}</span>
