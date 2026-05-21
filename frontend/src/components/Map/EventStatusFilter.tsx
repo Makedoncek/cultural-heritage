@@ -15,7 +15,7 @@ export default function EventStatusFilter({value, onChange}: EventStatusFilterPr
 
     return (
         <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">{t('home.filters.eventStatusTitle')}</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-stone-200 mb-2">{t('home.filters.eventStatusTitle')}</h3>
             <div className="flex gap-1">
                 {options.map(opt => (
                     <button
@@ -23,8 +23,8 @@ export default function EventStatusFilter({value, onChange}: EventStatusFilterPr
                         onClick={() => onChange(opt.value)}
                         className={`flex-1 px-2 py-1.5 text-xs rounded-lg font-medium transition-colors cursor-pointer ${
                             value === opt.value
-                                ? 'bg-purple-600 text-white'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'bg-purple-600 dark:bg-purple-500 text-white'
+                                : 'bg-gray-100 dark:bg-stone-800 text-gray-600 dark:text-stone-300 hover:bg-gray-200 dark:hover:bg-stone-700'
                         }`}
                     >
                         {opt.label}

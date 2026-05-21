@@ -1,9 +1,10 @@
 import {useState, useEffect} from 'react';
 import {useParams, Link} from 'react-router';
-import {MapContainer, TileLayer} from 'react-leaflet';
+import {MapContainer} from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import {useTranslation} from 'react-i18next';
 import ObjectMarker from '../components/Map/ObjectMarker';
+import ThemedTileLayer from '../components/Map/ThemedTileLayer';
 import FavoriteButton from '../components/Objects/FavoriteButton';
 import {usersService} from '../services/users.service';
 import {useAuth} from '../context/AuthContext';
@@ -122,10 +123,7 @@ export default function AuthorProfilePage() {
                             scrollWheelZoom={true}
                             className="h-full w-full"
                         >
-                            <TileLayer
-                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            />
+                            <ThemedTileLayer/>
                             <MarkerClusterGroup chunkedLoading>
                                 {objects.map(obj => (
                                     <ObjectMarker key={obj.id} object={obj}/>

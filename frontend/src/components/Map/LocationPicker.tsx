@@ -1,5 +1,6 @@
 import {useState, useEffect, useRef} from 'react';
-import {MapContainer, TileLayer, Marker, useMap, useMapEvents} from 'react-leaflet';
+import {MapContainer, Marker, useMap, useMapEvents} from 'react-leaflet';
+import ThemedTileLayer from './ThemedTileLayer';
 import '../../utils/leaflet-fix';
 import type {LatLngBoundsExpression} from 'leaflet';
 
@@ -122,10 +123,7 @@ export default function LocationPicker({value, onChange, error}: LocationPickerP
                     scrollWheelZoom={true}
                     className="h-full w-full"
                 >
-                    <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
+                    <ThemedTileLayer/>
                     <ClickHandler onChange={onChange}/>
                     <LocateMe onLocate={onChange}/>
                     {value && <Marker position={[value.latitude, value.longitude]}/>}
@@ -178,10 +176,7 @@ export default function LocationPicker({value, onChange, error}: LocationPickerP
                             className="h-full w-full"
                         >
                             <InvalidateSize/>
-                            <TileLayer
-                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            />
+                            <ThemedTileLayer/>
                             <ClickHandler onChange={onChange}/>
                             <LocateMe onLocate={onChange} large/>
                             {value && <Marker position={[value.latitude, value.longitude]}/>}

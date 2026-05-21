@@ -1,8 +1,9 @@
 import {useState, useEffect} from 'react';
 import {useParams, useNavigate, Link} from 'react-router';
-import {MapContainer, TileLayer, Marker} from 'react-leaflet';
+import {MapContainer, Marker} from 'react-leaflet';
 import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
+import ThemedTileLayer from '../components/Map/ThemedTileLayer';
 import {objectsService} from '../services/objects.service';
 import {photosService, extractUploadError} from '../services/photos.service';
 import {useAuth} from '../context/AuthContext';
@@ -296,10 +297,7 @@ export default function ObjectDetailPage() {
                         zoomControl={true}
                         className="h-full w-full"
                     >
-                        <TileLayer
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        />
+                        <ThemedTileLayer/>
                         <Marker position={[latitude, longitude]}/>
                     </MapContainer>
                 </div>
