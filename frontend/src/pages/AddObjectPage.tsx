@@ -52,7 +52,7 @@ export default function AddObjectPage() {
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('auth.addObjectTitle')}</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100 mb-6">{t('auth.addObjectTitle')}</h1>
                 <ObjectForm onSubmit={handleSubmit} submitLabel={t('form.addSubmit')} submittingLabel={t('form.addSubmitting')}>
                     <div className="my-4">
                         <PhotoUploader
@@ -64,7 +64,7 @@ export default function AddObjectPage() {
                     </div>
                 </ObjectForm>
                 {uploading && (
-                    <div className="mt-3 text-sm text-gray-700">
+                    <div className="mt-3 text-sm text-gray-700 dark:text-stone-200">
                         {t('photo.uploadProgress', {done: progress.done, total: progress.total})}
                     </div>
                 )}

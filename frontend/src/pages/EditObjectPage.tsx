@@ -111,7 +111,7 @@ export default function EditObjectPage() {
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
-                    <p className="text-gray-600">{t('home.loading')}</p>
+                    <p className="text-gray-600 dark:text-stone-300">{t('home.loading')}</p>
                 </div>
             </div>
         );
@@ -121,7 +121,7 @@ export default function EditObjectPage() {
         return (
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
-                    <p className="text-gray-600 text-lg">{t('object.notFound')}</p>
+                    <p className="text-gray-600 dark:text-stone-300 text-lg">{t('object.notFound')}</p>
                     <Link to="/" className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 underline">{t('object.backToMap')}</Link>
                 </div>
             </div>
@@ -147,10 +147,10 @@ export default function EditObjectPage() {
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('auth.editObjectTitle')}</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100 mb-4">{t('auth.editObjectTitle')}</h1>
                 {object.status === 'approved' && !user?.is_staff && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 mb-6">
-                        <p className="text-yellow-800 text-sm">
+                    <div className="bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200 dark:border-yellow-800 rounded-lg px-4 py-3 mb-6">
+                        <p className="text-yellow-800 dark:text-yellow-300 text-sm">
                             {t('object.willBeReviewed')}
                         </p>
                     </div>
@@ -180,7 +180,7 @@ export default function EditObjectPage() {
 
                     {uploading && uploadProgress.total > 0 && (
                         <div className="my-4">
-                            <div className="flex justify-between text-xs text-gray-600 mb-1">
+                            <div className="flex justify-between text-xs text-gray-600 dark:text-stone-300 mb-1">
                                 <span>{t('photo.sending')}</span>
                                 <span>{uploadProgress.done} / {uploadProgress.total}</span>
                             </div>
