@@ -71,7 +71,7 @@ function LocateMe({onLocate, large}: { onLocate: (coords: Coordinates) => void; 
             type="button"
             onClick={handleLocate}
             disabled={locating}
-            className={`absolute z-[1000] bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 shadow-sm cursor-pointer disabled:opacity-50 ${
+            className={`absolute z-[1000] bg-white dark:bg-stone-800 border border-gray-300 dark:border-stone-600 rounded-lg text-gray-700 dark:text-stone-200 hover:bg-gray-50 dark:hover:bg-stone-700 shadow-sm cursor-pointer disabled:opacity-50 ${
                 large ? 'top-4 right-4 px-3.5 py-2.5' : 'top-2 right-12 px-2.5 py-1.5 text-sm'
             }`}
             title="Моє місцезнаходження"
@@ -113,7 +113,7 @@ export default function LocationPicker({value, onChange, error}: LocationPickerP
 
     return (
         <div>
-            <div className="relative h-64 rounded-lg overflow-hidden border border-gray-200">
+            <div className="relative h-64 rounded-lg overflow-hidden border border-gray-200 dark:border-stone-700">
                 <MapContainer
                     center={value ? [value.latitude, value.longitude] : [49.0, 32.0]}
                     zoom={value ? 10 : 6}
@@ -132,26 +132,26 @@ export default function LocationPicker({value, onChange, error}: LocationPickerP
                 <button
                     type="button"
                     onClick={() => setFullscreen(true)}
-                    className="absolute top-2 right-2 z-[1000] bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-50 shadow-sm cursor-pointer"
+                    className="absolute top-2 right-2 z-[1000] bg-white dark:bg-stone-800 border border-gray-300 dark:border-stone-600 rounded-lg px-2.5 py-1.5 text-sm text-gray-700 dark:text-stone-200 hover:bg-gray-50 dark:hover:bg-stone-700 shadow-sm cursor-pointer"
                     title="Розгорнути карту"
                 >
                     ⛶
                 </button>
             </div>
 
-            <p className="text-sm mt-1.5 text-gray-500">
+            <p className="text-sm mt-1.5 text-gray-500 dark:text-stone-400">
                 {value
                     ? `${value.latitude.toFixed(6)}, ${value.longitude.toFixed(6)}`
                     : 'Натисніть на карту, щоб обрати місцезнаходження'
                 }
             </p>
-            {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
+            {error && <p className="text-red-600 dark:text-red-400 text-sm mt-1">{error}</p>}
 
             {/* Fullscreen overlay */}
             {fullscreen && (
-                <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
-                    <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
-                        <span className="text-sm text-gray-600">
+                <div className="fixed inset-0 z-[9999] bg-white dark:bg-stone-950 flex flex-col">
+                    <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-stone-700">
+                        <span className="text-sm text-gray-600 dark:text-stone-300">
                             {value
                                 ? `${value.latitude.toFixed(6)}, ${value.longitude.toFixed(6)}`
                                 : 'Натисніть на карту, щоб обрати місцезнаходження'
