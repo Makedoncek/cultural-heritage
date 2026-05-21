@@ -12,6 +12,9 @@ router.register('routes', views.RouteViewSet, basename='route')
 photos_router = NestedDefaultRouter(router, 'objects', lookup='object')
 photos_router.register('photos', views.ObjectPhotoViewSet, basename='object-photos')
 
+audios_router = NestedDefaultRouter(router, 'objects', lookup='obj')
+audios_router.register('audios', views.ObjectAudioViewSet, basename='object-audios')
+
 app_name = 'objects'
 
 urlpatterns = [
@@ -48,4 +51,4 @@ urlpatterns = [
 
     # Routes
     path('users/me/routes/', views.my_routes, name='my_routes'),
-] + router.urls + photos_router.urls
+] + router.urls + photos_router.urls + audios_router.urls

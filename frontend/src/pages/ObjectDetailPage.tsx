@@ -14,6 +14,7 @@ import PhotoGallery from '../components/Objects/PhotoGallery';
 import PhotoUploader, {type PendingPhoto} from '../components/Objects/PhotoUploader';
 import ReportInaccuracyButton from '../components/Objects/ReportInaccuracyButton';
 import AddToRouteButton from '../components/Objects/AddToRouteButton';
+import AudioGuidesSection from '../components/Audio/AudioGuidesSection';
 import type {CulturalObjectDetail} from '../types';
 import '../utils/leaflet-fix';
 
@@ -236,6 +237,14 @@ export default function ObjectDetailPage() {
                     <div className="my-6">
                         <PhotoGallery photos={object.photos}/>
                     </div>
+                )}
+
+                {object.status === 'approved' && (
+                    <AudioGuidesSection
+                        objectId={object.id}
+                        objectTitle={object.title}
+                        coverUrl={object.photos?.[0]?.image_url ?? null}
+                    />
                 )}
 
                 {canContribute && (

@@ -342,6 +342,68 @@ class ObjectPhoto(models.Model):
         return f'Photo {self.id} ({self.status}) for {self.cultural_object.title}'
 
 
+class ObjectAudio(models.Model):
+    """Аудіо-нарратив для культурного об'єкта (Audio Tours feature)."""
+
+    class Language(models.TextChoices):
+        UK = 'uk', 'Українська'
+        EN = 'en', 'English'
+        PL = 'pl', 'Polski'
+        DE = 'de', 'Deutsch'
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'На модерації'
+        APPROVED = 'approved', 'Опубліковано'
+        REJECTED = 'rejected', 'Відхилено'
+
+    cultural_object = models.ForeignKey(
+        CulturalObject,
+        on_delete=models.CASCADE,
+        related_name='audios',
+    )
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='uploaded_audios',
+    )
+    cloudinary_public_id = models.CharField(max_length=255, unique=True)
+    cloudinary_url = models.URLField(max_length=500)
+    duration_seconds = models.PositiveIntegerField()
+    language = models.CharField(
+        max_length=2,
+        choices=Language.choices,
+        default=Language.UK,
+    )
+    title = models.CharField(max_length=150)
+    narrator_name = models.CharField(max_length=100, blank=True)
+    # Affirms author has the right to publish (legal cover before moderation)
+    copyright_confirmed = models.BooleanField(default=False)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    moderation_note = models.TextField(blank=True)
+    plays_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    moderated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['cultural_object', 'status']),
+            models.Index(fields=['status', '-created_at']),
+            models.Index(fields=['cultural_object', 'language', 'status']),
+        ]
+        verbose_name = _("Аудіо-нарратив")
+        verbose_name_plural = _("Аудіо-наративи")
+
+    def __str__(self):
+        return f'Audio {self.id} ({self.language}, {self.status}) for {self.cultural_object.title}'
+
+
 class UserPreference(models.Model):
     """Налаштування користувача — мова інтерфейсу, email-сповіщень і тема."""
 

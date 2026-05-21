@@ -13,7 +13,7 @@ from .models import Tag
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Count, Exists, OuterRef, Subquery
+from django.db.models import Q, Count, Exists, OuterRef, Subquery, F
 from .models import CulturalObject, Favorite, FavoriteAuthor
 from .serializers import ObjectListSerializer, ObjectDetailSerializer, ObjectWriteSerializer, UserProfileSerializer, ObjectWithMyPhotosSerializer
 
@@ -26,9 +26,9 @@ class _PhotoLimitExceeded(Exception):
 from .permissions import IsAuthorOrReadOnly, IsPhotoUploaderOrAdmin, IsObjectAuthor, IsPhotoCaptionEditor
 from .throttles import PhotoUploadThrottle
 from .validators import validate_image_size, validate_image_format
-from . import cloudinary_service
-from .models import ObjectPhoto
-from .serializers import ObjectPhotoSerializer
+from . import cloudinary_service, cloudinary_audio_service
+from .models import ObjectPhoto, ObjectAudio
+from .serializers import ObjectPhotoSerializer, ObjectAudioSerializer, AudioUploadSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
@@ -1801,3 +1801,143 @@ def my_routes(request):
     if status_filter:
         qs = qs.filter(status=status_filter)
     return Response(RouteListSerializer(qs, many=True, context={'request': request}).data)
+
+
+MAX_AUDIOS_PER_OBJECT = 10
+
+
+class ObjectAudioViewSet(viewsets.ViewSet):
+    """Audio narratives для культурного об'єкта.
+
+    Endpoints:
+      GET    /api/objects/<obj_pk>/audios/             — list approved (public) + own pending/rejected
+      POST   /api/objects/<obj_pk>/audios/             — upload (multipart), copyright_confirmed=true
+      GET    /api/objects/<obj_pk>/audios/<pk>/        — detail
+      PATCH  /api/objects/<obj_pk>/audios/<pk>/        — edit metadata (title/narrator/language)
+      DELETE /api/objects/<obj_pk>/audios/<pk>/        — author or admin
+      POST   /api/objects/<obj_pk>/audios/<pk>/play/   — increment plays_count
+      POST   /api/objects/<obj_pk>/audios/<pk>/approve/ — admin only
+      POST   /api/objects/<obj_pk>/audios/<pk>/reject/ — admin only (with note)
+    """
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_permissions(self):
+        if self.action in ('list', 'retrieve', 'play'):
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def _get_object(self, obj_pk):
+        return get_object_or_404(CulturalObject, pk=obj_pk)
+
+    def _get_audio(self, obj_pk, pk):
+        return get_object_or_404(ObjectAudio, pk=pk, cultural_object_id=obj_pk)
+
+    def list(self, request, obj_pk=None):
+        cultural_object = self._get_object(obj_pk)
+        user = request.user
+        qs = ObjectAudio.objects.filter(cultural_object=cultural_object).select_related('uploaded_by')
+        language = request.query_params.get('language')
+        if language:
+            qs = qs.filter(language=language)
+        if user.is_authenticated and user.is_staff:
+            pass  # show everything
+        elif user.is_authenticated:
+            qs = qs.filter(Q(status=ObjectAudio.Status.APPROVED) | Q(uploaded_by=user))
+        else:
+            qs = qs.filter(status=ObjectAudio.Status.APPROVED)
+        return Response(ObjectAudioSerializer(qs, many=True).data)
+
+    def retrieve(self, request, obj_pk=None, pk=None):
+        audio = self._get_audio(obj_pk, pk)
+        user = request.user
+        if audio.status != ObjectAudio.Status.APPROVED:
+            if not user.is_authenticated or (audio.uploaded_by_id != user.id and not user.is_staff):
+                return Response({'detail': _('Не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+        return Response(ObjectAudioSerializer(audio).data)
+
+    def create(self, request, obj_pk=None):
+        cultural_object = self._get_object(obj_pk)
+        if cultural_object.audios.count() >= MAX_AUDIOS_PER_OBJECT:
+            return Response(
+                {'detail': _("Об'єкт може мати максимум 10 аудіо-наративів.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = AudioUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        uploaded = cloudinary_audio_service.upload_audio(
+            serializer.validated_data['audio'],
+            object_id=cultural_object.id,
+            uploader_id=request.user.id,
+        )
+        audio = ObjectAudio.objects.create(
+            cultural_object=cultural_object,
+            uploaded_by=request.user,
+            cloudinary_public_id=uploaded['public_id'],
+            cloudinary_url=uploaded['url'],
+            duration_seconds=uploaded['duration_seconds'],
+            language=serializer.validated_data['language'],
+            title=serializer.validated_data['title'],
+            narrator_name=serializer.validated_data.get('narrator_name', ''),
+            copyright_confirmed=True,
+        )
+        return Response(ObjectAudioSerializer(audio).data, status=status.HTTP_201_CREATED)
+
+    def partial_update(self, request, obj_pk=None, pk=None):
+        audio = self._get_audio(obj_pk, pk)
+        if audio.uploaded_by_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору або адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        # User cannot edit moderation fields; restrict to safe set.
+        editable = {'title', 'narrator_name', 'language'}
+        update_kwargs = {k: v for k, v in request.data.items() if k in editable}
+        if not update_kwargs:
+            return Response(ObjectAudioSerializer(audio).data)
+        for k, v in update_kwargs.items():
+            setattr(audio, k, v)
+        # Edits by non-admins push back to pending (re-moderation).
+        if not request.user.is_staff and audio.status == ObjectAudio.Status.APPROVED:
+            audio.status = ObjectAudio.Status.PENDING
+            audio.moderated_at = None
+        audio.save()
+        return Response(ObjectAudioSerializer(audio).data)
+
+    def destroy(self, request, obj_pk=None, pk=None):
+        audio = self._get_audio(obj_pk, pk)
+        if audio.uploaded_by_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору або адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        audio.delete()  # pre_delete-signal cleans up Cloudinary
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
+    def play(self, request, obj_pk=None, pk=None):
+        audio = self._get_audio(obj_pk, pk)
+        if audio.status != ObjectAudio.Status.APPROVED:
+            return Response({'detail': _('Цей аудіонарратив недоступний.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        ObjectAudio.objects.filter(pk=audio.pk).update(plays_count=F('plays_count') + 1)
+        return Response({'detail': 'ok'})
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def approve(self, request, obj_pk=None, pk=None):
+        if not request.user.is_staff:
+            return Response({'detail': _('Тільки адміністратор.')}, status=status.HTTP_403_FORBIDDEN)
+        audio = self._get_audio(obj_pk, pk)
+        audio.status = ObjectAudio.Status.APPROVED
+        audio.moderation_note = ''
+        from django.utils import timezone
+        audio.moderated_at = timezone.now()
+        audio.save(update_fields=['status', 'moderation_note', 'moderated_at'])
+        return Response(ObjectAudioSerializer(audio).data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def reject(self, request, obj_pk=None, pk=None):
+        if not request.user.is_staff:
+            return Response({'detail': _('Тільки адміністратор.')}, status=status.HTTP_403_FORBIDDEN)
+        audio = self._get_audio(obj_pk, pk)
+        audio.status = ObjectAudio.Status.REJECTED
+        audio.moderation_note = str(request.data.get('note', ''))[:500]
+        from django.utils import timezone
+        audio.moderated_at = timezone.now()
+        audio.save(update_fields=['status', 'moderation_note', 'moderated_at'])
+        return Response(ObjectAudioSerializer(audio).data)

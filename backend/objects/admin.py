@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from .models import (
-    Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto,
+    Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, ObjectAudio,
     InaccuracyReport, Visit, PlannedVisit, Route, RouteStop,
 )
 
@@ -480,3 +480,31 @@ class RouteAdmin(SortableAdminBase, admin.ModelAdmin):
     def archive_routes(self, request, queryset):
         n = queryset.exclude(status=Route.Status.ARCHIVED).update(status=Route.Status.ARCHIVED)
         self.message_user(request, f'Архівовано {n} маршрут(ів).')
+
+
+@admin.register(ObjectAudio)
+class ObjectAudioAdmin(admin.ModelAdmin):
+    list_display = ['id', 'title', 'cultural_object', 'language', 'narrator_name',
+                    'duration_seconds', 'status', 'plays_count', 'uploaded_by', 'created_at']
+    list_filter = ['status', 'language', 'created_at']
+    search_fields = ['title', 'narrator_name', 'cultural_object__title', 'uploaded_by__username']
+    readonly_fields = ['cloudinary_public_id', 'cloudinary_url', 'duration_seconds',
+                       'plays_count', 'uploaded_by', 'created_at', 'updated_at', 'moderated_at']
+    raw_id_fields = ['cultural_object']
+    actions = ['approve_audios', 'reject_audios']
+
+    @admin.action(description='Затвердити обрані аудіо')
+    def approve_audios(self, request, queryset):
+        from django.utils import timezone
+        n = queryset.exclude(status=ObjectAudio.Status.APPROVED).update(
+            status=ObjectAudio.Status.APPROVED, moderated_at=timezone.now(),
+        )
+        self.message_user(request, f'Затверджено {n} аудіо.')
+
+    @admin.action(description='Відхилити обрані аудіо')
+    def reject_audios(self, request, queryset):
+        from django.utils import timezone
+        n = queryset.exclude(status=ObjectAudio.Status.REJECTED).update(
+            status=ObjectAudio.Status.REJECTED, moderated_at=timezone.now(),
+        )
+        self.message_user(request, f'Відхилено {n} аудіо.')

@@ -7,7 +7,7 @@ from django.db.models.signals import pre_save, post_save, pre_delete
 from django.dispatch import receiver
 
 from . import cloudinary_service
-from .models import CulturalObject, ObjectPhoto, UserPreference
+from .models import CulturalObject, ObjectPhoto, ObjectAudio, UserPreference
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +88,20 @@ def _reset_photo_status_on_caption_change(sender, instance, **kwargs):
         instance.status = ObjectPhoto.Status.PENDING
         instance.moderated_at = None
         instance.rejected_cleanup_at = None
+
+
+@receiver(pre_delete, sender=ObjectAudio)
+def _cleanup_cloudinary_on_audio_delete(sender, instance, **kwargs):
+    """Видаляє Cloudinary-аудіо при будь-якому видаленні ObjectAudio.
+    Виконується синхронно — аудіо file rate теж невеликий.
+    """
+    if not instance.cloudinary_public_id:
+        return
+    try:
+        from . import cloudinary_audio_service
+        cloudinary_audio_service.delete_audio(instance.cloudinary_public_id)
+    except Exception as e:
+        logger.error(f'Failed to delete Cloudinary audio {instance.cloudinary_public_id}: {e}')
 
 
 @receiver(pre_delete, sender=ObjectPhoto)

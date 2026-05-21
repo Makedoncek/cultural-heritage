@@ -5,7 +5,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from .models import Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, InaccuracyReport, Visit, PlannedVisit
+from .models import Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, ObjectAudio, InaccuracyReport, Visit, PlannedVisit
 from .validators import validate_coordinates_within_ukraine
 
 
@@ -355,6 +355,58 @@ class ObjectPhotoSerializer(serializers.ModelSerializer):
             'id', 'cultural_object', 'uploaded_by', 'image_url',
             'thumbnail_url', 'status', 'order', 'is_author_photo', 'created_at',
         ]
+
+
+class ObjectAudioSerializer(serializers.ModelSerializer):
+    uploaded_by = UploadedByNestedSerializer(read_only=True)
+    language_label = serializers.CharField(source='get_language_display', read_only=True)
+    status_label = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = ObjectAudio
+        fields = [
+            'id', 'cultural_object', 'uploaded_by',
+            'cloudinary_url', 'duration_seconds',
+            'language', 'language_label',
+            'title', 'narrator_name',
+            'status', 'status_label', 'moderation_note',
+            'plays_count', 'created_at',
+        ]
+        read_only_fields = [
+            'id', 'cultural_object', 'uploaded_by',
+            'cloudinary_url', 'duration_seconds',
+            'language_label', 'status', 'status_label',
+            'moderation_note', 'plays_count', 'created_at',
+        ]
+
+
+class AudioUploadSerializer(serializers.Serializer):
+    """Validates multipart upload of an audio narrative."""
+    audio = serializers.FileField()
+    language = serializers.ChoiceField(choices=ObjectAudio.Language.choices)
+    title = serializers.CharField(max_length=150)
+    narrator_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    copyright_confirmed = serializers.BooleanField()
+
+    ALLOWED_MIMES = (
+        'audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/webm',
+        'audio/ogg', 'audio/wav', 'audio/x-m4a', 'audio/x-wav',
+    )
+    MAX_SIZE_BYTES = 10 * 1024 * 1024
+
+    def validate_audio(self, value):
+        if value.size > self.MAX_SIZE_BYTES:
+            raise serializers.ValidationError('Файл більший за 10 МБ')
+        if value.content_type and value.content_type not in self.ALLOWED_MIMES:
+            raise serializers.ValidationError(f'Непідтримуваний формат: {value.content_type}')
+        return value
+
+    def validate_copyright_confirmed(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                'Потрібно підтвердити авторство або право на публікацію'
+            )
+        return value
 
 
 class InaccuracyReportSerializer(serializers.ModelSerializer):
