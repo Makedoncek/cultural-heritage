@@ -505,6 +505,7 @@ class RouteStopSerializer(serializers.ModelSerializer):
     object_status = serializers.SerializerMethodField()
     object_cover_url = serializers.SerializerMethodField()
     is_unavailable = serializers.BooleanField(read_only=True)
+    is_visited = serializers.SerializerMethodField()
 
     class Meta:
         from .models import RouteStop
@@ -512,10 +513,10 @@ class RouteStopSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'order', 'object_id', 'object_title',
             'latitude', 'longitude', 'object_status', 'object_cover_url',
-            'note', 'is_unavailable',
+            'note', 'is_unavailable', 'is_visited',
         ]
         read_only_fields = ['id', 'object_id', 'object_title', 'latitude', 'longitude',
-                            'object_status', 'object_cover_url', 'is_unavailable']
+                            'object_status', 'object_cover_url', 'is_unavailable', 'is_visited']
 
     def get_object_title(self, obj):
         return obj.cultural_object.title
@@ -531,6 +532,13 @@ class RouteStopSerializer(serializers.ModelSerializer):
 
     def get_object_cover_url(self, obj):
         return _object_cover_thumb(obj.cultural_object)
+
+    def get_is_visited(self, obj):
+        # `visited_object_ids` injected by RouteViewSet.retrieve via context — avoids N+1.
+        visited_ids = self.context.get('visited_object_ids')
+        if visited_ids is None:
+            return False
+        return obj.cultural_object_id in visited_ids
 
 
 class RouteListSerializer(serializers.ModelSerializer):

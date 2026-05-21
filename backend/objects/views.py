@@ -1553,6 +1553,24 @@ class RouteViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated()]
         return [AllowAny()]
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        # Pre-fetch which stops the current user has already visited (one query per route).
+        user = self.request.user if hasattr(self.request, 'user') else None
+        if self.action == 'retrieve' and user and user.is_authenticated:
+            from .models import RouteStop, Visit
+            route_id = self.kwargs.get('pk')
+            if route_id:
+                stop_object_ids = list(
+                    RouteStop.objects.filter(route_id=route_id).values_list('cultural_object_id', flat=True),
+                )
+                visited_ids = set(
+                    Visit.objects.filter(user=user, cultural_object_id__in=stop_object_ids)
+                    .values_list('cultural_object_id', flat=True),
+                )
+                context['visited_object_ids'] = visited_ids
+        return context
+
     def perform_create(self, serializer):
         from .models import Route
         serializer.save(author=self.request.user, status=Route.Status.DRAFT)

@@ -340,7 +340,8 @@
       "copied": "Copied to your drafts",
       "copyFailed": "Failed to copy",
       "noteSaved": "Note saved",
-      "noteSaveFailed": "Failed to save note"
+      "noteSaveFailed": "Failed to save note",
+      "visitFailed": "Failed to update visit"
     },
     "searchPlaceholder": "Search by title or description...",
     "anyDuration": "Any duration",
@@ -390,7 +391,12 @@
       "stopsHeader": "📋 Route stops",
       "stopUnavailable": "⚠ Object temporarily unavailable",
       "stopDetails": "Details →",
-      "copiedFrom": "Created as a copy of route"
+      "copiedFrom": "Created as a copy of route",
+      "progress": "✓ {{visited}} of {{total}} stops visited",
+      "iWasHere": "🚶 I was here",
+      "visited": "Visited",
+      "markVisited": "Mark as visited",
+      "unvisit": "Remove visit mark"
     }
   },
   "audio": {

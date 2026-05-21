@@ -14,6 +14,7 @@ export interface RouteStop {
     object_cover_url: string | null;
     note: string;
     is_unavailable: boolean;
+    is_visited: boolean;
 }
 
 export interface RouteListItem {

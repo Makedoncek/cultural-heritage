@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import ThemedTileLayer from '../components/Map/ThemedTileLayer';
 import {routesService} from '../services/routes.service';
+import {visitsService} from '../services/visits.service';
 import {useAuth} from '../context/AuthContext';
 import type {RouteDetail} from '../types/routes';
 import '../utils/leaflet-fix';
@@ -46,6 +47,26 @@ export default function RouteDetailPage() {
 
     const isOwner = user && route && user.username === route.author_name;
     const canEdit = isOwner || user?.is_staff;
+    const [togglingStopId, setTogglingStopId] = useState<number | null>(null);
+
+    const visitedCount = route?.stops.filter(s => s.is_visited).length ?? 0;
+    const totalCount = route?.stops.length ?? 0;
+    const progressPct = totalCount > 0 ? Math.round((visitedCount / totalCount) * 100) : 0;
+
+    const handleToggleVisit = async (stopId: number, objectId: number) => {
+        setTogglingStopId(stopId);
+        try {
+            const {is_visited} = await visitsService.toggle(objectId);
+            setRoute(prev => prev ? {
+                ...prev,
+                stops: prev.stops.map(s => s.id === stopId ? {...s, is_visited} : s),
+            } : prev);
+        } catch {
+            toast.error(t('routes.toast.visitFailed'));
+        } finally {
+            setTogglingStopId(null);
+        }
+    };
 
     useEffect(() => {
         if (routeId == null) return;
@@ -271,6 +292,23 @@ export default function RouteDetailPage() {
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-stone-100 mb-3">
                     {t('routes.detail.stopsHeader')} ({route.stops.length})
                 </h2>
+
+                {isAuthenticated && totalCount > 0 && (
+                    <div className="mb-4">
+                        <div className="flex justify-between items-baseline mb-1">
+                            <span className="text-sm font-medium text-gray-700 dark:text-stone-200">
+                                {t('routes.detail.progress', {visited: visitedCount, total: totalCount})}
+                            </span>
+                            <span className="text-sm text-gray-500 dark:text-stone-400">{progressPct}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-200 dark:bg-stone-700 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-green-500 dark:bg-green-400 transition-all"
+                                style={{width: `${progressPct}%`}}
+                            />
+                        </div>
+                    </div>
+                )}
                 <div className="space-y-2">
                     {route.stops.map(s => (
                         <div
@@ -278,11 +316,17 @@ export default function RouteDetailPage() {
                             className={`flex items-start gap-3 border rounded-lg px-3 py-2 ${
                                 s.is_unavailable
                                     ? 'border-gray-300 dark:border-stone-600 bg-gray-50 dark:bg-stone-800/50 opacity-70'
-                                    : 'border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900'
+                                    : s.is_visited
+                                        ? 'border-green-300 dark:border-green-700 bg-green-50/30 dark:bg-green-900/10'
+                                        : 'border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900'
                             }`}
                         >
-                            <div className="shrink-0 w-8 h-8 rounded-full bg-amber-600 dark:bg-amber-500 text-white dark:text-stone-900 flex items-center justify-center font-bold">
-                                {s.order}
+                            <div className={`shrink-0 w-8 h-8 rounded-full text-white dark:text-stone-900 flex items-center justify-center font-bold ${
+                                s.is_visited
+                                    ? 'bg-green-600 dark:bg-green-500'
+                                    : 'bg-amber-600 dark:bg-amber-500'
+                            }`}>
+                                {s.is_visited ? '✓' : s.order}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <Link
@@ -302,6 +346,21 @@ export default function RouteDetailPage() {
                                     </p>
                                 )}
                             </div>
+                            {isAuthenticated && !s.is_unavailable && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleToggleVisit(s.id, s.object_id)}
+                                    disabled={togglingStopId === s.id}
+                                    className={`shrink-0 px-2.5 py-1 text-xs rounded-lg cursor-pointer disabled:opacity-50 ${
+                                        s.is_visited
+                                            ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-700 hover:bg-green-200 dark:hover:bg-green-900/60'
+                                            : 'bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900'
+                                    }`}
+                                    title={s.is_visited ? t('routes.detail.unvisit') : t('routes.detail.markVisited')}
+                                >
+                                    {s.is_visited ? `✓ ${t('routes.detail.visited')}` : t('routes.detail.iWasHere')}
+                                </button>
+                            )}
                         </div>
                     ))}
                 </div>
