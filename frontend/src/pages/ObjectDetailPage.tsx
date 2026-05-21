@@ -14,9 +14,9 @@ import type {CulturalObjectDetail} from '../types';
 import '../utils/leaflet-fix';
 
 const STATUS_COLORS: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    approved: 'bg-green-100 text-green-800',
-    archived: 'bg-gray-100 text-gray-600',
+    pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+    approved: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+    archived: 'bg-gray-100 text-gray-600 dark:bg-stone-800 dark:text-stone-400',
 };
 
 export default function ObjectDetailPage() {
@@ -97,7 +97,7 @@ export default function ObjectDetailPage() {
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
-                    <p className="text-gray-600">{t('home.loading')}</p>
+                    <p className="text-gray-600 dark:text-stone-300">{t('home.loading')}</p>
                 </div>
             </div>
         );
@@ -107,8 +107,8 @@ export default function ObjectDetailPage() {
         return (
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
-                    <p className="text-gray-600 text-lg">{t('object.notFound')}</p>
-                    <Link to="/" className="text-amber-600 hover:text-amber-800 underline">
+                    <p className="text-gray-600 dark:text-stone-300 text-lg">{t('object.notFound')}</p>
+                    <Link to="/" className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 underline">
                         {t('object.backToMap')}
                     </Link>
                 </div>
@@ -143,7 +143,7 @@ export default function ObjectDetailPage() {
 
                 <div className="mb-4">
                     <div className="flex flex-wrap items-center gap-3 mb-2">
-                        <h1 className="text-2xl font-bold text-gray-900">{object.title}</h1>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">{object.title}</h1>
                         {canEdit && (
                             <span className={`px-3 py-1 text-sm font-medium rounded ${STATUS_COLORS[object.status]}`}>
                                 {t(`object.moderationStatus.${object.status}`)}
@@ -184,7 +184,7 @@ export default function ObjectDetailPage() {
                         {object.tags.map(tag => (
                             <span
                                 key={tag.id}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-sm"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 rounded-full text-sm"
                             >
                                 {tag.icon} {tag.name}
                             </span>
@@ -195,16 +195,16 @@ export default function ObjectDetailPage() {
 
                 {object.object_type === 'event' && (
                     <div className="flex flex-wrap items-center gap-2 mb-4">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 rounded-full text-sm font-medium">
                             🎉 {t('object.objectType.event')}
                         </span>
                         {object.event_start_date && object.event_end_date && (
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-gray-600 dark:text-stone-300">
                                 📅 {new Date(object.event_start_date).toLocaleString(dateLocale, {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'})} — {new Date(object.event_end_date).toLocaleString(dateLocale, {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'})}
                             </span>
                         )}
                         {object.event_end_date && new Date(object.event_end_date) < new Date() && (
-                            <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-xs">
+                            <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 dark:bg-stone-800 text-gray-500 dark:text-stone-400 rounded-full text-xs">
                                 {t('object.eventStatus.finished')}
                             </span>
                         )}
@@ -218,9 +218,9 @@ export default function ObjectDetailPage() {
                 )}
 
                 {canContribute && (
-                    <div className="my-6 p-4 border rounded bg-blue-50">
-                        <h3 className="font-semibold mb-2">{t('photo.addContribute')}</h3>
-                        <p className="text-sm text-gray-600 mb-3">
+                    <div className="my-6 p-4 border border-blue-200 dark:border-blue-800 rounded bg-blue-50 dark:bg-blue-950/40">
+                        <h3 className="font-semibold mb-2 text-gray-900 dark:text-stone-100">{t('photo.addContribute')}</h3>
+                        <p className="text-sm text-gray-600 dark:text-stone-300 mb-3">
                             {t('photo.contributeHint', {count: 3})}
                         </p>
                         {!showContribUploader ? (
@@ -235,11 +235,11 @@ export default function ObjectDetailPage() {
                                 <PhotoUploader photos={contribPhotos} onChange={setContribPhotos} maxCount={3}/>
                                 {uploadingContrib && contribProgress.total > 0 && (
                                     <div className="mt-3">
-                                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                                        <div className="flex justify-between text-xs text-gray-600 dark:text-stone-300 mb-1">
                                             <span>{t('photo.sending')}</span>
                                             <span>{contribProgress.done} / {contribProgress.total}</span>
                                         </div>
-                                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                        <div className="w-full bg-gray-200 dark:bg-stone-700 rounded-full h-2 overflow-hidden">
                                             <div
                                                 className="bg-blue-600 h-2 transition-all duration-300"
                                                 style={{width: `${(contribProgress.done / contribProgress.total) * 100}%`}}
@@ -261,7 +261,7 @@ export default function ObjectDetailPage() {
                                             setContribPhotos([]);
                                         }}
                                         disabled={uploadingContrib}
-                                        className="px-4 py-2 border rounded cursor-pointer disabled:opacity-50"
+                                        className="px-4 py-2 border border-gray-300 dark:border-stone-600 text-gray-700 dark:text-stone-200 rounded cursor-pointer disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-stone-800"
                                     >
                                         {t('form.cancel')}
                                     </button>
@@ -273,22 +273,22 @@ export default function ObjectDetailPage() {
 
                 {object.description && (
                     <div className="mb-6">
-                        <p className="text-gray-700 whitespace-pre-line leading-relaxed">{object.description}</p>
+                        <p className="text-gray-700 dark:text-stone-200 whitespace-pre-line leading-relaxed">{object.description}</p>
                     </div>
                 )}
 
-                <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mb-2">
+                <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-stone-400 mb-2">
                     <span>📍 {t('object.coordinates')} {latitude.toFixed(6)}, {longitude.toFixed(6)}</span>
                     <button
                         onClick={() => navigator.clipboard.writeText(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`)}
-                        className="px-2 py-0.5 text-xs text-amber-600 hover:text-amber-800 border border-amber-200 rounded hover:bg-amber-50 cursor-pointer"
+                        className="px-2 py-0.5 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 border border-amber-200 dark:border-stone-600 rounded hover:bg-amber-50 dark:hover:bg-stone-800 cursor-pointer"
                     >
                         {t('object.copy')}
                     </button>
                 </div>
 
 
-                <div className="h-64 rounded-lg overflow-hidden border border-gray-200 mb-6">
+                <div className="h-64 rounded-lg overflow-hidden border border-gray-200 dark:border-stone-700 mb-6">
                     <MapContainer
                         center={[latitude, longitude]}
                         zoom={13}
@@ -304,23 +304,23 @@ export default function ObjectDetailPage() {
 
                 {(object.wikipedia_url || object.official_website || object.google_maps_url) && (
                     <div className="mb-6">
-                        <h2 className="text-sm font-semibold text-gray-700 mb-2">{t('object.links')}</h2>
+                        <h2 className="text-sm font-semibold text-gray-700 dark:text-stone-200 mb-2">{t('object.links')}</h2>
                         <div className="flex flex-wrap gap-3">
                             {object.wikipedia_url && (
                                 <a href={object.wikipedia_url} target="_blank" rel="noopener noreferrer"
-                                   className="text-sm text-blue-600 hover:text-blue-800 underline">
+                                   className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline">
                                     {t('object.wikipedia')}
                                 </a>
                             )}
                             {object.official_website && (
                                 <a href={object.official_website} target="_blank" rel="noopener noreferrer"
-                                   className="text-sm text-blue-600 hover:text-blue-800 underline">
+                                   className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline">
                                     {t('object.officialSite')}
                                 </a>
                             )}
                             {object.google_maps_url && (
                                 <a href={object.google_maps_url} target="_blank" rel="noopener noreferrer"
-                                   className="text-sm text-blue-600 hover:text-blue-800 underline">
+                                   className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline">
                                     {t('object.googleMaps')}
                                 </a>
                             )}
@@ -329,8 +329,8 @@ export default function ObjectDetailPage() {
                 )}
 
                 {/* Meta info */}
-                <div className="border-t border-gray-200 pt-4 text-sm text-gray-500">
-                    <p>{t('object.author')} <Link to={`/authors/${object.author}`} className="text-amber-600 hover:text-amber-800 underline">{object.author}</Link></p>
+                <div className="border-t border-gray-200 dark:border-stone-700 pt-4 text-sm text-gray-500 dark:text-stone-400">
+                    <p>{t('object.author')} <Link to={`/authors/${object.author}`} className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 underline">{object.author}</Link></p>
                     <p>{t('object.createdAt')} {new Date(object.created_at).toLocaleDateString(dateLocale)}</p>
                     {new Date(object.updated_at).getTime() - new Date(object.created_at).getTime() > 60000 && (
                         <p>{t('object.updatedAt')} {new Date(object.updated_at).toLocaleDateString(dateLocale)}</p>

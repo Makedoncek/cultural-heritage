@@ -83,7 +83,7 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
                 <button
                     type="button"
                     onClick={onOpen}
-                    className="relative w-40 h-32 block rounded overflow-hidden border border-gray-200 hover:border-amber-400 cursor-pointer"
+                    className="relative w-40 h-32 block rounded overflow-hidden border border-gray-200 dark:border-stone-700 hover:border-amber-400 dark:hover:border-amber-500 cursor-pointer"
                     title={t('myPhotos.viewLabel')}
                 >
                     <img
@@ -119,15 +119,15 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
                 maxLength={200}
                 placeholder={t('myPhotos.noCaption')}
                 disabled={saving}
-                className={`mt-1 w-full text-xs border rounded px-2 py-1 disabled:bg-gray-50 ${
-                    dirty ? 'border-amber-400' : 'border-gray-200'
+                className={`mt-1 w-full text-xs border rounded px-2 py-1 disabled:bg-gray-50 dark:disabled:bg-stone-900 bg-white dark:bg-stone-800 text-gray-900 dark:text-stone-100 placeholder-gray-400 dark:placeholder-stone-500 ${
+                    dirty ? 'border-amber-400' : 'border-gray-200 dark:border-stone-600'
                 }`}
             />
             {dirty && !saving && (
-                <p className="text-[10px] text-amber-700 mt-0.5">{t('photo.captionSavePrompt')}</p>
+                <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5">{t('photo.captionSavePrompt')}</p>
             )}
             {saving && (
-                <p className="text-[10px] text-gray-500 mt-0.5">{t('photo.captionSaving')}</p>
+                <p className="text-[10px] text-gray-500 dark:text-stone-400 mt-0.5">{t('photo.captionSaving')}</p>
             )}
         </div>
     );
@@ -172,7 +172,7 @@ export default function MyPhotosPage() {
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
-                    <p className="text-gray-600">{t('home.loading')}</p>
+                    <p className="text-gray-600 dark:text-stone-300">{t('home.loading')}</p>
                 </div>
             </div>
         );
@@ -189,13 +189,13 @@ export default function MyPhotosPage() {
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-3xl mx-auto px-4 py-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('myPhotos.title')}</h1>
-                <p className="text-sm text-gray-500 mb-6">{t('myPhotos.subtitleEditable')}</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100 mb-2">{t('myPhotos.title')}</h1>
+                <p className="text-sm text-gray-500 dark:text-stone-400 mb-6">{t('myPhotos.subtitleEditable')}</p>
 
                 {items.length === 0 ? (
                     <div className="text-center py-12">
-                        <p className="text-gray-500 mb-4">{t('myPhotos.empty')}</p>
-                        <Link to="/" className="text-amber-600 hover:text-amber-800 underline">
+                        <p className="text-gray-500 dark:text-stone-400 mb-4">{t('myPhotos.empty')}</p>
+                        <Link to="/" className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 underline">
                             {t('myPhotos.goToMap')}
                         </Link>
                     </div>
@@ -206,7 +206,7 @@ export default function MyPhotosPage() {
                             return (
                                 <div
                                     key={obj.id}
-                                    className="border border-gray-200 rounded-lg p-3 hover:border-amber-300 transition-colors"
+                                    className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg p-3 hover:border-amber-300 dark:hover:border-amber-500 transition-colors"
                                 >
                                     <div className="flex gap-3">
                                         <Link to={`/objects/${obj.id}`} className="shrink-0">
@@ -220,22 +220,22 @@ export default function MyPhotosPage() {
                                         <div className="flex-1 min-w-0">
                                             <Link
                                                 to={`/objects/${obj.id}`}
-                                                className="text-lg font-semibold text-gray-900 hover:text-amber-700 truncate block"
+                                                className="text-lg font-semibold text-gray-900 dark:text-stone-100 hover:text-amber-700 dark:hover:text-amber-400 truncate block"
                                             >
                                                 {obj.title}
                                             </Link>
-                                            <div className="text-xs text-gray-500 mt-1">
+                                            <div className="text-xs text-gray-500 dark:text-stone-400 mt-1">
                                                 {obj.tags.map(t => t.icon).join(' ')} · {t('myPhotos.authorByLine', {name: obj.author_name})}
                                             </div>
                                             <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                                                <span className="text-gray-700">
+                                                <span className="text-gray-700 dark:text-stone-200">
                                                     {t('myPhotos.myPhotosCount')} <strong>{obj.my_photos.length}</strong>
                                                 </span>
                                                 {counts.approved > 0 && (
-                                                    <span className="text-green-700">✓ {t('myPhotos.approvedCount', {count: counts.approved})}</span>
+                                                    <span className="text-green-700 dark:text-green-400">✓ {t('myPhotos.approvedCount', {count: counts.approved})}</span>
                                                 )}
                                                 {counts.pending > 0 && (
-                                                    <span className="text-yellow-700">⏳ {t('myPhotos.pendingCount', {count: counts.pending})}</span>
+                                                    <span className="text-yellow-700 dark:text-yellow-400">⏳ {t('myPhotos.pendingCount', {count: counts.pending})}</span>
                                                 )}
                                                 {counts.rejected > 0 && (
                                                     <span className="text-red-700">✕ {t('myPhotos.rejectedCount', {count: counts.rejected})}</span>

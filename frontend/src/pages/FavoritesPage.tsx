@@ -43,7 +43,7 @@ export default function FavoritesPage() {
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
-                    <p className="text-gray-600">{t('home.loading')}</p>
+                    <p className="text-gray-600 dark:text-stone-300">{t('home.loading')}</p>
                 </div>
             </div>
         );
@@ -60,12 +60,12 @@ export default function FavoritesPage() {
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('favorites.title')}</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100 mb-6">{t('favorites.title')}</h1>
 
                 {objects.length === 0 ? (
                     <div className="text-center py-12">
-                        <p className="text-gray-500 mb-4">{t('favorites.empty')}</p>
-                        <Link to="/" className="text-amber-600 hover:text-amber-800 underline">
+                        <p className="text-gray-500 dark:text-stone-400 mb-4">{t('favorites.empty')}</p>
+                        <Link to="/" className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 underline">
                             {t('favorites.goToMap')}
                         </Link>
                     </div>
@@ -74,18 +74,18 @@ export default function FavoritesPage() {
                         {objects.map(obj => (
                             <div
                                 key={obj.id}
-                                className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 border border-gray-200 rounded-lg px-4 py-3"
+                                className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg px-4 py-3"
                             >
                                 <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-gray-900 font-medium">{obj.title}</span>
+                                        <span className="text-gray-900 dark:text-stone-100 font-medium">{obj.title}</span>
                                         {obj.object_type === 'event' && (
-                                            <span className="px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-800">
+                                            <span className="px-2 py-0.5 text-xs font-medium rounded bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300">
                                                 {t('object.objectType.event')}
                                             </span>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-stone-400 mt-1">
                                         {obj.tags.length > 0 && (
                                             <span>{obj.tags.map(t => t.icon).join(' ')}</span>
                                         )}
@@ -101,7 +101,7 @@ export default function FavoritesPage() {
                                     />
                                     <Link
                                         to={`/objects/${obj.id}`}
-                                        className="px-3 py-1.5 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600"
+                                        className="px-3 py-1.5 text-sm bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg"
                                     >
                                         {t('myObjects.view')}
                                     </Link>

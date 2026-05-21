@@ -69,54 +69,54 @@ export default function AuthorProfilePage() {
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
                 {/* Author info */}
-                <div className="border border-gray-200 rounded-lg p-5 mb-6">
+                <div className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg p-5 mb-6">
                     <div className="flex items-center justify-between mb-3">
-                        <h1 className="text-2xl font-bold text-gray-900">{profile.username}</h1>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">{profile.username}</h1>
                         {isAuthenticated && !isOwnProfile && (
                             <button
                                 onClick={handleFollow}
                                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                                     profile.is_followed
-                                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                        : 'bg-amber-500 text-white hover:bg-amber-600'
+                                        ? 'bg-gray-200 dark:bg-stone-800 text-gray-700 dark:text-stone-200 hover:bg-gray-300 dark:hover:bg-stone-700'
+                                        : 'bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900'
                                 }`}
                             >
                                 {profile.is_followed ? t('subscriptions.unfollow') : t('subscriptions.follow')}
                             </button>
                         )}
                         {isOwnProfile && (
-                            <span className="px-3 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+                            <span className="px-3 py-1 text-xs font-medium rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
                                 {t('profile.yourProfile')}
                             </span>
                         )}
                     </div>
-                    <p className="text-gray-500 text-sm mb-1">
+                    <p className="text-gray-500 dark:text-stone-400 text-sm mb-1">
                         {t('profile.onPlatformSince', {date: new Date(profile.date_joined).toLocaleDateString(dateLocale)})}
                     </p>
                     {isOwnProfile && profile.email && (
-                        <p className="text-gray-500 text-sm mb-3">
-                            📧 <span className="text-gray-700">{profile.email}</span>
+                        <p className="text-gray-500 dark:text-stone-400 text-sm mb-3">
+                            📧 <span className="text-gray-700 dark:text-stone-200">{profile.email}</span>
                         </p>
                     )}
                     <div className="flex gap-6 text-sm">
                         <div>
-                            <span className="font-semibold text-gray-900">{profile.approved_objects_count}</span>
-                            <span className="text-gray-500 ml-1">{t('profile.objectsCount')}</span>
+                            <span className="font-semibold text-gray-900 dark:text-stone-100">{profile.approved_objects_count}</span>
+                            <span className="text-gray-500 dark:text-stone-400 ml-1">{t('profile.objectsCount')}</span>
                         </div>
                         <div>
-                            <span className="font-semibold text-gray-900">{profile.total_favorites_received}</span>
-                            <span className="text-gray-500 ml-1">{t('profile.likesCount')}</span>
+                            <span className="font-semibold text-gray-900 dark:text-stone-100">{profile.total_favorites_received}</span>
+                            <span className="text-gray-500 dark:text-stone-400 ml-1">{t('profile.likesCount')}</span>
                         </div>
                         <div>
-                            <span className="font-semibold text-gray-900">{profile.followers_count}</span>
-                            <span className="text-gray-500 ml-1">{t('profile.followersCount')}</span>
+                            <span className="font-semibold text-gray-900 dark:text-stone-100">{profile.followers_count}</span>
+                            <span className="text-gray-500 dark:text-stone-400 ml-1">{t('profile.followersCount')}</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Map */}
                 {objects.length > 0 && (
-                    <div className="h-80 rounded-lg overflow-hidden border border-gray-200 mb-6">
+                    <div className="h-80 rounded-lg overflow-hidden border border-gray-200 dark:border-stone-700 mb-6">
                         <MapContainer
                             center={[49.0, 32.0]}
                             zoom={6}
@@ -134,33 +134,33 @@ export default function AuthorProfilePage() {
                 )}
 
                 {/* Objects list */}
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-stone-100 mb-3">
                     {t('profile.authorObjects')}
                 </h2>
                 {objects.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">{t('profile.noPublishedObjects')}</p>
+                    <p className="text-gray-500 dark:text-stone-400 text-center py-8">{t('profile.noPublishedObjects')}</p>
                 ) : (
                     <div className="space-y-3">
                         {objects.map(obj => (
                             <div
                                 key={obj.id}
-                                className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 border border-gray-200 rounded-lg px-4 py-3"
+                                className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg px-4 py-3"
                             >
                                 <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-gray-900 font-medium">{obj.title}</span>
+                                        <span className="text-gray-900 dark:text-stone-100 font-medium">{obj.title}</span>
                                         {obj.object_type === 'event' && (
-                                            <span className="px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-800">
+                                            <span className="px-2 py-0.5 text-xs font-medium rounded bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300">
                                                 {t('object.objectType.event')}
                                             </span>
                                         )}
                                         {obj.status === 'pending' && (
-                                            <span className="px-2 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-800">
+                                            <span className="px-2 py-0.5 text-xs font-medium rounded bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">
                                                 {t('object.moderationStatus.pending')}
                                             </span>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-stone-400 mt-1">
                                         {obj.tags.length > 0 && (
                                             <span>{obj.tags.map(t => t.icon).join(' ')}</span>
                                         )}
@@ -177,7 +177,7 @@ export default function AuthorProfilePage() {
                                     )}
                                     <Link
                                         to={`/objects/${obj.id}`}
-                                        className="px-3 py-1.5 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600"
+                                        className="px-3 py-1.5 text-sm bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg"
                                     >
                                         {t('myObjects.view')}
                                     </Link>

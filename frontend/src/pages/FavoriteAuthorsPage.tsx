@@ -27,7 +27,7 @@ export default function FavoriteAuthorsPage() {
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
-                    <p className="text-gray-600">{t('home.loading')}</p>
+                    <p className="text-gray-600 dark:text-stone-300">{t('home.loading')}</p>
                 </div>
             </div>
         );
@@ -44,35 +44,35 @@ export default function FavoriteAuthorsPage() {
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('subscriptions.title')}</h1>
-                <p className="text-gray-500 text-sm mb-6">{t('subscriptions.subtitle')}</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100 mb-2">{t('subscriptions.title')}</h1>
+                <p className="text-gray-500 dark:text-stone-400 text-sm mb-6">{t('subscriptions.subtitle')}</p>
 
                 {authors.length === 0 ? (
                     <div className="text-center py-12">
-                        <p className="text-gray-500">{t('subscriptions.empty')}</p>
+                        <p className="text-gray-500 dark:text-stone-400">{t('subscriptions.empty')}</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {authors.map(author => (
                             <div
                                 key={author.username}
-                                className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3"
+                                className="flex items-center justify-between border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg px-4 py-3"
                             >
                                 <div>
                                     <Link
                                         to={`/authors/${author.username}`}
-                                        className="text-gray-900 font-medium hover:text-amber-700"
+                                        className="text-gray-900 dark:text-stone-100 font-medium hover:text-amber-700 dark:hover:text-amber-400"
                                     >
                                         {author.username}
                                     </Link>
-                                    <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+                                    <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-stone-400 mt-1">
                                         <span>{t('subscriptions.objectsCount', {count: author.approved_objects_count})}</span>
                                         <span>{t('subscriptions.followersCount', {count: author.followers_count})}</span>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => handleUnfollow(author.username)}
-                                    className="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 cursor-pointer"
+                                    className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-stone-800 text-gray-700 dark:text-stone-200 rounded-lg hover:bg-gray-300 dark:hover:bg-stone-700 cursor-pointer"
                                 >
                                     {t('subscriptions.unfollow')}
                                 </button>
