@@ -1,0 +1,94 @@
+/* Drag-handle для RouteStopInline */
+
+fieldset.sortable table tr.form-row.has_original td.original {
+    width: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    padding: 0 !important;
+    vertical-align: middle !important;
+    background: linear-gradient(180deg,
+        transparent 0%,
+        rgba(121, 174, 200, 0.15) 50%,
+        transparent 100%);
+    border-left: 4px solid #79aec8;
+    position: relative;
+}
+
+fieldset.sortable table tr.form-row.has_original:hover td.original {
+    background: linear-gradient(180deg,
+        transparent 0%,
+        rgba(121, 174, 200, 0.35) 50%,
+        transparent 100%);
+}
+
+fieldset.sortable table tr.form-row.has_original td.original p {
+    cursor: grab;
+    background-image: none;
+    width: 100%;
+    height: 100%;
+    min-height: 60px;
+    margin: 0;
+    padding: 0;
+    font-size: 0 !important;
+    color: transparent !important;
+    line-height: 0;
+    position: relative;
+}
+
+fieldset.sortable table tr.form-row.has_original td.original p:active {
+    cursor: grabbing;
+}
+
+/* ≡≡ dots */
+fieldset.sortable table tr.form-row.has_original td.original p::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 14px;
+    height: 26px;
+    background-image:
+        radial-gradient(circle, #79aec8 2px, transparent 2.5px),
+        radial-gradient(circle, #79aec8 2px, transparent 2.5px),
+        radial-gradient(circle, #79aec8 2px, transparent 2.5px),
+        radial-gradient(circle, #79aec8 2px, transparent 2.5px),
+        radial-gradient(circle, #79aec8 2px, transparent 2.5px),
+        radial-gradient(circle, #79aec8 2px, transparent 2.5px);
+    background-size: 7px 7px;
+    background-repeat: no-repeat;
+    background-position:
+        0 0, 7px 0,
+        0 9px, 7px 9px,
+        0 18px, 7px 18px;
+    pointer-events: none;
+}
+
+fieldset.sortable table tr.form-row.has_original td.original a.inlinechangelink,
+fieldset.sortable table tr.form-row.has_original td.original a.inlineviewlink {
+    display: none !important;
+}
+
+/* Up/down arrows — у куті колонки drag-handle */
+fieldset.sortable :is(.inline-related, td.original) span.sort {
+    position: absolute;
+    top: 4px;
+    right: 2px;
+    margin: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+fieldset.sortable :is(.inline-related, td.original) span.sort i {
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.15s, transform 0.15s;
+    display: inline-block;
+}
+
+fieldset.sortable :is(.inline-related, td.original) span.sort i:hover {
+    opacity: 1;
+    transform: scale(1.3);
+}

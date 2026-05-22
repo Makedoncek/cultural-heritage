@@ -10,6 +10,8 @@ const linkClass = ({isActive}: { isActive: boolean }) =>
         ? 'text-amber-700 dark:text-amber-400 font-semibold'
         : 'text-gray-700 dark:text-stone-300 hover:text-amber-700 dark:hover:text-amber-400';
 
+const ADMIN_URL = (import.meta.env.VITE_API_URL as string || 'http://localhost:8000/api').replace(/\/api\/?$/, '/admin/');
+
 export default function Header() {
     const {user, isAuthenticated, loading, logout} = useAuth();
     const {t} = useTranslation();
@@ -35,11 +37,22 @@ export default function Header() {
                                 <>
                                     <NavLink to="/" end className={linkClass}>{t('nav.map')}</NavLink>
                                     <NavLink to="/popular" className={linkClass}>{t('nav.popular')}</NavLink>
+                                    <NavLink to="/routes" className={linkClass}>🗺 Маршрути</NavLink>
                                     <NavLink to="/my-objects" className={linkClass}>{t('nav.myObjects')}</NavLink>
-                                    <NavLink to="/my-photos" className={linkClass}>{t('nav.myPhotos')}</NavLink>
-                                    <NavLink to="/favorites" className={linkClass}>{t('nav.favorites')}</NavLink>
-                                    <NavLink to="/favorite-authors" className={linkClass}>{t('nav.subscriptions')}</NavLink>
+                                    <NavLink to="/my-contributions" className={linkClass}>{t('nav.myContributions')}</NavLink>
+                                    <NavLink to="/saved" className={linkClass}>{t('nav.saved')}</NavLink>
                                     <NavLink to="/objects/add" className={linkClass}>{t('nav.addObject')}</NavLink>
+                                    {user?.is_staff && (
+                                        <a
+                                            href={ADMIN_URL}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-purple-700 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 font-medium"
+                                            title="Django admin"
+                                        >
+                                            🛠 {t('nav.admin')}
+                                        </a>
+                                    )}
                                     <Link to={`/authors/${user?.username}`} className="text-amber-800 dark:text-amber-300 font-medium hover:text-amber-600 dark:hover:text-amber-200">{user?.username}</Link>
                                     <ThemeSwitcher/>
                                     <LanguageSwitcher/>
@@ -53,6 +66,7 @@ export default function Header() {
                             ) : (
                                 <>
                                     <NavLink to="/popular" className={linkClass}>{t('nav.popular')}</NavLink>
+                                    <NavLink to="/routes" className={linkClass}>🗺 Маршрути</NavLink>
                                     <ThemeSwitcher/>
                                     <LanguageSwitcher/>
                                     <Link to="/login" className="border border-amber-600 dark:border-amber-500 text-amber-700 dark:text-amber-300 px-4 py-2 rounded-lg hover:bg-amber-50 dark:hover:bg-stone-800 transition-colors">{t('nav.login')}</Link>
@@ -91,16 +105,27 @@ export default function Header() {
                                      onClick={() => setMenuOpen(false)}>{t('nav.map')}</NavLink>
                             <NavLink to="/popular" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>{t('nav.popular')}</NavLink>
+                            <NavLink to="/routes" className={linkClass}
+                                     onClick={() => setMenuOpen(false)}>🗺 {t('nav.routes')}</NavLink>
                             <NavLink to="/my-objects" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>{t('nav.myObjects')}</NavLink>
-                            <NavLink to="/my-photos" className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>{t('nav.myPhotos')}</NavLink>
-                            <NavLink to="/favorites" className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>{t('nav.favorites')}</NavLink>
-                            <NavLink to="/favorite-authors" className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>{t('nav.subscriptions')}</NavLink>
+                            <NavLink to="/my-contributions" className={linkClass}
+                                     onClick={() => setMenuOpen(false)}>{t('nav.myContributions')}</NavLink>
+                            <NavLink to="/saved" className={linkClass}
+                                     onClick={() => setMenuOpen(false)}>{t('nav.saved')}</NavLink>
                             <NavLink to="/objects/add" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>{t('nav.addObject')}</NavLink>
+                            {user?.is_staff && (
+                                <a
+                                    href={ADMIN_URL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-purple-700 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 font-medium"
+                                    onClick={() => setMenuOpen(false)}
+                                >
+                                    🛠 {t('nav.admin')}
+                                </a>
+                            )}
                             <div className="border-t border-gray-100 dark:border-stone-700 pt-3 flex items-center justify-between gap-2">
                                 <Link to={`/authors/${user?.username}`} className="text-amber-800 dark:text-amber-300 font-medium hover:text-amber-600 dark:hover:text-amber-200 flex-1" onClick={() => setMenuOpen(false)}>{user?.username}</Link>
                                 <ThemeSwitcher/>
@@ -120,6 +145,8 @@ export default function Header() {
                         <>
                             <NavLink to="/popular" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>{t('nav.popular')}</NavLink>
+                            <NavLink to="/routes" className={linkClass}
+                                     onClick={() => setMenuOpen(false)}>🗺 {t('nav.routes')}</NavLink>
                             <div className="flex items-center gap-2">
                                 <ThemeSwitcher/>
                                 <LanguageSwitcher/>

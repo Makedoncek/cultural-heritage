@@ -8,8 +8,13 @@ import {objectsService} from '../services/objects.service';
 import {photosService, extractUploadError} from '../services/photos.service';
 import {useAuth} from '../context/AuthContext';
 import FavoriteButton from '../components/Objects/FavoriteButton';
+import VisitedToggleButton from '../components/Objects/VisitedToggleButton';
+import PlanVisitToggleButton from '../components/Objects/PlanVisitToggleButton';
 import PhotoGallery from '../components/Objects/PhotoGallery';
 import PhotoUploader, {type PendingPhoto} from '../components/Objects/PhotoUploader';
+import ReportInaccuracyButton from '../components/Objects/ReportInaccuracyButton';
+import AddToRouteButton from '../components/Objects/AddToRouteButton';
+import AudioGuidesSection from '../components/Audio/AudioGuidesSection';
 import type {CulturalObjectDetail} from '../types';
 import '../utils/leaflet-fix';
 
@@ -152,11 +157,28 @@ export default function ObjectDetailPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                         {isAuthenticated && (
-                            <FavoriteButton
-                                objectId={object.id}
-                                initialFavorited={object.is_favorited ?? false}
-                                initialCount={object.favorites_count ?? 0}
-                            />
+                            <>
+                                <FavoriteButton
+                                    objectId={object.id}
+                                    initialFavorited={object.is_favorited ?? false}
+                                    initialCount={object.favorites_count ?? 0}
+                                />
+                                {!isAuthor && object.status === 'approved' && (
+                                    <>
+                                        <VisitedToggleButton
+                                            objectId={object.id}
+                                            initialVisited={object.is_visited ?? false}
+                                        />
+                                        <PlanVisitToggleButton
+                                            objectId={object.id}
+                                            initialPlanned={object.is_planned ?? false}
+                                        />
+                                    </>
+                                )}
+                                {(object.status === 'approved' || isAuthor) && object.status !== 'archived' && (
+                                    <AddToRouteButton objectId={object.id}/>
+                                )}
+                            </>
                         )}
                         {canEdit && (
                             <>
@@ -272,9 +294,33 @@ export default function ObjectDetailPage() {
                 )}
 
                 {object.description && (
-                    <div className="mb-6">
-                        <p className="text-gray-700 dark:text-stone-200 whitespace-pre-line leading-relaxed">{object.description}</p>
-                    </div>
+                    <section className="my-6 bg-white dark:bg-stone-900 border border-gray-200 dark:border-stone-700 rounded-xl overflow-hidden shadow-sm">
+                        <header className="flex items-center gap-2 px-5 py-2.5 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800/50">
+                            <span className="text-amber-700 dark:text-amber-400">📖</span>
+                            <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300 uppercase tracking-wide">
+                                {t('object.about')}
+                            </h3>
+                        </header>
+                        <div className="px-5 py-4">
+                            <p className="text-[15px] text-gray-800 dark:text-stone-100 whitespace-pre-line leading-relaxed">
+                                {object.description}
+                            </p>
+                        </div>
+                    </section>
+                )}
+
+                {object.status === 'approved' && (
+                    <AudioGuidesSection
+                        objectId={object.id}
+                        objectTitle={object.title}
+                        coverUrl={object.photos?.[0]?.image_url ?? null}
+                    />
+                )}
+
+                {typeof object.visits_count === 'number' && object.visits_count > 0 && (
+                    <p className="text-sm text-gray-500 dark:text-stone-400 mb-2">
+                        ✓ Відвідано: <strong className="text-green-700 dark:text-green-400">{object.visits_count}</strong> {object.visits_count === 1 ? 'раз' : 'раз(ів)'}
+                    </p>
                 )}
 
                 <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-stone-400 mb-2">
@@ -334,6 +380,11 @@ export default function ObjectDetailPage() {
                     <p>{t('object.createdAt')} {new Date(object.created_at).toLocaleDateString(dateLocale)}</p>
                     {new Date(object.updated_at).getTime() - new Date(object.created_at).getTime() > 60000 && (
                         <p>{t('object.updatedAt')} {new Date(object.updated_at).toLocaleDateString(dateLocale)}</p>
+                    )}
+                    {!isAuthor && (
+                        <div className="mt-3">
+                            <ReportInaccuracyButton objectId={object.id} objectTitle={object.title}/>
+                        </div>
                     )}
                 </div>
             </div>

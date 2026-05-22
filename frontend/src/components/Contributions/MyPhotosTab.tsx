@@ -2,11 +2,11 @@ import {useState, useEffect} from 'react';
 import {Link} from 'react-router';
 import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
-import {objectsService} from '../services/objects.service';
-import {photosService} from '../services/photos.service';
-import Lightbox from '../components/Objects/Lightbox';
-import CoverImage from '../components/Objects/CoverImage';
-import type {CulturalObjectWithMyPhotos, ObjectPhoto} from '../types';
+import {objectsService} from '../../services/objects.service';
+import {photosService} from '../../services/photos.service';
+import Lightbox from '../Objects/Lightbox';
+import CoverImage from '../Objects/CoverImage';
+import type {CulturalObjectWithMyPhotos, ObjectPhoto} from '../../types';
 
 const STATUS_OVERLAY_CLS: Record<string, string | null> = {
     approved: null,
@@ -133,7 +133,7 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
     );
 }
 
-export default function MyPhotosPage() {
+export default function MyPhotosTab() {
     const {t} = useTranslation();
     const [items, setItems] = useState<CulturalObjectWithMyPhotos[]>([]);
     const [loading, setLoading] = useState(true);
@@ -150,119 +150,111 @@ export default function MyPhotosPage() {
     const handlePhotoUpdated = (objectId: number, updated: ObjectPhoto) => {
         setItems(prev => prev.map(obj => {
             if (obj.id !== objectId) return obj;
-            return {
-                ...obj,
-                my_photos: obj.my_photos.map(p => p.id === updated.id ? updated : p),
-            };
+            return {...obj, my_photos: obj.my_photos.map(p => p.id === updated.id ? updated : p)};
         }));
     };
 
     const handlePhotoDeleted = (objectId: number, photoId: number) => {
         setItems(prev => prev
-            .map(obj => {
-                if (obj.id !== objectId) return obj;
-                return {...obj, my_photos: obj.my_photos.filter(p => p.id !== photoId)};
-            })
+            .map(obj => obj.id !== objectId ? obj : {...obj, my_photos: obj.my_photos.filter(p => p.id !== photoId)})
             .filter(obj => obj.my_photos.length > 0)
         );
     };
 
     if (loading) {
         return (
-            <div className="flex-1 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-3">
-                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
-                    <p className="text-gray-600 dark:text-stone-300">{t('home.loading')}</p>
-                </div>
+            <div className="flex items-center justify-center py-8">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
             </div>
         );
     }
-
     if (error) {
+        return <p className="text-red-600 text-center py-6">{error}</p>;
+    }
+    if (items.length === 0) {
         return (
-            <div className="flex-1 flex items-center justify-center">
-                <p className="text-red-600">{error}</p>
+            <div className="text-center py-12">
+                <p className="text-gray-500 dark:text-stone-400 mb-4">{t('myPhotos.empty')}</p>
+                <Link to="/" className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 underline">
+                    {t('myPhotos.goToMap')}
+                </Link>
             </div>
         );
     }
 
     return (
-        <div className="flex-1 overflow-y-auto">
-            <div className="max-w-3xl mx-auto px-4 py-6">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100 mb-2">{t('myPhotos.title')}</h1>
-                <p className="text-sm text-gray-500 dark:text-stone-400 mb-6">{t('myPhotos.subtitleEditable')}</p>
-
-                {items.length === 0 ? (
-                    <div className="text-center py-12">
-                        <p className="text-gray-500 dark:text-stone-400 mb-4">{t('myPhotos.empty')}</p>
-                        <Link to="/" className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 underline">
-                            {t('myPhotos.goToMap')}
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {items.map(obj => {
-                            const counts = countByStatus(obj.my_photos);
-                            return (
-                                <div
-                                    key={obj.id}
-                                    className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg p-3 hover:border-amber-300 dark:hover:border-amber-500 transition-colors"
-                                >
-                                    <div className="flex gap-3">
-                                        <Link to={`/objects/${obj.id}`} className="shrink-0">
-                                            <CoverImage
-                                                coverUrl={obj.cover_url}
-                                                tags={obj.tags}
-                                                alt={obj.title}
-                                                className="w-24 h-24 rounded"
-                                            />
-                                        </Link>
-                                        <div className="flex-1 min-w-0">
-                                            <Link
-                                                to={`/objects/${obj.id}`}
-                                                className="text-lg font-semibold text-gray-900 dark:text-stone-100 hover:text-amber-700 dark:hover:text-amber-400 truncate block"
-                                            >
-                                                {obj.title}
-                                            </Link>
-                                            <div className="text-xs text-gray-500 dark:text-stone-400 mt-1">
-                                                {obj.tags.map(t => t.icon).join(' ')} · {t('myPhotos.authorByLine', {name: obj.author_name})}
-                                            </div>
-                                            <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                                                <span className="text-gray-700 dark:text-stone-200">
-                                                    {t('myPhotos.myPhotosCount')} <strong>{obj.my_photos.length}</strong>
+        <>
+            <div className="space-y-4">
+                {items.map(obj => {
+                    const counts = countByStatus(obj.my_photos);
+                    return (
+                        <div
+                            key={obj.id}
+                            className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg p-3 hover:border-amber-300 dark:hover:border-amber-500 transition-colors"
+                        >
+                            <div className="flex gap-3">
+                                <Link to={`/objects/${obj.id}`} className="shrink-0">
+                                    <CoverImage
+                                        coverUrl={obj.cover_url}
+                                        tags={obj.tags}
+                                        alt={obj.title}
+                                        className="w-24 h-24 rounded"
+                                    />
+                                </Link>
+                                <div className="flex-1 min-w-0">
+                                    <Link
+                                        to={`/objects/${obj.id}`}
+                                        className="text-lg font-semibold text-gray-900 dark:text-stone-100 hover:text-amber-700 dark:hover:text-amber-400 truncate block"
+                                    >
+                                        {obj.title}
+                                    </Link>
+                                    <p className="text-sm text-gray-600 dark:text-stone-300 mt-1">
+                                        {t('myPhotos.authorByLine', {name: obj.author_name})}
+                                    </p>
+                                    {obj.tags.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 mt-2">
+                                            {obj.tags.map(tag => (
+                                                <span
+                                                    key={tag.id}
+                                                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 rounded-full text-xs"
+                                                >
+                                                    {tag.icon} {tag.name}
                                                 </span>
-                                                {counts.approved > 0 && (
-                                                    <span className="text-green-700 dark:text-green-400">✓ {t('myPhotos.approvedCount', {count: counts.approved})}</span>
-                                                )}
-                                                {counts.pending > 0 && (
-                                                    <span className="text-yellow-700 dark:text-yellow-400">⏳ {t('myPhotos.pendingCount', {count: counts.pending})}</span>
-                                                )}
-                                                {counts.rejected > 0 && (
-                                                    <span className="text-red-700">✕ {t('myPhotos.rejectedCount', {count: counts.rejected})}</span>
-                                                )}
-                                            </div>
+                                            ))}
                                         </div>
-                                    </div>
-
-                                    <div className="flex gap-3 mt-3 overflow-x-auto pb-1">
-                                        {obj.my_photos.map((p, i) => (
-                                            <PhotoCard
-                                                key={p.id}
-                                                objectId={obj.id}
-                                                photo={p}
-                                                onOpen={() => setLightbox({photos: obj.my_photos, idx: i})}
-                                                onUpdated={(u) => handlePhotoUpdated(obj.id, u)}
-                                                onDeleted={(pid) => handlePhotoDeleted(obj.id, pid)}
-                                            />
-                                        ))}
+                                    )}
+                                    <div className="flex flex-wrap gap-2 mt-2 text-xs">
+                                        <span className="text-gray-700 dark:text-stone-200">
+                                            {t('myPhotos.myPhotosCount')} <strong>{obj.my_photos.length}</strong>
+                                        </span>
+                                        {counts.approved > 0 && (
+                                            <span className="text-green-700 dark:text-green-400">✓ {t('myPhotos.approvedCount', {count: counts.approved})}</span>
+                                        )}
+                                        {counts.pending > 0 && (
+                                            <span className="text-yellow-700 dark:text-yellow-400">⏳ {t('myPhotos.pendingCount', {count: counts.pending})}</span>
+                                        )}
+                                        {counts.rejected > 0 && (
+                                            <span className="text-red-700">✕ {t('myPhotos.rejectedCount', {count: counts.rejected})}</span>
+                                        )}
                                     </div>
                                 </div>
-                            );
-                        })}
-                    </div>
-                )}
+                            </div>
+                            <div className="flex gap-3 mt-3 overflow-x-auto pb-1">
+                                {obj.my_photos.map((p, i) => (
+                                    <PhotoCard
+                                        key={p.id}
+                                        objectId={obj.id}
+                                        photo={p}
+                                        onOpen={() => setLightbox({photos: obj.my_photos, idx: i})}
+                                        onUpdated={(u) => handlePhotoUpdated(obj.id, u)}
+                                        onDeleted={(pid) => handlePhotoDeleted(obj.id, pid)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
-
             {lightbox && (
                 <Lightbox
                     photos={lightbox.photos}
@@ -270,6 +262,6 @@ export default function MyPhotosPage() {
                     onClose={() => setLightbox(null)}
                 />
             )}
-        </div>
+        </>
     );
 }

@@ -66,3 +66,49 @@ msgstr "Invalid language. Allowed: uk, en."
 
 msgid "Невірна тема. Доступні: light, dark."
 msgstr "Invalid theme. Allowed: light, dark."
+
+# objects/models.py — verbose names
+msgid "Тег"
+msgstr "Tag"
+
+msgid "Теги"
+msgstr "Tags"
+
+msgid "Культурний об'єкт"
+msgstr "Cultural Object"
+
+msgid "Культурні об'єкти"
+msgstr "Cultural Objects"
+
+msgid "Обране"
+msgstr "Favorites"
+
+msgid "Підписка на автора"
+msgstr "Author follow"
+
+msgid "Підписки на авторів"
+msgstr "Author follows"
+
+msgid "Фото об'єкта"
+msgstr "Object photo"
+
+msgid "Фото об'єктів"
+msgstr "Object photos"
+
+msgid "Репорт про неточність"
+msgstr "Inaccuracy report"
+
+msgid "Репорти про неточності"
+msgstr "Inaccuracy reports"
+
+msgid "Візит"
+msgstr "Visit"
+
+msgid "Візити"
+msgstr "Visits"
+
+msgid "Заплановане відвідування"
+msgstr "Planned visit"
+
+msgid "Заплановані відвідування"
+msgstr "Planned visits"

@@ -22,8 +22,20 @@ export const objectsService = {
     update: (id: number, data: Partial<CulturalObjectWrite>) =>
         api.patch<CulturalObjectDetail>(`/objects/${id}/`, data).then(res => res.data),
 
+    checkDuplicates: (latitude: number, longitude: number, excludeId?: number) =>
+        api.post<{nearby: {id: number; title: string; latitude: string; longitude: string; distance_m: number}[]}>(
+            '/objects/check-duplicates/',
+            {latitude, longitude, exclude_id: excludeId},
+        ).then(res => res.data),
+
     delete: (id: number) =>
         api.delete(`/objects/${id}/`).then(res => res.data),
+
+    restore: (id: number) =>
+        api.post(`/objects/${id}/restore/`).then(res => res.data),
+
+    hardDelete: (id: number) =>
+        api.delete(`/objects/${id}/hard-delete/`).then(res => res.data),
 
     getMy: () =>
         api.get<PaginatedResponse<CulturalObject>>('/objects/my/').then(res => res.data),

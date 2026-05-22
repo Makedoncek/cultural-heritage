@@ -5,7 +5,10 @@ from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from .models import Tag, CulturalObject, Favorite, ObjectPhoto
+from .models import (
+    Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, ObjectAudio,
+    InaccuracyReport, Visit, PlannedVisit, Route, RouteStop,
+)
 
 
 @admin.register(Tag)
@@ -88,6 +91,7 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
         'author_link',
         'colored_status',
         'object_type',
+        'pending_reports_badge',
         'created_at',
         'archived_at',
     ]
@@ -156,6 +160,30 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
             count += 1
         self.message_user(request, f"Відновлено {count} об'єкт(ів)")
 
+    def get_queryset(self, request):
+        from django.db.models import Count, Q
+        qs = super().get_queryset(request)
+        return qs.annotate(
+            _pending_reports=Count(
+                'inaccuracy_reports',
+                filter=Q(inaccuracy_reports__status='pending'),
+            ),
+        )
+
+    @admin.display(description='⚠ Reports')
+    def pending_reports_badge(self, obj):
+        # `_pending_reports` annotation may be absent when SortableAdminBase
+        # rebuilds the queryset (e.g. drag-to-reorder); fall back to a direct count.
+        count = getattr(obj, '_pending_reports', None)
+        if count is None:
+            count = obj.inaccuracy_reports.filter(status='pending').count()
+        if not count:
+            return '—'
+        return format_html(
+            '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-weight:600;">{}</span>',
+            count,
+        )
+
     @admin.display(description='Переглянути на карті')
     def map_link(self, obj):
         if obj.latitude and obj.longitude:
@@ -213,6 +241,34 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
 class FavoriteAdmin(admin.ModelAdmin):
     list_display = ['user', 'cultural_object', 'created_at']
     list_filter = ['created_at']
+    readonly_fields = ['created_at']
+    raw_id_fields = ['user', 'cultural_object']
+
+
+@admin.register(FavoriteAuthor)
+class FavoriteAuthorAdmin(admin.ModelAdmin):
+    list_display = ['user', 'author', 'created_at']
+    list_filter = ['created_at']
+    readonly_fields = ['created_at']
+    raw_id_fields = ['user', 'author']
+    search_fields = ['user__username', 'author__username']
+
+
+@admin.register(Visit)
+class VisitAdmin(admin.ModelAdmin):
+    list_display = ['user', 'cultural_object', 'visited_at', 'is_public', 'created_at']
+    list_filter = ['is_public', 'visited_at']
+    search_fields = ['user__username', 'cultural_object__title', 'impression']
+    readonly_fields = ['created_at', 'updated_at']
+    raw_id_fields = ['user', 'cultural_object']
+    date_hierarchy = 'visited_at'
+
+
+@admin.register(PlannedVisit)
+class PlannedVisitAdmin(admin.ModelAdmin):
+    list_display = ['user', 'cultural_object', 'planned_date', 'created_at']
+    list_filter = ['planned_date', 'created_at']
+    search_fields = ['user__username', 'cultural_object__title', 'note']
     readonly_fields = ['created_at']
     raw_id_fields = ['user', 'cultural_object']
 
@@ -293,3 +349,205 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
             rejected_cleanup_at=cleanup_at,
         )
         self.message_user(request, f'Відхилено {count} фото. Видалення з Cloudinary через {settings.PHOTO_REJECTED_RETENTION_DAYS} днів.')
+
+
+@admin.register(InaccuracyReport)
+class InaccuracyReportAdmin(admin.ModelAdmin):
+    list_display = ['id', 'cultural_object_title', 'reporter', 'reason_type', 'status', 'created_at', 'object_edit_link']
+    # Both id and the object title open the report — Django wraps these cells with the change-view link.
+    list_display_links = ['id', 'cultural_object_title']
+    list_filter = ['status', 'reason_type', 'created_at']
+    search_fields = ['cultural_object__title', 'reporter__username', 'note']
+    readonly_fields = ['reporter', 'cultural_object_link_field', 'reason_type', 'note', 'created_at', 'resolved_at', 'resolved_by']
+    fieldsets = (
+        ('Report', {
+            'fields': ('cultural_object_link_field', 'reporter', 'reason_type', 'note', 'created_at'),
+        }),
+        ('Moderation', {
+            'fields': ('status', 'admin_response', 'resolved_by', 'resolved_at'),
+        }),
+    )
+    actions = ['resolve_reports', 'dismiss_reports']
+
+    @admin.display(description='Cultural object', ordering='cultural_object__title')
+    def cultural_object_title(self, obj):
+        # Plain text — Django wraps the cell with the change-view link via list_display_links.
+        return str(obj.cultural_object)
+
+    @admin.display(description='Дія')
+    def object_edit_link(self, obj):
+        from django.urls import reverse
+        url = reverse('admin:objects_culturalobject_change', args=[obj.cultural_object_id])
+        # Django admin's built-in .button class adapts to the current theme palette.
+        return format_html(
+            '<a class="button" href="{}" style="white-space:nowrap;">Виправити об\'єкт</a>',
+            url,
+        )
+
+    @admin.display(description='Об\'єкт')
+    def cultural_object_link_field(self, obj):
+        from django.urls import reverse
+        url = reverse('admin:objects_culturalobject_change', args=[obj.cultural_object_id])
+        return format_html(
+            '{} &nbsp; <a class="button" href="{}" target="_blank" style="white-space:nowrap;">Виправити</a>',
+            obj.cultural_object,
+            url,
+        )
+
+    def save_model(self, request, obj, form, change):
+        from .email import send_inaccuracy_outcome_email
+        prev_status = (
+            InaccuracyReport.objects.filter(pk=obj.pk).values_list('status', flat=True).first()
+            if change else None
+        )
+        if change and obj.status in (InaccuracyReport.Status.RESOLVED, InaccuracyReport.Status.DISMISSED):
+            if not obj.resolved_by:
+                obj.resolved_by = request.user
+            if not obj.resolved_at:
+                obj.resolved_at = timezone.now()
+        super().save_model(request, obj, form, change)
+        # Email the reporter when status transitions from pending to closed.
+        if change and prev_status == InaccuracyReport.Status.PENDING and obj.status != InaccuracyReport.Status.PENDING:
+            send_inaccuracy_outcome_email.delay(obj.pk)
+
+    @admin.action(description='Вирішити репорт (resolved)')
+    def resolve_reports(self, request, queryset):
+        from .email import send_inaccuracy_outcome_email
+        pending = list(queryset.filter(status=InaccuracyReport.Status.PENDING).values_list('pk', flat=True))
+        InaccuracyReport.objects.filter(pk__in=pending).update(
+            status=InaccuracyReport.Status.RESOLVED,
+            resolved_by=request.user,
+            resolved_at=timezone.now(),
+        )
+        for pk in pending:
+            send_inaccuracy_outcome_email.delay(pk)
+        self.message_user(request, f'Вирішено {len(pending)} репортів.')
+
+    @admin.action(description='Відхилити репорт (dismissed)')
+    def dismiss_reports(self, request, queryset):
+        from .email import send_inaccuracy_outcome_email
+        pending = list(queryset.filter(status=InaccuracyReport.Status.PENDING).values_list('pk', flat=True))
+        InaccuracyReport.objects.filter(pk__in=pending).update(
+            status=InaccuracyReport.Status.DISMISSED,
+            resolved_by=request.user,
+            resolved_at=timezone.now(),
+        )
+        for pk in pending:
+            send_inaccuracy_outcome_email.delay(pk)
+        self.message_user(request, f'Відхилено {len(pending)} репортів.')
+
+
+class RouteStopInline(SortableTabularInline):
+    model = RouteStop
+    extra = 0
+    fields = ['order', 'cultural_object', 'note']
+    raw_id_fields = ['cultural_object']
+    ordering = ['order']
+    ordering_field = 'order'
+
+    class Media:
+        css = {'all': ('admin/css/route_stop_inline_sortable.css',)}
+
+
+@admin.register(Route)
+class RouteAdmin(SortableAdminBase, admin.ModelAdmin):
+    list_display = ['title', 'author', 'visibility', 'status', 'stops_count', 'is_featured', 'created_at']
+    list_filter = ['visibility', 'status', 'is_featured', 'created_at']
+    search_fields = ['title', 'description', 'author__username']
+    raw_id_fields = ['author', 'copied_from']
+    filter_horizontal = ['tags']
+    readonly_fields = ['created_at', 'updated_at']
+    inlines = [RouteStopInline]
+    actions = ['approve_routes', 'archive_routes']
+
+    fieldsets = (
+        ('Основна інформація', {'fields': ('title', 'description', 'visibility', 'status')}),
+        ('Метадані', {'fields': ('author', 'tags', 'is_featured', 'cover_photo',
+                                  'estimated_duration_minutes', 'copied_from')}),
+        ('Дати', {'fields': ('created_at', 'updated_at')}),
+    )
+
+    @admin.display(description='Зупинок')
+    def stops_count(self, obj):
+        return obj.stops.count()
+
+    @admin.action(description='Затвердити обрані маршрути')
+    def approve_routes(self, request, queryset):
+        n = queryset.exclude(status=Route.Status.APPROVED).update(status=Route.Status.APPROVED)
+        self.message_user(request, f'Затверджено {n} маршрут(ів).')
+
+    @admin.action(description='Архівувати обрані маршрути')
+    def archive_routes(self, request, queryset):
+        n = queryset.exclude(status=Route.Status.ARCHIVED).update(status=Route.Status.ARCHIVED)
+        self.message_user(request, f'Архівовано {n} маршрут(ів).')
+
+
+@admin.register(ObjectAudio)
+class ObjectAudioAdmin(admin.ModelAdmin):
+    list_display = ['id', 'title', 'cultural_object', 'language', 'audio_player_short',
+                    'duration_seconds', 'status', 'plays_count', 'uploaded_by', 'created_at']
+    list_filter = ['status', 'language', 'created_at']
+    search_fields = ['title', 'narrator_name', 'cultural_object__title', 'uploaded_by__username']
+    readonly_fields = ['cloudinary_public_id', 'cloudinary_url', 'audio_player',
+                       'duration_seconds', 'plays_count', 'uploaded_by',
+                       'created_at', 'updated_at', 'moderated_at']
+    raw_id_fields = ['cultural_object']
+    actions = ['approve_audios', 'reject_audios']
+
+    fieldsets = (
+        ('Аудіо', {
+            'fields': ('audio_player', 'title', 'language', 'narrator_name',
+                       'duration_seconds', 'plays_count'),
+        }),
+        ('Модерація', {
+            'fields': ('status', 'moderation_note', 'moderated_at'),
+        }),
+        ('Об\'єкт і автор', {
+            'fields': ('cultural_object', 'uploaded_by', 'copyright_confirmed'),
+        }),
+        ('Cloudinary', {
+            'fields': ('cloudinary_public_id', 'cloudinary_url'),
+            'classes': ('collapse',),
+        }),
+        ('Дати', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
+
+    @admin.display(description='Послухати')
+    def audio_player(self, obj):
+        if not obj.cloudinary_url:
+            return '—'
+        return mark_safe(
+            f'<audio src="{obj.cloudinary_url}" controls preload="metadata" '
+            f'style="display:block;width:480px;max-width:100%;height:40px;margin-top:6px;"></audio>'
+            f'<a href="{obj.cloudinary_url}" target="_blank" '
+            f'style="display:inline-block;margin-top:8px;font-size:15px;font-weight:500;">'
+            f'⬇ Завантажити файл</a>'
+        )
+
+    @admin.display(description='Запис')
+    def audio_player_short(self, obj):
+        if not obj.cloudinary_url:
+            return '—'
+        return mark_safe(
+            f'<audio controls preload="none" style="height:32px;width:200px;">'
+            f'<source src="{obj.cloudinary_url}" /></audio>'
+        )
+
+    @admin.action(description='Затвердити обрані аудіо')
+    def approve_audios(self, request, queryset):
+        from django.utils import timezone
+        n = queryset.exclude(status=ObjectAudio.Status.APPROVED).update(
+            status=ObjectAudio.Status.APPROVED, moderated_at=timezone.now(),
+        )
+        self.message_user(request, f'Затверджено {n} аудіо.')
+
+    @admin.action(description='Відхилити обрані аудіо')
+    def reject_audios(self, request, queryset):
+        from django.utils import timezone
+        n = queryset.exclude(status=ObjectAudio.Status.REJECTED).update(
+            status=ObjectAudio.Status.REJECTED, moderated_at=timezone.now(),
+        )
+        self.message_user(request, f'Відхилено {n} аудіо.')

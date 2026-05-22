@@ -146,7 +146,7 @@ export default function HomePage() {
                     absolute md:relative z-[1001] bg-white dark:bg-stone-900 border-r border-gray-200 dark:border-stone-700 shadow-lg md:shadow-none
                     w-60 overflow-y-auto flex-shrink-0
                     transition-transform duration-200
-                    h-full
+                    inset-y-0 md:inset-auto md:self-stretch
                     ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
                     md:translate-x-0
                 `}

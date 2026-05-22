@@ -37,4 +37,6 @@ Pillow>=11.0
 drf-nested-routers~=0.95
 django-admin-sortable2~=2.3
 polib>=1.2
+gpxpy>=1.6
+simplekml>=1.3
 

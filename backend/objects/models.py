@@ -11,6 +11,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
 
 from .validators import validate_coordinates_within_ukraine
 
@@ -59,8 +60,8 @@ class Tag(models.Model):
 
     class Meta:
         ordering = ['name']
-        verbose_name = 'Tag'
-        verbose_name_plural = 'Tags'
+        verbose_name = _('Тег')
+        verbose_name_plural = _('Теги')
 
     def save(self, *args, **kwargs):
         """Auto-generate slug from name if not provided."""
@@ -198,8 +199,8 @@ class CulturalObject(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Cultural Object'
-        verbose_name_plural = 'Cultural Objects'
+        verbose_name = _('Культурний об\'єкт')
+        verbose_name_plural = _('Культурні об\'єкти')
 
         # Indexes for frequently filtered fields
         indexes = [
@@ -271,6 +272,8 @@ class Favorite(models.Model):
     class Meta:
         unique_together = ('user', 'cultural_object')
         ordering = ['-created_at']
+        verbose_name = _('Обране')
+        verbose_name_plural = _('Обране')
 
     def __str__(self):
         return f'{self.user.username} → {self.cultural_object.title}'
@@ -284,6 +287,8 @@ class FavoriteAuthor(models.Model):
     class Meta:
         unique_together = ('user', 'author')
         ordering = ['-created_at']
+        verbose_name = _('Підписка на автора')
+        verbose_name_plural = _('Підписки на авторів')
 
     def __str__(self):
         return f'{self.user.username} → {self.author.username}'
@@ -330,9 +335,73 @@ class ObjectPhoto(models.Model):
             models.Index(fields=['status', 'rejected_cleanup_at']),
             models.Index(fields=['uploaded_by']),
         ]
+        verbose_name = _('Фото об\'єкта')
+        verbose_name_plural = _('Фото об\'єктів')
 
     def __str__(self):
         return f'Photo {self.id} ({self.status}) for {self.cultural_object.title}'
+
+
+class ObjectAudio(models.Model):
+    """Аудіо-нарратив для культурного об'єкта (Audio Tours feature)."""
+
+    class Language(models.TextChoices):
+        UK = 'uk', 'Українська'
+        EN = 'en', 'English'
+        PL = 'pl', 'Polski'
+        DE = 'de', 'Deutsch'
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'На модерації'
+        APPROVED = 'approved', 'Опубліковано'
+        REJECTED = 'rejected', 'Відхилено'
+
+    cultural_object = models.ForeignKey(
+        CulturalObject,
+        on_delete=models.CASCADE,
+        related_name='audios',
+    )
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='uploaded_audios',
+    )
+    cloudinary_public_id = models.CharField(max_length=255, unique=True)
+    cloudinary_url = models.URLField(max_length=500)
+    duration_seconds = models.PositiveIntegerField()
+    language = models.CharField(
+        max_length=2,
+        choices=Language.choices,
+        default=Language.UK,
+    )
+    title = models.CharField(max_length=150)
+    narrator_name = models.CharField(max_length=100, blank=True)
+    # Affirms author has the right to publish (legal cover before moderation)
+    copyright_confirmed = models.BooleanField(default=False)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    moderation_note = models.TextField(blank=True)
+    plays_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    moderated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['cultural_object', 'status']),
+            models.Index(fields=['status', '-created_at']),
+            models.Index(fields=['cultural_object', 'language', 'status']),
+        ]
+        verbose_name = _("Аудіо-нарратив")
+        verbose_name_plural = _("Аудіо-наративи")
+
+    def __str__(self):
+        return f'Audio {self.id} ({self.language}, {self.status}) for {self.cultural_object.title}'
 
 
 class UserPreference(models.Model):
@@ -365,3 +434,213 @@ class UserPreference(models.Model):
 
     def __str__(self):
         return f'{self.user.username}: lang={self.language}, theme={self.theme}'
+
+
+class InaccuracyReport(models.Model):
+    """User-submitted report of an issue with a cultural object (wrong data, duplicate, etc.)."""
+
+    class ReasonType(models.TextChoices):
+        WRONG_COORDS = 'wrong_coords', 'Невірні координати'
+        WRONG_NAME = 'wrong_name', 'Неточна назва'
+        WRONG_DESCRIPTION = 'wrong_description', 'Помилки в описі'
+        WRONG_TAGS = 'wrong_tags', 'Невірні теги'
+        DUPLICATE = 'duplicate', 'Дублікат іншого об\'єкта'
+        OTHER = 'other', 'Інше'
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'На розгляді'
+        RESOLVED = 'resolved', 'Вирішено'
+        DISMISSED = 'dismissed', 'Відхилено'
+
+    cultural_object = models.ForeignKey(
+        CulturalObject,
+        related_name='inaccuracy_reports',
+        on_delete=models.CASCADE,
+    )
+    reporter = models.ForeignKey(
+        User,
+        related_name='reports_made',
+        on_delete=models.CASCADE,
+    )
+    reason_type = models.CharField(max_length=20, choices=ReasonType.choices)
+    note = models.TextField(max_length=500, blank=True)
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    admin_response = models.TextField(blank=True)
+    resolved_by = models.ForeignKey(
+        User,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='reports_resolved',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['status', 'created_at']),
+            models.Index(fields=['cultural_object', 'status']),
+        ]
+        ordering = ['-created_at']
+        verbose_name = _('Репорт про неточність')
+        verbose_name_plural = _('Репорти про неточності')
+
+    def __str__(self):
+        return f'Report #{self.pk} on "{self.cultural_object.title}" by {self.reporter.username} ({self.status})'
+
+
+class Visit(models.Model):
+    """User check-in: 'I've visited this place' — with optional impression and privacy toggle."""
+
+    user = models.ForeignKey(
+        User,
+        related_name='visits',
+        on_delete=models.CASCADE,
+    )
+    cultural_object = models.ForeignKey(
+        CulturalObject,
+        related_name='visits',
+        on_delete=models.CASCADE,
+    )
+    visited_at = models.DateField(default=timezone.localdate)
+    impression = models.TextField(
+        max_length=1000,
+        blank=True,
+        help_text='Враження від візиту',
+    )
+    is_public = models.BooleanField(
+        default=False,
+        help_text='Чи показувати цей візит у публічному паспорті',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [('user', 'cultural_object')]
+        indexes = [
+            models.Index(fields=['user', 'visited_at']),
+            models.Index(fields=['cultural_object']),
+            models.Index(fields=['is_public', 'user']),
+        ]
+        ordering = ['-visited_at']
+        verbose_name = _('Візит')
+        verbose_name_plural = _('Візити')
+
+    def __str__(self):
+        return f'{self.user.username} → {self.cultural_object.title} ({self.visited_at})'
+
+
+class PlannedVisit(models.Model):
+    """User wishlist: 'I plan to visit this place' — with optional planned date."""
+
+    user = models.ForeignKey(
+        User,
+        related_name='planned_visits',
+        on_delete=models.CASCADE,
+    )
+    cultural_object = models.ForeignKey(
+        CulturalObject,
+        related_name='planned_visits',
+        on_delete=models.CASCADE,
+    )
+    planned_date = models.DateField(
+        null=True, blank=True,
+        help_text='Опційна планова дата',
+    )
+    note = models.TextField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('user', 'cultural_object')]
+        ordering = ['-created_at']
+        verbose_name = _('Заплановане відвідування')
+        verbose_name_plural = _('Заплановані відвідування')
+
+    def __str__(self):
+        return f'{self.user.username} plans → {self.cultural_object.title}'
+
+
+class Route(models.Model):
+    """Curated multi-stop tourist route through cultural objects."""
+
+    class Status(models.TextChoices):
+        DRAFT = 'draft', 'Чернетка'
+        PENDING = 'pending', 'На модерації'
+        APPROVED = 'approved', 'Опубліковано'
+        ARCHIVED = 'archived', 'В архіві'
+
+    class Visibility(models.TextChoices):
+        PRIVATE = 'private', 'Особистий'
+        PUBLIC = 'public', 'Публічний'
+
+    title = models.CharField(max_length=200)
+    description = models.TextField(max_length=2000)
+    visibility = models.CharField(
+        max_length=10,
+        choices=Visibility.choices,
+        default=Visibility.PRIVATE,
+        help_text='Private — only author sees, no moderation. Public — visible to everyone after approval.',
+    )
+    author = models.ForeignKey(
+        User,
+        related_name='routes',
+        on_delete=models.CASCADE,
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.DRAFT,
+    )
+    tags = models.ManyToManyField(Tag, blank=True, related_name='routes')
+    is_featured = models.BooleanField(default=False)
+    cover_photo = models.URLField(blank=True)
+    estimated_duration_minutes = models.PositiveIntegerField(null=True, blank=True)
+    copied_from = models.ForeignKey(
+        'self',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='copies',
+        help_text='Якщо маршрут створений як копія',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['visibility', 'status', '-created_at']),
+            models.Index(fields=['is_featured', '-created_at']),
+            models.Index(fields=['author', 'visibility']),
+        ]
+        ordering = ['-created_at']
+        verbose_name = _('Маршрут')
+        verbose_name_plural = _('Маршрути')
+
+    def __str__(self):
+        return f'{self.title} ({self.status})'
+
+
+class RouteStop(models.Model):
+    """Single stop in a Route, pointing at a CulturalObject."""
+
+    route = models.ForeignKey(Route, related_name='stops', on_delete=models.CASCADE)
+    cultural_object = models.ForeignKey(CulturalObject, on_delete=models.CASCADE)
+    order = models.PositiveSmallIntegerField()
+    note = models.TextField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('route', 'cultural_object')]
+        ordering = ['order']
+        verbose_name = _('Зупинка маршруту')
+        verbose_name_plural = _('Зупинки маршруту')
+
+    @property
+    def is_unavailable(self) -> bool:
+        """Stop is unavailable when its underlying object has been archived."""
+        return self.cultural_object.status == CulturalObject.Status.ARCHIVED
+
+    def __str__(self):
+        return f'{self.route.title} #{self.order}: {self.cultural_object.title}'

@@ -1,0 +1,51 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block usertools %}
+    {% if has_permission %}
+        <div id="user-tools">
+            {% block welcome-msg %}
+                {% translate 'Welcome,' %}
+                <strong>{% firstof user.get_short_name user.get_username %}</strong>.
+            {% endblock %}
+            {% block userlinks %}
+                {# Language switcher — pill toggle with 2 buttons (avoids cross-browser <select> rendering issues). #}
+                {% get_current_language as CURRENT_LANG %}
+                {% get_available_languages as AVAILABLE_LANGS %}
+                {% get_language_info_list for AVAILABLE_LANGS as language_list %}
+                <span style="display:inline-flex;align-items:center;gap:0;margin-right:12px;border:1px solid rgba(255,255,255,0.45);border-radius:14px;overflow:hidden;background:rgba(255,255,255,0.08);">
+                    {% for lang in language_list %}
+                        <form action="{% url 'set_language' %}" method="post" style="display:inline;margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <input type="hidden" name="language" value="{{ lang.code }}">
+                            <button type="submit"
+                                    style="border:0;background:{% if lang.code == CURRENT_LANG %}#fff{% else %}transparent{% endif %};color:{% if lang.code == CURRENT_LANG %}#264b5d{% else %}#fff{% endif %};padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px;"
+                                    {% if lang.code == CURRENT_LANG %}aria-pressed="true"{% endif %}
+                                    title="{{ lang.name_local }}">
+                                {{ lang.code|upper }}
+                            </button>
+                        </form>
+                    {% endfor %}
+                </span>
+                {% if site_url %}
+                    <a href="{{ site_url }}">{% translate 'View site' %}</a> /
+                {% endif %}
+                {% if user.is_active and user.is_staff %}
+                    {% url 'django-admindocs-docroot' as docsroot %}
+                    {% if docsroot %}
+                        <a href="{{ docsroot }}">{% translate 'Documentation' %}</a> /
+                    {% endif %}
+                {% endif %}
+                {% if user.has_usable_password %}
+                    <a href="{% url 'admin:password_change' %}">{% translate 'Change password' %}</a> /
+                {% endif %}
+                <form id="logout-form" method="post" action="{% url 'admin:logout' %}">
+                    {% csrf_token %}
+                    <button type="submit">{% translate 'Log out' %}</button>
+                </form>
+                {% include "admin/color_theme_toggle.html" %}
+            {% endblock %}
+        </div>
+    {% endif %}
+{% endblock %}

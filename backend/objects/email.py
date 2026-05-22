@@ -182,6 +182,61 @@ def _follower_subject_and_labels(lang: str, author_username: str, obj_title: str
     return subject, type_label, type_short
 
 
+INACCURACY_SUBJECTS = {
+    'uk': {
+        'resolved': 'CultureMap — Ваш репорт вирішено',
+        'dismissed': 'CultureMap — Ваш репорт відхилено',
+    },
+    'en': {
+        'resolved': 'CultureMap — Your report has been confirmed',
+        'dismissed': 'CultureMap — Your report has been dismissed',
+    },
+}
+
+INACCURACY_OUTCOME_LABELS = {
+    'uk': {'resolved': 'вирішено', 'dismissed': 'відхилено'},
+    'en': {'resolved': 'confirmed', 'dismissed': 'dismissed'},
+}
+
+
+@shared_task(**EMAIL_RETRY_KWARGS)
+def send_inaccuracy_outcome_email(report_id):
+    """Notify reporter when admin resolves or dismisses their report."""
+    from .models import InaccuracyReport
+    try:
+        report = (InaccuracyReport.objects
+                  .select_related('reporter', 'cultural_object')
+                  .get(pk=report_id))
+    except InaccuracyReport.DoesNotExist:
+        return
+
+    if report.status not in ('resolved', 'dismissed') or not report.reporter.email:
+        return
+
+    lang = _user_language(report.reporter)
+    outcome = report.status
+    subject = INACCURACY_SUBJECTS.get(lang, INACCURACY_SUBJECTS['uk'])[outcome]
+    outcome_label = INACCURACY_OUTCOME_LABELS.get(lang, INACCURACY_OUTCOME_LABELS['uk'])[outcome]
+    object_url = f"{settings.FRONTEND_URL}/objects/{report.cultural_object.pk}"
+
+    html_message = render_to_string(_template_for('inaccuracy_resolved', lang), {
+        'user': report.reporter,
+        'object_title': report.cultural_object.title,
+        'object_url': object_url,
+        'reason_label': report.get_reason_type_display(),
+        'outcome_label': outcome_label,
+        'admin_response': report.admin_response,
+    })
+
+    send_mail(
+        subject=subject,
+        message=strip_tags(html_message),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[report.reporter.email],
+        html_message=html_message,
+    )
+
+
 @shared_task(**EMAIL_RETRY_KWARGS)
 def send_follower_notifications(obj_id):
     """Розсилає підписникам автора лист про нову публікацію (об'єкт або подію).

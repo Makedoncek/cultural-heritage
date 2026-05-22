@@ -43,6 +43,25 @@ const eventIcon = new L.Icon({
     iconRetinaUrl: `data:image/svg+xml,${eventMarkerSvg}`,
 });
 
+// Green marker for objects the current user has already visited.
+const visitedMarkerSvg = (color: string) => encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" width="25" height="41" viewBox="0 0 25 41">
+  <path d="M12.5 0C5.6 0 0 5.6 0 12.5C0 21.9 12.5 41 12.5 41S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0Z" fill="${color}"/>
+  <path d="M8 13 L11.5 16 L17 9" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`);
+
+const visitedEventIcon = new L.Icon({
+    ...iconOptions,
+    iconUrl: `data:image/svg+xml,${visitedMarkerSvg('#16a34a')}`,
+    iconRetinaUrl: `data:image/svg+xml,${visitedMarkerSvg('#16a34a')}`,
+});
+
+const visitedPermanentIcon = new L.Icon({
+    ...iconOptions,
+    iconUrl: `data:image/svg+xml,${visitedMarkerSvg('#15803d')}`,
+    iconRetinaUrl: `data:image/svg+xml,${visitedMarkerSvg('#15803d')}`,
+});
+
 function formatDateRange(start: string | null, end: string | null, locale: string): string | null {
     if (!start || !end) return null;
     const fmt = (d: string) => new Date(d).toLocaleString(locale, {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'});
@@ -59,7 +78,14 @@ export default function ObjectMarker({object}: ObjectMarkerProps) {
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
     const isPending = object.status === 'pending';
     const isEvent = object.object_type === 'event';
-    const icon = isPending ? pendingIcon : isEvent ? eventIcon : defaultIcon;
+    const isVisited = object.is_visited === true;
+    const icon = isPending
+        ? pendingIcon
+        : isVisited
+            ? (isEvent ? visitedEventIcon : visitedPermanentIcon)
+            : isEvent
+                ? eventIcon
+                : defaultIcon;
     const dateRange = isEvent ? formatDateRange(object.event_start_date, object.event_end_date, dateLocale) : null;
 
     return (

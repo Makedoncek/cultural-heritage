@@ -55,6 +55,22 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  celery-beat:
+    build: ./backend
+    command: celery -A config beat --loglevel=info
+    env_file:
+      - ./backend/.env
+    environment:
+      - DB_HOST=db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend

@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.utils.translation import gettext as _
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample, inline_serializer
 from rest_framework import serializers as s
 from .filters import ObjectFilter
@@ -12,7 +13,7 @@ from .models import Tag
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Count, Exists, OuterRef, Subquery
+from django.db.models import Q, Count, Exists, OuterRef, Subquery, F, Max
 from .models import CulturalObject, Favorite, FavoriteAuthor
 from .serializers import ObjectListSerializer, ObjectDetailSerializer, ObjectWriteSerializer, UserProfileSerializer, ObjectWithMyPhotosSerializer
 
@@ -25,9 +26,9 @@ class _PhotoLimitExceeded(Exception):
 from .permissions import IsAuthorOrReadOnly, IsPhotoUploaderOrAdmin, IsObjectAuthor, IsPhotoCaptionEditor
 from .throttles import PhotoUploadThrottle
 from .validators import validate_image_size, validate_image_format
-from . import cloudinary_service
-from .models import ObjectPhoto
-from .serializers import ObjectPhotoSerializer
+from . import cloudinary_service, cloudinary_audio_service
+from .models import ObjectPhoto, ObjectAudio
+from .serializers import ObjectPhotoSerializer, ObjectAudioSerializer, AudioUploadSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
@@ -545,7 +546,6 @@ class ObjectViewSet(viewsets.ModelViewSet):
         base_qs = (CulturalObject.objects
                    .select_related('author')
                    .prefetch_related('tags')
-                   .exclude(status='archived')
                    .annotate(favorites_count=Count('favorited_by', distinct=True))
                    .annotate(_cover_thumbnail_url=Subquery(cover_thumb_sq))
                    .order_by('-created_at'))
@@ -554,6 +554,16 @@ class ObjectViewSet(viewsets.ModelViewSet):
             base_qs = base_qs.annotate(
                 _is_favorited=Exists(Favorite.objects.filter(user=user, cultural_object=OuterRef('pk')))
             )
+
+        # Author/admin can retrieve their own archived objects; list/other actions exclude archived.
+        if self.action == 'retrieve':
+            if user.is_staff:
+                return base_qs
+            if user.is_authenticated:
+                return base_qs.filter(Q(status='approved') | Q(author=user)).distinct().order_by('-created_at')
+            return base_qs.filter(status='approved')
+
+        base_qs = base_qs.exclude(status='archived')
 
         if user.is_staff:
             return base_qs
@@ -594,6 +604,34 @@ class ObjectViewSet(viewsets.ModelViewSet):
         instance.archive()
         return Response({'detail': _("Об'єкт архівовано")}, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def restore(self, request, pk=None):
+        """Author or admin restores archived object → status='pending' (requires re-approval)."""
+        try:
+            instance = CulturalObject.objects.get(pk=pk)
+        except CulturalObject.DoesNotExist:
+            return Response({'detail': _('Не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+        if instance.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору чи адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        if instance.status != CulturalObject.Status.ARCHIVED:
+            return Response({'detail': _('Об\'єкт не в архіві.')}, status=status.HTTP_400_BAD_REQUEST)
+        instance.restore()
+        return Response({'detail': _("Об'єкт відновлено")}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['delete'], url_path='hard-delete', permission_classes=[IsAuthenticated])
+    def hard_delete(self, request, pk=None):
+        """Author or admin permanently deletes object (regardless of status)."""
+        try:
+            instance = CulturalObject.objects.get(pk=pk)
+        except CulturalObject.DoesNotExist:
+            return Response({'detail': _('Не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+        if instance.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору чи адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @extend_schema(
         tags=['Objects'],
         summary='My objects',
@@ -623,13 +661,46 @@ class ObjectViewSet(viewsets.ModelViewSet):
             ),
         ],
     )
+    @action(detail=False, methods=['post'], url_path='check-duplicates', permission_classes=[AllowAny])
+    def check_duplicates(self, request):
+        """Returns approved objects within 100 m of the given coordinates.
+
+        Used by the create-object form as a soft duplicate warning: client
+        shows the list, user decides whether to proceed or pick an existing one.
+        Read-only — does not create or modify anything.
+        """
+        from .services.geo import find_nearby_objects
+        try:
+            latitude = float(request.data.get('latitude'))
+            longitude = float(request.data.get('longitude'))
+        except (TypeError, ValueError):
+            return Response({'detail': _('latitude і longitude обовʼязкові')},
+                            status=status.HTTP_400_BAD_REQUEST)
+        exclude_id = request.data.get('exclude_id')
+        try:
+            exclude_id = int(exclude_id) if exclude_id is not None else None
+        except (TypeError, ValueError):
+            exclude_id = None
+        nearby = find_nearby_objects(latitude, longitude, radius_m=100.0, exclude_id=exclude_id)
+        return Response({
+            'nearby': [
+                {
+                    'id': obj.id,
+                    'title': obj.title,
+                    'latitude': str(obj.latitude),
+                    'longitude': str(obj.longitude),
+                    'distance_m': round(distance, 1),
+                }
+                for obj, distance in nearby[:5]
+            ],
+        })
+
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my(self, request):
         objects = (CulturalObject.objects
                    .select_related('author')
                    .prefetch_related('tags')
                    .filter(author=request.user)
-                   .exclude(status='archived')
                    .order_by('-created_at'))
 
         page = self.paginate_queryset(objects)
@@ -667,6 +738,31 @@ class ObjectViewSet(viewsets.ModelViewSet):
 
         serializer = ObjectWithMyPhotosSerializer(objects, many=True, context={'request': request})
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='with-my-audios', permission_classes=[IsAuthenticated])
+    def with_my_audios(self, request):
+        """Objects (any author) where the current user has uploaded at least one audio narrative."""
+        object_ids = (ObjectAudio.objects
+                      .filter(uploaded_by=request.user)
+                      .values_list('cultural_object_id', flat=True)
+                      .distinct())
+        objects = (CulturalObject.objects
+                   .select_related('author')
+                   .prefetch_related('tags')
+                   .filter(id__in=object_ids)
+                   .exclude(status='archived')
+                   .order_by('-created_at'))
+        result = []
+        for obj in objects:
+            my_audios = list(obj.audios.filter(uploaded_by=request.user).order_by('-created_at'))
+            result.append({
+                'id': obj.id,
+                'title': obj.title,
+                'tags': [{'id': tg.id, 'name': tg.name, 'icon': tg.icon} for tg in obj.tags.all()],
+                'author_name': obj.author.username,
+                'my_audios': ObjectAudioSerializer(my_audios, many=True).data,
+            })
+        return Response(result)
 
     @extend_schema(
         tags=['Objects'],
@@ -1099,3 +1195,879 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
             p.order = int(item['order'])
         ObjectPhoto.objects.bulk_update(photos, ['order'])
         return Response({'detail': 'ok'})
+
+
+class InaccuracyReportViewSet(viewsets.GenericViewSet):
+    """Crowd-sourced reports about issues with cultural objects.
+
+    Endpoints:
+      POST   /api/objects/<object_pk>/report/      — create report (auth, 1/day per object)
+      DELETE /api/reports/<id>/                    — delete own pending report
+      GET    /api/users/me/reports/                — list reports created by me
+      GET    /api/users/me/objects/reports/        — list reports on objects I authored
+      GET    /api/admin/reports/                   — admin queue (with status filter)
+      POST   /api/admin/reports/<id>/resolve/      — admin: resolve
+      POST   /api/admin/reports/<id>/dismiss/      — admin: dismiss
+    """
+    serializer_class = None  # set per-action
+
+    def get_serializer_class(self):
+        from .serializers import InaccuracyReportSerializer
+        return InaccuracyReportSerializer
+
+    def get_permissions(self):
+        if self.action in ('admin_list', 'admin_resolve', 'admin_dismiss'):
+            from rest_framework.permissions import IsAdminUser
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def report_object(request, object_pk):
+    from .models import InaccuracyReport
+    from .serializers import InaccuracyReportSerializer
+    from datetime import timedelta
+    from django.utils import timezone
+
+    try:
+        obj = CulturalObject.objects.get(pk=object_pk)
+    except CulturalObject.DoesNotExist:
+        return Response({'detail': _('Об\'єкт не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+
+    # Throttle: 1 report per (user, object) per 24h
+    recent = InaccuracyReport.objects.filter(
+        reporter=request.user,
+        cultural_object=obj,
+        created_at__gte=timezone.now() - timedelta(days=1),
+    ).exists()
+    if recent:
+        return Response(
+            {'detail': _('Ви вже надсилали репорт на цей об\'єкт нещодавно. Спробуйте через 24 години.')},
+            status=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
+    reason_type = request.data.get('reason_type')
+    if reason_type not in dict(InaccuracyReport.ReasonType.choices):
+        return Response({'reason_type': [_('Невірна причина.')]}, status=status.HTTP_400_BAD_REQUEST)
+
+    report = InaccuracyReport.objects.create(
+        cultural_object=obj,
+        reporter=request.user,
+        reason_type=reason_type,
+        note=request.data.get('note', '')[:500],
+    )
+    return Response(
+        InaccuracyReportSerializer(report).data,
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_own_report(request, report_pk):
+    from .models import InaccuracyReport
+    try:
+        report = InaccuracyReport.objects.get(pk=report_pk)
+    except InaccuracyReport.DoesNotExist:
+        return Response({'detail': _('Репорт не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+    if report.reporter_id != request.user.id:
+        return Response({'detail': _('Не можна видалити чужий репорт.')}, status=status.HTTP_403_FORBIDDEN)
+    if report.status != InaccuracyReport.Status.PENDING:
+        return Response(
+            {'detail': _('Можна видалити лише репорт зі статусом «На розгляді».')},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    report.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_reports(request):
+    from .models import InaccuracyReport
+    from .serializers import InaccuracyReportSerializer
+    qs = InaccuracyReport.objects.filter(reporter=request.user).select_related('cultural_object')
+    return Response(InaccuracyReportSerializer(qs, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def reports_on_my_objects(request):
+    from .models import InaccuracyReport
+    from .serializers import InaccuracyReportSerializer
+    qs = (InaccuracyReport.objects
+          .filter(cultural_object__author=request.user)
+          .select_related('cultural_object', 'reporter'))
+    return Response(InaccuracyReportSerializer(qs, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_reports_list(request):
+    from .models import InaccuracyReport
+    from .serializers import InaccuracyReportSerializer
+    if not request.user.is_staff:
+        return Response({'detail': _('Тільки для адміністратора.')}, status=status.HTTP_403_FORBIDDEN)
+    status_filter = request.query_params.get('status', 'pending')
+    qs = InaccuracyReport.objects.select_related('cultural_object', 'reporter')
+    if status_filter in dict(InaccuracyReport.Status.choices):
+        qs = qs.filter(status=status_filter)
+    return Response(InaccuracyReportSerializer(qs, many=True).data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_resolve_report(request, report_pk):
+    return _admin_close_report(request, report_pk, resolved=True)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_dismiss_report(request, report_pk):
+    return _admin_close_report(request, report_pk, resolved=False)
+
+
+def _admin_close_report(request, report_pk, resolved: bool):
+    from .models import InaccuracyReport
+    from .serializers import InaccuracyReportSerializer
+    from django.utils import timezone
+    if not request.user.is_staff:
+        return Response({'detail': _('Тільки для адміністратора.')}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        report = InaccuracyReport.objects.get(pk=report_pk)
+    except InaccuracyReport.DoesNotExist:
+        return Response({'detail': _('Репорт не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+    if report.status != InaccuracyReport.Status.PENDING:
+        return Response(
+            {'detail': _('Репорт уже опрацьовано.')},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    report.status = (
+        InaccuracyReport.Status.RESOLVED if resolved else InaccuracyReport.Status.DISMISSED
+    )
+    report.admin_response = request.data.get('admin_response', '')[:500]
+    report.resolved_by = request.user
+    report.resolved_at = timezone.now()
+    report.save(update_fields=['status', 'admin_response', 'resolved_by', 'resolved_at'])
+
+    from .email import send_inaccuracy_outcome_email
+    send_inaccuracy_outcome_email.delay(report.id)
+
+    return Response(InaccuracyReportSerializer(report).data)
+
+
+# --- Visit & PlannedVisit endpoints ---
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def toggle_visit(request, object_pk):
+    """Toggle 'I visited' for the current user."""
+    from .models import Visit, CulturalObject
+    from .serializers import VisitSerializer
+    try:
+        obj = CulturalObject.objects.get(pk=object_pk)
+    except CulturalObject.DoesNotExist:
+        return Response({'detail': _('Об\'єкт не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+
+    visit = Visit.objects.filter(user=request.user, cultural_object=obj).first()
+    if visit:
+        visit.delete()
+        return Response({'is_visited': False})
+    visit = Visit.objects.create(user=request.user, cultural_object=obj)
+    return Response({'is_visited': True, 'visit': VisitSerializer(visit).data}, status=status.HTTP_201_CREATED)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_visit(request, visit_pk):
+    """Edit own visit: impression, visited_at, is_public."""
+    from .models import Visit
+    from .serializers import VisitSerializer
+    try:
+        visit = Visit.objects.get(pk=visit_pk)
+    except Visit.DoesNotExist:
+        return Response({'detail': _('Візит не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+    if visit.user_id != request.user.id:
+        return Response({'detail': _('Не можна редагувати чужий візит.')}, status=status.HTTP_403_FORBIDDEN)
+
+    allowed = {'impression', 'visited_at', 'is_public'}
+    updates = {k: v for k, v in request.data.items() if k in allowed}
+
+    if 'visited_at' in updates:
+        from datetime import date
+        try:
+            parsed = date.fromisoformat(str(updates['visited_at']))
+        except ValueError:
+            return Response({'visited_at': [_('Невірний формат дати.')]}, status=status.HTTP_400_BAD_REQUEST)
+        if parsed > timezone.localdate():
+            return Response(
+                {'visited_at': [_('Дата візиту не може бути у майбутньому.')]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    for k, v in updates.items():
+        setattr(visit, k, v)
+    visit.save()
+    return Response(VisitSerializer(visit).data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def visits_count(request, object_pk):
+    """Public: how many unique users visited this object."""
+    from .models import Visit
+    count = Visit.objects.filter(cultural_object_id=object_pk).count()
+    return Response({'visits_count': count})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_visits(request):
+    from .models import Visit
+    from .serializers import VisitSerializer
+    qs = Visit.objects.filter(user=request.user).select_related('cultural_object')
+    return Response(VisitSerializer(qs, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def public_visits(request, username):
+    from .models import Visit
+    from .serializers import VisitSerializer
+    try:
+        target = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({'detail': _('Користувача не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+    qs = Visit.objects.filter(user=target, is_public=True).select_related('cultural_object')
+    return Response(VisitSerializer(qs, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_visits_stats(request):
+    """Aggregated counts for the cultural passport dashboard."""
+    from .models import Visit, Tag, Route, RouteStop
+    from django.db.models import Count
+    base = Visit.objects.filter(user=request.user)
+    total = base.count()
+    total_objects = CulturalObject.objects.filter(status='approved').count()
+    by_tag = list(
+        Tag.objects.filter(cultural_objects__visits__user=request.user)
+        .annotate(visited_count=Count('cultural_objects__visits',
+                                      filter=Q(cultural_objects__visits__user=request.user),
+                                      distinct=True))
+        .values('id', 'name', 'icon', 'visited_count')
+        .order_by('-visited_count')
+    )
+    # Routes counted as completed when every stop's object has a Visit by the user.
+    completed_routes = (
+        Route.objects.filter(stops__isnull=False)
+        .annotate(
+            total_stops=Count('stops', distinct=True),
+            visited_stops=Count(
+                'stops',
+                filter=Q(stops__cultural_object__visits__user=request.user),
+                distinct=True,
+            ),
+        )
+        .filter(total_stops__gt=0, visited_stops=F('total_stops'))
+        .count()
+    )
+    return Response({
+        'total_visits': total,
+        'total_approved_objects': total_objects,
+        'completed_routes': completed_routes,
+        'by_tag': by_tag,
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def toggle_planned_visit(request, object_pk):
+    """Toggle 'I plan to visit' for the current user."""
+    from .models import PlannedVisit
+    from .serializers import PlannedVisitSerializer
+    try:
+        obj = CulturalObject.objects.get(pk=object_pk)
+    except CulturalObject.DoesNotExist:
+        return Response({'detail': _('Об\'єкт не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+
+    planned = PlannedVisit.objects.filter(user=request.user, cultural_object=obj).first()
+    if planned:
+        planned.delete()
+        return Response({'is_planned': False})
+    planned = PlannedVisit.objects.create(user=request.user, cultural_object=obj)
+    return Response(
+        {'is_planned': True, 'planned': PlannedVisitSerializer(planned).data},
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_planned_visit(request, planned_pk):
+    from .models import PlannedVisit
+    from .serializers import PlannedVisitSerializer
+    try:
+        planned = PlannedVisit.objects.get(pk=planned_pk)
+    except PlannedVisit.DoesNotExist:
+        return Response({'detail': _('План не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+    if planned.user_id != request.user.id:
+        return Response({'detail': _('Не можна редагувати чужий план.')}, status=status.HTTP_403_FORBIDDEN)
+
+    allowed = {'planned_date', 'note'}
+    for k, v in request.data.items():
+        if k in allowed:
+            setattr(planned, k, v)
+    planned.save()
+    return Response(PlannedVisitSerializer(planned).data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def convert_planned_to_visit(request, planned_pk):
+    """Convert a PlannedVisit into a Visit (deletes plan, creates visit)."""
+    from .models import PlannedVisit, Visit
+    from .serializers import VisitSerializer
+    try:
+        planned = PlannedVisit.objects.get(pk=planned_pk)
+    except PlannedVisit.DoesNotExist:
+        return Response({'detail': _('План не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+    if planned.user_id != request.user.id:
+        return Response({'detail': _('Не можна конвертувати чужий план.')}, status=status.HTTP_403_FORBIDDEN)
+
+    visit, created = Visit.objects.get_or_create(
+        user=planned.user,
+        cultural_object=planned.cultural_object,
+        defaults={'impression': planned.note},
+    )
+    planned.delete()
+    return Response(
+        {'visit': VisitSerializer(visit).data, 'created': created},
+        status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+    )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_planned_visits(request):
+    from .models import PlannedVisit
+    from .serializers import PlannedVisitSerializer
+    qs = PlannedVisit.objects.filter(user=request.user).select_related('cultural_object')
+    return Response(PlannedVisitSerializer(qs, many=True).data)
+
+
+# --- Routes ---
+
+MAX_STOPS_PER_ROUTE = 50
+
+
+class RouteViewSet(viewsets.ModelViewSet):
+    """CRUD for Heritage Routes.
+
+    Visibility:
+      - public list: only approved routes
+      - draft/pending visible to author + admin
+    """
+    # Default lookup_field='pk' — routes are identified by numeric ID.
+
+    def get_serializer_class(self):
+        from .serializers import RouteListSerializer, RouteDetailSerializer, RouteWriteSerializer
+        if self.action == 'list':
+            return RouteListSerializer
+        if self.action in ('create', 'update', 'partial_update'):
+            return RouteWriteSerializer
+        return RouteDetailSerializer
+
+    def get_queryset(self):
+        from .models import Route
+        qs = Route.objects.select_related('author').prefetch_related('tags', 'stops__cultural_object')
+        user = self.request.user
+
+        if self.action == 'list':
+            # Public catalog: only public routes that have been approved.
+            qs = qs.filter(visibility=Route.Visibility.PUBLIC, status=Route.Status.APPROVED)
+            params = self.request.query_params
+            if params.get('is_featured') == 'true':
+                qs = qs.filter(is_featured=True)
+            tag_ids = params.get('tags')
+            if tag_ids:
+                ids = [int(t) for t in tag_ids.split(',') if t.isdigit()]
+                if ids:
+                    qs = qs.filter(tags__id__in=ids).distinct()
+            search = (params.get('search') or '').strip()
+            if search:
+                qs = qs.filter(Q(title__icontains=search) | Q(description__icontains=search))
+            # Duration filter (minutes). Treats null estimated_duration_minutes as 0.
+            dmin = params.get('duration_min')
+            dmax = params.get('duration_max')
+            if dmin and dmin.isdigit():
+                qs = qs.filter(estimated_duration_minutes__gte=int(dmin))
+            if dmax and dmax.isdigit():
+                qs = qs.filter(estimated_duration_minutes__lte=int(dmax))
+            return qs
+
+        if self.action == 'retrieve':
+            if user.is_authenticated:
+                if user.is_staff:
+                    return qs
+                # Author sees own routes (any visibility); others only public+approved.
+                return qs.filter(
+                    Q(author=user) |
+                    Q(visibility=Route.Visibility.PUBLIC, status=Route.Status.APPROVED)
+                )
+            return qs.filter(visibility=Route.Visibility.PUBLIC, status=Route.Status.APPROVED)
+
+        return qs
+
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy',
+                           'submit', 'copy', 'add_stop', 'reorder', 'stop_detail'):
+            return [IsAuthenticated()]
+        return [AllowAny()]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        # Pre-fetch which stops the current user has already visited (one query per route).
+        user = self.request.user if hasattr(self.request, 'user') else None
+        if self.action == 'retrieve' and user and user.is_authenticated:
+            from .models import RouteStop, Visit
+            route_id = self.kwargs.get('pk')
+            if route_id:
+                stop_object_ids = list(
+                    RouteStop.objects.filter(route_id=route_id).values_list('cultural_object_id', flat=True),
+                )
+                visited_ids = set(
+                    Visit.objects.filter(user=user, cultural_object_id__in=stop_object_ids)
+                    .values_list('cultural_object_id', flat=True),
+                )
+                context['visited_object_ids'] = visited_ids
+        return context
+
+    def perform_create(self, serializer):
+        from .models import Route
+        serializer.save(author=self.request.user, status=Route.Status.DRAFT)
+
+    def create(self, request, *args, **kwargs):
+        # Use write serializer for validation, detail serializer for the response
+        # so the frontend immediately gets `id`, `status`, etc.
+        from .serializers import RouteDetailSerializer
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(
+            RouteDetailSerializer(serializer.instance, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def update(self, request, *args, **kwargs):
+        from .models import Route
+        instance = self.get_object()
+        if instance.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Не можна редагувати чужий маршрут.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        from .serializers import RouteDetailSerializer
+        partial = kwargs.pop('partial', False)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        # If user switches private→public, send the route back to draft so it goes through moderation.
+        new_visibility = serializer.validated_data.get('visibility')
+        if (new_visibility == Route.Visibility.PUBLIC
+                and instance.visibility == Route.Visibility.PRIVATE):
+            serializer.validated_data['status'] = Route.Status.DRAFT
+        self.perform_update(serializer)
+        return Response(
+            RouteDetailSerializer(serializer.instance, context={'request': request}).data,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        from .models import Route
+        instance = self.get_object()
+        if instance.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Не можна видалити чужий маршрут.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        instance.status = Route.Status.ARCHIVED
+        instance.save(update_fields=['status', 'updated_at'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['post'])
+    def restore(self, request, pk=None):
+        """Author or admin restores archived route → status='draft'."""
+        from .models import Route
+        from .serializers import RouteDetailSerializer
+        try:
+            instance = Route.objects.get(pk=pk)
+        except Route.DoesNotExist:
+            return Response({'detail': _('Не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+        if instance.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору чи адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        if instance.status != Route.Status.ARCHIVED:
+            return Response({'detail': _('Маршрут не в архіві.')}, status=status.HTTP_400_BAD_REQUEST)
+        instance.status = Route.Status.DRAFT
+        instance.save(update_fields=['status', 'updated_at'])
+        return Response(RouteDetailSerializer(instance, context={'request': request}).data)
+
+    @action(detail=True, methods=['delete'], url_path='hard-delete')
+    def hard_delete(self, request, pk=None):
+        """Author or admin permanently deletes route (regardless of status)."""
+        from .models import Route
+        try:
+            instance = Route.objects.get(pk=pk)
+        except Route.DoesNotExist:
+            return Response({'detail': _('Не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+        if instance.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору чи адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['post'])
+    def submit(self, request, pk=None):
+        from .models import Route
+        from .serializers import RouteDetailSerializer
+        route = self.get_object()
+        if route.author_id != request.user.id:
+            return Response({'detail': _('Тільки автор може подати маршрут на модерацію.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        if route.visibility != Route.Visibility.PUBLIC:
+            return Response(
+                {'detail': _('Особистий маршрут не потребує модерації. Зробіть його публічним, щоб подати.')},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if route.status != Route.Status.DRAFT:
+            return Response({'detail': _('Подати на модерацію можна лише чернетку.')},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if route.stops.count() < 2:
+            return Response({'detail': _('Маршрут має містити щонайменше 2 зупинки.')},
+                            status=status.HTTP_400_BAD_REQUEST)
+        route.status = Route.Status.PENDING
+        route.save(update_fields=['status', 'updated_at'])
+        return Response(RouteDetailSerializer(route, context={'request': request}).data)
+
+    @action(detail=True, methods=['post'])
+    def copy(self, request, pk=None):
+        from .models import Route, RouteStop
+        from .serializers import RouteDetailSerializer
+        original = self.get_object()
+        # Can copy only public+approved routes (private ones aren't shareable by design).
+        if original.visibility != Route.Visibility.PUBLIC or original.status != Route.Status.APPROVED:
+            return Response({'detail': _('Можна копіювати тільки опубліковані маршрути.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        copy = Route.objects.create(
+            title=f'{original.title} (копія)',
+            description=original.description,
+            author=request.user,
+            # Copy defaults to PRIVATE — user explicitly opts in to publish.
+            visibility=Route.Visibility.PRIVATE,
+            status=Route.Status.DRAFT,
+            cover_photo=original.cover_photo,
+            estimated_duration_minutes=original.estimated_duration_minutes,
+            copied_from=original,
+        )
+        copy.tags.set(original.tags.all())
+        for stop in original.stops.all():
+            RouteStop.objects.create(
+                route=copy,
+                cultural_object=stop.cultural_object,
+                order=stop.order,
+                note=stop.note,
+            )
+        return Response(
+            RouteDetailSerializer(copy, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=True, methods=['post'], url_path='stops')
+    def add_stop(self, request, pk=None):
+        from .models import RouteStop
+        from .serializers import RouteStopSerializer
+        route = self.get_object()
+        if route.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Не можна редагувати чужий маршрут.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        if route.stops.count() >= MAX_STOPS_PER_ROUTE:
+            return Response(
+                {'detail': _('Маршрут не може містити більше 50 зупинок.')},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        object_id = request.data.get('cultural_object')
+        try:
+            cultural_object = CulturalObject.objects.get(pk=object_id)
+        except CulturalObject.DoesNotExist:
+            return Response({'cultural_object': [_('Об\'єкт не знайдено.')]},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if RouteStop.objects.filter(route=route, cultural_object=cultural_object).exists():
+            return Response(
+                {'detail': _('Цей об\'єкт уже доданий у маршрут.')},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # Use max(order)+1 instead of count()+1 to avoid duplicate `order` when
+        # legacy data has gaps (e.g. an old delete that didn't recompact).
+        last_order = route.stops.aggregate(m=Max('order'))['m'] or 0
+        stop = RouteStop.objects.create(
+            route=route,
+            cultural_object=cultural_object,
+            order=last_order + 1,
+            note=str(request.data.get('note', ''))[:500],
+        )
+        return Response(RouteStopSerializer(stop).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='reorder')
+    def reorder(self, request, pk=None):
+        from .models import RouteStop
+        route = self.get_object()
+        if route.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Не можна редагувати чужий маршрут.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        items = request.data.get('order') or []
+        if not isinstance(items, list):
+            return Response({'detail': 'order must be a list'}, status=400)
+        ids = [int(it.get('id')) for it in items if 'id' in it and 'order' in it]
+        stops = list(RouteStop.objects.filter(route=route, id__in=ids))
+        if len(stops) != len(ids):
+            return Response({'detail': _('Деякі зупинки не належать цьому маршруту.')},
+                            status=status.HTTP_400_BAD_REQUEST)
+        by_id = {s.id: s for s in stops}
+        for it in items:
+            s = by_id[int(it['id'])]
+            s.order = int(it['order'])
+        RouteStop.objects.bulk_update(stops, ['order'])
+        return Response({'detail': 'ok'})
+
+    @action(detail=True, methods=['patch', 'delete'], url_path=r'stops/(?P<stop_pk>\d+)')
+    def stop_detail(self, request, pk=None, stop_pk=None):
+        """PATCH updates RouteStop (note), DELETE removes it. Author or admin only."""
+        from .models import RouteStop
+        from .serializers import RouteStopSerializer
+        route = self.get_object()
+        if route.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Не можна редагувати чужий маршрут.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        try:
+            stop = RouteStop.objects.get(pk=stop_pk, route=route)
+        except RouteStop.DoesNotExist:
+            return Response({'detail': _('Зупинку не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+        if request.method == 'DELETE':
+            stop.delete()
+            # Recompact: keep stop orders sequential 1..N (no gaps after delete).
+            remaining = list(RouteStop.objects.filter(route=route).order_by('order'))
+            for idx, s in enumerate(remaining, start=1):
+                if s.order != idx:
+                    s.order = idx
+            RouteStop.objects.bulk_update(remaining, ['order'])
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        # PATCH
+        if 'note' in request.data:
+            stop.note = str(request.data['note'])[:500]
+            stop.save(update_fields=['note'])
+        return Response(RouteStopSerializer(stop).data)
+
+    @action(detail=True, methods=['post'], url_path='mark-completed', permission_classes=[IsAuthenticated])
+    def mark_completed(self, request, pk=None):
+        """Bulk-create Visits for every stop the user has not yet visited.
+
+        After this call, all stops belong to user.visits -> the route counts as 'completed'
+        when stats are computed (no separate RouteCompletion table — derived from Visit data).
+        """
+        from .models import Visit
+        from django.utils import timezone
+        route = self.get_object()
+        already_visited = set(
+            Visit.objects.filter(user=request.user, cultural_object__in=route.stops.values('cultural_object'))
+            .values_list('cultural_object_id', flat=True)
+        )
+        missing = [s.cultural_object_id for s in route.stops.all() if s.cultural_object_id not in already_visited]
+        created = 0
+        for object_id in missing:
+            Visit.objects.create(
+                user=request.user,
+                cultural_object_id=object_id,
+                visited_at=timezone.localdate(),
+                impression='',
+            )
+            created += 1
+        return Response({'created_visits': created, 'total_stops': route.stops.count()})
+
+    @action(detail=True, methods=['get'], url_path='export')
+    def export(self, request, pk=None):
+        from .services.route_export import export_route_as_gpx, export_route_as_kml
+        from django.http import HttpResponse
+        route = self.get_object()
+        fmt = request.query_params.get('fmt', 'gpx').lower()
+        if fmt == 'gpx':
+            content = export_route_as_gpx(route)
+            content_type = 'application/gpx+xml'
+            ext = 'gpx'
+        elif fmt == 'kml':
+            content = export_route_as_kml(route)
+            content_type = 'application/vnd.google-earth.kml+xml'
+            ext = 'kml'
+        else:
+            return Response({'detail': _('Підтримувані формати: gpx, kml.')},
+                            status=status.HTTP_400_BAD_REQUEST)
+        response = HttpResponse(content, content_type=content_type)
+        from django.utils.text import slugify
+        filename = slugify(route.title) or f'route-{route.pk}'
+        response['Content-Disposition'] = f'attachment; filename="{filename}.{ext}"'
+        return response
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_routes(request):
+    """List routes authored by the current user (any status)."""
+    from .models import Route
+    from .serializers import RouteListSerializer
+    qs = (Route.objects.filter(author=request.user)
+          .select_related('author').prefetch_related('tags')
+          .order_by('-updated_at'))
+    status_filter = request.query_params.get('status')
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    return Response(RouteListSerializer(qs, many=True, context={'request': request}).data)
+
+
+MAX_AUDIOS_PER_OBJECT = 10
+
+
+class ObjectAudioViewSet(viewsets.ViewSet):
+    """Audio narratives для культурного об'єкта.
+
+    Endpoints:
+      GET    /api/objects/<obj_pk>/audios/             — list approved (public) + own pending/rejected
+      POST   /api/objects/<obj_pk>/audios/             — upload (multipart), copyright_confirmed=true
+      GET    /api/objects/<obj_pk>/audios/<pk>/        — detail
+      PATCH  /api/objects/<obj_pk>/audios/<pk>/        — edit metadata (title/narrator/language)
+      DELETE /api/objects/<obj_pk>/audios/<pk>/        — author or admin
+      POST   /api/objects/<obj_pk>/audios/<pk>/play/   — increment plays_count
+      POST   /api/objects/<obj_pk>/audios/<pk>/approve/ — admin only
+      POST   /api/objects/<obj_pk>/audios/<pk>/reject/ — admin only (with note)
+    """
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_permissions(self):
+        if self.action in ('list', 'retrieve', 'play'):
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def _get_object(self, obj_pk):
+        return get_object_or_404(CulturalObject, pk=obj_pk)
+
+    def _get_audio(self, obj_pk, pk):
+        return get_object_or_404(ObjectAudio, pk=pk, cultural_object_id=obj_pk)
+
+    def list(self, request, obj_pk=None):
+        cultural_object = self._get_object(obj_pk)
+        user = request.user
+        qs = ObjectAudio.objects.filter(cultural_object=cultural_object).select_related('uploaded_by')
+        language = request.query_params.get('language')
+        if language:
+            qs = qs.filter(language=language)
+        if user.is_authenticated and user.is_staff:
+            pass  # show everything
+        elif user.is_authenticated:
+            qs = qs.filter(Q(status=ObjectAudio.Status.APPROVED) | Q(uploaded_by=user))
+        else:
+            qs = qs.filter(status=ObjectAudio.Status.APPROVED)
+        return Response(ObjectAudioSerializer(qs, many=True).data)
+
+    def retrieve(self, request, obj_pk=None, pk=None):
+        audio = self._get_audio(obj_pk, pk)
+        user = request.user
+        if audio.status != ObjectAudio.Status.APPROVED:
+            if not user.is_authenticated or (audio.uploaded_by_id != user.id and not user.is_staff):
+                return Response({'detail': _('Не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+        return Response(ObjectAudioSerializer(audio).data)
+
+    def create(self, request, obj_pk=None):
+        cultural_object = self._get_object(obj_pk)
+        if cultural_object.audios.count() >= MAX_AUDIOS_PER_OBJECT:
+            return Response(
+                {'detail': _("Об'єкт може мати максимум 10 аудіо-наративів.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = AudioUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        uploaded = cloudinary_audio_service.upload_audio(
+            serializer.validated_data['audio'],
+            object_id=cultural_object.id,
+            uploader_id=request.user.id,
+        )
+        audio = ObjectAudio.objects.create(
+            cultural_object=cultural_object,
+            uploaded_by=request.user,
+            cloudinary_public_id=uploaded['public_id'],
+            cloudinary_url=uploaded['url'],
+            duration_seconds=uploaded['duration_seconds'],
+            language=serializer.validated_data['language'],
+            title=serializer.validated_data['title'],
+            narrator_name=serializer.validated_data.get('narrator_name', ''),
+            copyright_confirmed=True,
+        )
+        return Response(ObjectAudioSerializer(audio).data, status=status.HTTP_201_CREATED)
+
+    def partial_update(self, request, obj_pk=None, pk=None):
+        audio = self._get_audio(obj_pk, pk)
+        if audio.uploaded_by_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору або адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        # User cannot edit moderation fields; restrict to safe set.
+        editable = {'title', 'narrator_name', 'language'}
+        update_kwargs = {k: v for k, v in request.data.items() if k in editable}
+        if not update_kwargs:
+            return Response(ObjectAudioSerializer(audio).data)
+        for k, v in update_kwargs.items():
+            setattr(audio, k, v)
+        # Edits by non-admins push back to pending (re-moderation) — both from approved and rejected.
+        if not request.user.is_staff and audio.status in (ObjectAudio.Status.APPROVED, ObjectAudio.Status.REJECTED):
+            audio.status = ObjectAudio.Status.PENDING
+            audio.moderated_at = None
+            audio.moderation_note = ''
+        audio.save()
+        return Response(ObjectAudioSerializer(audio).data)
+
+    def destroy(self, request, obj_pk=None, pk=None):
+        audio = self._get_audio(obj_pk, pk)
+        if audio.uploaded_by_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору або адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        audio.delete()  # pre_delete-signal cleans up Cloudinary
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
+    def play(self, request, obj_pk=None, pk=None):
+        audio = self._get_audio(obj_pk, pk)
+        if audio.status != ObjectAudio.Status.APPROVED:
+            return Response({'detail': _('Цей аудіонарратив недоступний.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        # Don't inflate the counter with self-plays — the uploader's own listens don't count.
+        if request.user.is_authenticated and request.user.id == audio.uploaded_by_id:
+            return Response({'detail': 'self-play not counted'})
+        ObjectAudio.objects.filter(pk=audio.pk).update(plays_count=F('plays_count') + 1)
+        return Response({'detail': 'ok'})
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def approve(self, request, obj_pk=None, pk=None):
+        if not request.user.is_staff:
+            return Response({'detail': _('Тільки адміністратор.')}, status=status.HTTP_403_FORBIDDEN)
+        audio = self._get_audio(obj_pk, pk)
+        audio.status = ObjectAudio.Status.APPROVED
+        audio.moderation_note = ''
+        from django.utils import timezone
+        audio.moderated_at = timezone.now()
+        audio.save(update_fields=['status', 'moderation_note', 'moderated_at'])
+        return Response(ObjectAudioSerializer(audio).data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def reject(self, request, obj_pk=None, pk=None):
+        if not request.user.is_staff:
+            return Response({'detail': _('Тільки адміністратор.')}, status=status.HTTP_403_FORBIDDEN)
+        audio = self._get_audio(obj_pk, pk)
+        audio.status = ObjectAudio.Status.REJECTED
+        audio.moderation_note = str(request.data.get('note', ''))[:500]
+        from django.utils import timezone
+        audio.moderated_at = timezone.now()
+        audio.save(update_fields=['status', 'moderation_note', 'moderated_at'])
+        return Response(ObjectAudioSerializer(audio).data)

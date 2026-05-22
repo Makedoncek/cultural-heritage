@@ -30,6 +30,7 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(','
 # Application definition
 
 INSTALLED_APPS = [
+    'objects',  # must precede django.contrib.admin so our admin template overrides win
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -43,7 +44,6 @@ INSTALLED_APPS = [
     'django_filters',
     'drf_spectacular',
     'adminsortable2',
-    'objects',
 ]
 
 MIDDLEWARE = [

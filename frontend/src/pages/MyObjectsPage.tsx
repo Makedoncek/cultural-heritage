@@ -24,10 +24,37 @@ export default function MyObjectsPage() {
         setDeletingId(id);
         try {
             await objectsService.delete(id);
-            setObjects(prev => prev.filter(obj => obj.id !== id));
+            setObjects(prev => prev.map(obj => obj.id === id ? {...obj, status: 'archived'} : obj));
             toast.success(t('object.archived'));
         } catch {
             setError(t('object.deleteError'));
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    const handleRestore = async (id: number) => {
+        setDeletingId(id);
+        try {
+            await objectsService.restore(id);
+            setObjects(prev => prev.map(obj => obj.id === id ? {...obj, status: 'pending'} : obj));
+            toast.success('Об\'єкт відновлено');
+        } catch {
+            toast.error('Не вдалося відновити');
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    const handleHardDelete = async (id: number) => {
+        if (!confirm('Видалити назавжди? Цю дію не можна скасувати.')) return;
+        setDeletingId(id);
+        try {
+            await objectsService.hardDelete(id);
+            setObjects(prev => prev.filter(obj => obj.id !== id));
+            toast.success('Видалено назавжди');
+        } catch {
+            toast.error('Не вдалося видалити');
         } finally {
             setDeletingId(null);
         }
@@ -62,13 +89,36 @@ export default function MyObjectsPage() {
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-2">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">{t('myObjects.title')}</h1>
                     <Link
                         to="/objects/add"
                         className="px-4 py-2 bg-amber-600 dark:bg-amber-500 hover:bg-amber-700 dark:hover:bg-amber-400 text-white dark:text-stone-900 text-sm rounded-lg"
                     >
                         {t('myObjects.addNew')}
+                    </Link>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-6">
+                    <Link
+                        to="/passport"
+                        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-amber-300 dark:border-stone-600 bg-amber-50 dark:bg-stone-800 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-stone-700 hover:border-amber-400 dark:hover:border-amber-500 transition-colors"
+                    >
+                        <span className="text-base">🎒</span>
+                        Культурний паспорт
+                    </Link>
+                    <Link
+                        to="/reports?tab=mine"
+                        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-amber-300 dark:border-stone-600 bg-amber-50 dark:bg-stone-800 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-stone-700 hover:border-amber-400 dark:hover:border-amber-500 transition-colors"
+                    >
+                        <span className="text-base">⚠</span>
+                        Мої репорти
+                    </Link>
+                    <Link
+                        to="/reports?tab=on-mine"
+                        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-amber-300 dark:border-stone-600 bg-amber-50 dark:bg-stone-800 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-stone-700 hover:border-amber-400 dark:hover:border-amber-500 transition-colors"
+                    >
+                        <span className="text-base">📨</span>
+                        Репорти на мої об'єкти
                     </Link>
                 </div>
 
@@ -91,7 +141,12 @@ export default function MyObjectsPage() {
                             >
                                 <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-gray-900 dark:text-stone-100 font-medium">{obj.title}</span>
+                                        <Link
+                                            to={`/objects/${obj.id}`}
+                                            className="text-gray-900 dark:text-stone-100 font-medium hover:text-amber-700 dark:hover:text-amber-300"
+                                        >
+                                            {obj.title}
+                                        </Link>
                                         <span className={`px-2.5 py-0.5 text-xs font-medium rounded ${STATUS_COLORS[obj.status]}`}>
                                             {t(`object.moderationStatus.${obj.status}`)}
                                         </span>
@@ -104,25 +159,46 @@ export default function MyObjectsPage() {
                                     </div>
                                 </div>
                                 <div className="flex gap-2 flex-wrap shrink-0">
-                                    <Link
-                                        to={`/objects/${obj.id}`}
-                                        className="px-3 py-1.5 text-sm bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg"
-                                    >
-                                        {t('myObjects.view')}
-                                    </Link>
-                                    <Link
-                                        to={`/objects/${obj.id}/edit`}
-                                        className="px-3 py-1.5 text-sm border border-gray-300 dark:border-stone-600 text-gray-700 dark:text-stone-200 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-800"
-                                    >
-                                        {t('object.edit')}
-                                    </Link>
-                                    <button
-                                        onClick={() => handleDelete(obj.id)}
-                                        disabled={deletingId === obj.id}
-                                        className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 cursor-pointer disabled:opacity-50"
-                                    >
-                                        {deletingId === obj.id ? t('object.deleting') : t('object.delete')}
-                                    </button>
+                                    {obj.status === 'archived' ? (
+                                        <>
+                                            <button
+                                                onClick={() => handleRestore(obj.id)}
+                                                disabled={deletingId === obj.id}
+                                                className="px-3 py-1.5 text-sm bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg cursor-pointer disabled:opacity-50"
+                                            >
+                                                ↩ Відновити
+                                            </button>
+                                            <button
+                                                onClick={() => handleHardDelete(obj.id)}
+                                                disabled={deletingId === obj.id}
+                                                className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg cursor-pointer disabled:opacity-50"
+                                            >
+                                                🗑 Видалити назавжди
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Link
+                                                to={`/objects/${obj.id}`}
+                                                className="px-3 py-1.5 text-sm bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg"
+                                            >
+                                                {t('myObjects.view')}
+                                            </Link>
+                                            <Link
+                                                to={`/objects/${obj.id}/edit`}
+                                                className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white rounded-lg"
+                                            >
+                                                {t('object.edit')}
+                                            </Link>
+                                            <button
+                                                onClick={() => handleDelete(obj.id)}
+                                                disabled={deletingId === obj.id}
+                                                className="px-3 py-1.5 text-sm bg-stone-200 hover:bg-stone-300 dark:bg-stone-700 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 rounded-lg cursor-pointer disabled:opacity-50"
+                                            >
+                                                {deletingId === obj.id ? t('object.deleting') : `📦 ${t('object.delete')}`}
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         ))}
