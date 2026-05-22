@@ -85,7 +85,7 @@ export default function CulturalPassportPage() {
                 </p>
 
                 {/* Counters */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
                     <div className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg p-4">
                         <p className="text-xs text-gray-500 dark:text-stone-400 uppercase tracking-wide">📊 Відвідано</p>
                         <p className="text-3xl font-bold text-amber-700 dark:text-amber-400 mt-1">
@@ -99,6 +99,12 @@ export default function CulturalPassportPage() {
                         <p className="text-xs text-gray-500 dark:text-stone-400 uppercase tracking-wide">📌 У планах</p>
                         <p className="text-3xl font-bold text-blue-700 dark:text-blue-400 mt-1">
                             {planned.length}
+                        </p>
+                    </div>
+                    <div className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg p-4">
+                        <p className="text-xs text-gray-500 dark:text-stone-400 uppercase tracking-wide">🏆 Маршрутів пройдено</p>
+                        <p className="text-3xl font-bold text-green-700 dark:text-green-400 mt-1">
+                            {stats?.completed_routes ?? 0}
                         </p>
                     </div>
                 </div>

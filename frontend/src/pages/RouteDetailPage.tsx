@@ -53,6 +53,26 @@ export default function RouteDetailPage() {
     const totalCount = route?.stops.length ?? 0;
     const progressPct = totalCount > 0 ? Math.round((visitedCount / totalCount) * 100) : 0;
 
+    const allVisited = totalCount > 0 && visitedCount === totalCount;
+
+    const handleMarkRouteCompleted = async () => {
+        if (!route) return;
+        if (!confirm(t('routes.detail.markRouteCompletedConfirm'))) return;
+        setActionLoading(true);
+        try {
+            await routesService.markCompleted(route.id);
+            setRoute(prev => prev ? {
+                ...prev,
+                stops: prev.stops.map(s => ({...s, is_visited: true})),
+            } : prev);
+            toast.success(t('routes.toast.routeCompleted'));
+        } catch {
+            toast.error(t('routes.toast.routeCompletedFailed'));
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     const handleToggleVisit = async (stopId: number, objectId: number) => {
         setTogglingStopId(stopId);
         try {
@@ -297,7 +317,9 @@ export default function RouteDetailPage() {
                     <div className="mb-4">
                         <div className="flex justify-between items-baseline mb-1">
                             <span className="text-sm font-medium text-gray-700 dark:text-stone-200">
-                                {t('routes.detail.progress', {visited: visitedCount, total: totalCount})}
+                                {allVisited
+                                    ? `🏆 ${t('routes.detail.routeCompleted')}`
+                                    : t('routes.detail.progress', {visited: visitedCount, total: totalCount})}
                             </span>
                             <span className="text-sm text-gray-500 dark:text-stone-400">{progressPct}%</span>
                         </div>
@@ -307,6 +329,16 @@ export default function RouteDetailPage() {
                                 style={{width: `${progressPct}%`}}
                             />
                         </div>
+                        {!allVisited && (
+                            <button
+                                type="button"
+                                onClick={handleMarkRouteCompleted}
+                                disabled={actionLoading}
+                                className="mt-2 px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-400 text-white dark:text-stone-900 rounded-lg cursor-pointer disabled:opacity-50"
+                            >
+                                🏆 {t('routes.detail.markRouteCompleted')}
+                            </button>
+                        )}
                     </div>
                 )}
                 <div className="space-y-2">

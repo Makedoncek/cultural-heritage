@@ -341,7 +341,9 @@
       "copyFailed": "Failed to copy",
       "noteSaved": "Note saved",
       "noteSaveFailed": "Failed to save note",
-      "visitFailed": "Failed to update visit"
+      "visitFailed": "Failed to update visit",
+      "routeCompleted": "Route completed! All stops added to your passport",
+      "routeCompletedFailed": "Failed to mark route as completed"
     },
     "searchPlaceholder": "Search by title or description...",
     "anyDuration": "Any duration",
@@ -396,7 +398,10 @@
       "iWasHere": "🚶 I was here",
       "visited": "Visited",
       "markVisited": "Mark as visited",
-      "unvisit": "Remove visit mark"
+      "unvisit": "Remove visit mark",
+      "markRouteCompleted": "Mark route as completed",
+      "markRouteCompletedConfirm": "Mark all stops as visited? This will add them to your cultural passport.",
+      "routeCompleted": "Route completed!"
     }
   },
   "audio": {

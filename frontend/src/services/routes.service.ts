@@ -52,6 +52,11 @@ export const routesService = {
         await api.delete(`/routes/${id}/hard-delete/`);
     },
 
+    async markCompleted(id: number): Promise<{created_visits: number; total_stops: number}> {
+        const {data} = await api.post(`/routes/${id}/mark-completed/`);
+        return data;
+    },
+
     async submit(id: number): Promise<RouteDetail> {
         const {data} = await api.post<RouteDetail>(`/routes/${id}/submit/`);
         return data;

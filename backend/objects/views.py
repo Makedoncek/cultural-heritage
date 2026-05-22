@@ -1388,7 +1388,7 @@ def public_visits(request, username):
 @permission_classes([IsAuthenticated])
 def my_visits_stats(request):
     """Aggregated counts for the cultural passport dashboard."""
-    from .models import Visit, Tag
+    from .models import Visit, Tag, Route, RouteStop
     from django.db.models import Count
     base = Visit.objects.filter(user=request.user)
     total = base.count()
@@ -1401,9 +1401,24 @@ def my_visits_stats(request):
         .values('id', 'name', 'icon', 'visited_count')
         .order_by('-visited_count')
     )
+    # Routes counted as completed when every stop's object has a Visit by the user.
+    completed_routes = (
+        Route.objects.filter(stops__isnull=False)
+        .annotate(
+            total_stops=Count('stops', distinct=True),
+            visited_stops=Count(
+                'stops',
+                filter=Q(stops__cultural_object__visits__user=request.user),
+                distinct=True,
+            ),
+        )
+        .filter(total_stops__gt=0, visited_stops=F('total_stops'))
+        .count()
+    )
     return Response({
         'total_visits': total,
         'total_approved_objects': total_objects,
+        'completed_routes': completed_routes,
         'by_tag': by_tag,
     })
 
@@ -1781,6 +1796,32 @@ class RouteViewSet(viewsets.ModelViewSet):
             stop.note = str(request.data['note'])[:500]
             stop.save(update_fields=['note'])
         return Response(RouteStopSerializer(stop).data)
+
+    @action(detail=True, methods=['post'], url_path='mark-completed', permission_classes=[IsAuthenticated])
+    def mark_completed(self, request, pk=None):
+        """Bulk-create Visits for every stop the user has not yet visited.
+
+        After this call, all stops belong to user.visits -> the route counts as 'completed'
+        when stats are computed (no separate RouteCompletion table — derived from Visit data).
+        """
+        from .models import Visit
+        from django.utils import timezone
+        route = self.get_object()
+        already_visited = set(
+            Visit.objects.filter(user=request.user, cultural_object__in=route.stops.values('cultural_object'))
+            .values_list('cultural_object_id', flat=True)
+        )
+        missing = [s.cultural_object_id for s in route.stops.all() if s.cultural_object_id not in already_visited]
+        created = 0
+        for object_id in missing:
+            Visit.objects.create(
+                user=request.user,
+                cultural_object_id=object_id,
+                visited_at=timezone.localdate(),
+                impression='',
+            )
+            created += 1
+        return Response({'created_visits': created, 'total_stops': route.stops.count()})
 
     @action(detail=True, methods=['get'], url_path='export')
     def export(self, request, pk=None):

@@ -27,6 +27,7 @@ export interface PlannedVisit {
 export interface VisitsStats {
     total_visits: number;
     total_approved_objects: number;
+    completed_routes: number;
     by_tag: {id: number; name: string; icon: string; visited_count: number}[];
 }
 
