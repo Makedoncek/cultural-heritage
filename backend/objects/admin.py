@@ -484,14 +484,57 @@ class RouteAdmin(SortableAdminBase, admin.ModelAdmin):
 
 @admin.register(ObjectAudio)
 class ObjectAudioAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title', 'cultural_object', 'language', 'narrator_name',
+    list_display = ['id', 'title', 'cultural_object', 'language', 'audio_player_short',
                     'duration_seconds', 'status', 'plays_count', 'uploaded_by', 'created_at']
     list_filter = ['status', 'language', 'created_at']
     search_fields = ['title', 'narrator_name', 'cultural_object__title', 'uploaded_by__username']
-    readonly_fields = ['cloudinary_public_id', 'cloudinary_url', 'duration_seconds',
-                       'plays_count', 'uploaded_by', 'created_at', 'updated_at', 'moderated_at']
+    readonly_fields = ['cloudinary_public_id', 'cloudinary_url', 'audio_player',
+                       'duration_seconds', 'plays_count', 'uploaded_by',
+                       'created_at', 'updated_at', 'moderated_at']
     raw_id_fields = ['cultural_object']
     actions = ['approve_audios', 'reject_audios']
+
+    fieldsets = (
+        ('Аудіо', {
+            'fields': ('audio_player', 'title', 'language', 'narrator_name',
+                       'duration_seconds', 'plays_count'),
+        }),
+        ('Модерація', {
+            'fields': ('status', 'moderation_note', 'moderated_at'),
+        }),
+        ('Об\'єкт і автор', {
+            'fields': ('cultural_object', 'uploaded_by', 'copyright_confirmed'),
+        }),
+        ('Cloudinary', {
+            'fields': ('cloudinary_public_id', 'cloudinary_url'),
+            'classes': ('collapse',),
+        }),
+        ('Дати', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
+
+    @admin.display(description='Послухати')
+    def audio_player(self, obj):
+        if not obj.cloudinary_url:
+            return '—'
+        return mark_safe(
+            f'<audio src="{obj.cloudinary_url}" controls preload="metadata" '
+            f'style="display:block;width:480px;max-width:100%;height:40px;margin-top:6px;"></audio>'
+            f'<a href="{obj.cloudinary_url}" target="_blank" '
+            f'style="display:inline-block;margin-top:8px;font-size:15px;font-weight:500;">'
+            f'⬇ Завантажити файл</a>'
+        )
+
+    @admin.display(description='Запис')
+    def audio_player_short(self, obj):
+        if not obj.cloudinary_url:
+            return '—'
+        return mark_safe(
+            f'<audio controls preload="none" style="height:32px;width:200px;">'
+            f'<source src="{obj.cloudinary_url}" /></audio>'
+        )
 
     @admin.action(description='Затвердити обрані аудіо')
     def approve_audios(self, request, queryset):

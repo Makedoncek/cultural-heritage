@@ -239,14 +239,6 @@ export default function ObjectDetailPage() {
                     </div>
                 )}
 
-                {object.status === 'approved' && (
-                    <AudioGuidesSection
-                        objectId={object.id}
-                        objectTitle={object.title}
-                        coverUrl={object.photos?.[0]?.image_url ?? null}
-                    />
-                )}
-
                 {canContribute && (
                     <div className="my-6 p-4 border border-blue-200 dark:border-blue-800 rounded bg-blue-50 dark:bg-blue-950/40">
                         <h3 className="font-semibold mb-2 text-gray-900 dark:text-stone-100">{t('photo.addContribute')}</h3>
@@ -302,9 +294,27 @@ export default function ObjectDetailPage() {
                 )}
 
                 {object.description && (
-                    <div className="mb-6">
-                        <p className="text-gray-700 dark:text-stone-200 whitespace-pre-line leading-relaxed">{object.description}</p>
-                    </div>
+                    <section className="my-6 bg-white dark:bg-stone-900 border border-gray-200 dark:border-stone-700 rounded-xl overflow-hidden shadow-sm">
+                        <header className="flex items-center gap-2 px-5 py-2.5 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800/50">
+                            <span className="text-amber-700 dark:text-amber-400">📖</span>
+                            <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300 uppercase tracking-wide">
+                                {t('object.about')}
+                            </h3>
+                        </header>
+                        <div className="px-5 py-4">
+                            <p className="text-[15px] text-gray-800 dark:text-stone-100 whitespace-pre-line leading-relaxed">
+                                {object.description}
+                            </p>
+                        </div>
+                    </section>
+                )}
+
+                {object.status === 'approved' && (
+                    <AudioGuidesSection
+                        objectId={object.id}
+                        objectTitle={object.title}
+                        coverUrl={object.photos?.[0]?.image_url ?? null}
+                    />
                 )}
 
                 {typeof object.visits_count === 'number' && object.visits_count > 0 && (

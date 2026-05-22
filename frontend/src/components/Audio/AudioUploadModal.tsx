@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import {audioService} from '../../services/audio.service';
@@ -14,6 +14,10 @@ interface Props {
 const LANGUAGE_VALUES: AudioLanguage[] = ['uk', 'en', 'pl', 'de'];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_MIMES = new Set([
+    'audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/webm',
+    'audio/ogg', 'audio/wav', 'audio/x-m4a', 'audio/x-wav',
+]);
 
 export default function AudioUploadModal({objectId, onClose, onUploaded}: Props) {
     const {t} = useTranslation();
@@ -24,12 +28,32 @@ export default function AudioUploadModal({objectId, onClose, onUploaded}: Props)
     const [narrator, setNarrator] = useState('');
     const [copyrightOk, setCopyrightOk] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!file) {
+            setPreviewUrl(null);
+            return;
+        }
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+        return () => URL.revokeObjectURL(url);
+    }, [file]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const f = e.target.files?.[0];
         if (!f) return;
         if (f.size > MAX_FILE_SIZE) {
             toast.error(t('audio.modal.fileTooBig'));
+            e.target.value = '';
+            setFile(null);
+            return;
+        }
+        // Browser may report '' for unknown types — reject anything not whitelisted.
+        if (!f.type || !ALLOWED_MIMES.has(f.type)) {
+            toast.error(t('audio.modal.unsupportedFormat', {type: f.type || '—'}));
+            e.target.value = '';
+            setFile(null);
             return;
         }
         setFile(f);
@@ -65,7 +89,7 @@ export default function AudioUploadModal({objectId, onClose, onUploaded}: Props)
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
             <div
                 onClick={(e) => e.stopPropagation()}
                 className="bg-white dark:bg-stone-900 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-stone-700"
@@ -101,7 +125,7 @@ export default function AudioUploadModal({objectId, onClose, onUploaded}: Props)
                                 type="file"
                                 accept="audio/*"
                                 onChange={handleFileChange}
-                                className="w-full text-sm text-gray-700 dark:text-stone-200"
+                                className="block w-full text-sm text-gray-700 dark:text-stone-200 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-amber-600 file:text-white dark:file:bg-amber-500 dark:file:text-stone-900 hover:file:bg-amber-700 dark:hover:file:bg-amber-400 file:cursor-pointer cursor-pointer"
                             />
                             {file && <p className="text-xs text-gray-500 dark:text-stone-400 mt-1">{t('audio.modal.fileSize', {name: file.name, kb: Math.round(file.size / 1024)})}</p>}
                         </div>
@@ -113,6 +137,18 @@ export default function AudioUploadModal({objectId, onClose, onUploaded}: Props)
                                     {t('audio.modal.recordingFile', {kb: Math.round(file.size / 1024)})}
                                 </p>
                             )}
+                        </div>
+                    )}
+
+                    {previewUrl && (
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-stone-400 mb-1">{t('audio.modal.preview')}</p>
+                            <audio
+                                src={previewUrl}
+                                controls
+                                preload="metadata"
+                                className="w-full"
+                            />
                         </div>
                     )}
 

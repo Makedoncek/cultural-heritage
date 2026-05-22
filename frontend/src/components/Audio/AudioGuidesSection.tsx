@@ -5,6 +5,7 @@ import {audioService} from '../../services/audio.service';
 import type {AudioLanguage, ObjectAudio} from '../../types/audio';
 import AudioPlayer from './AudioPlayer';
 import AudioUploadModal from './AudioUploadModal';
+import AudioEditModal from './AudioEditModal';
 import {useAuth} from '../../context/AuthContext';
 
 interface Props {
@@ -13,6 +14,20 @@ interface Props {
     coverUrl?: string | null;
 }
 
+const LANG_TO_ISO: Record<AudioLanguage, string> = {
+    uk: 'ua',
+    en: 'gb',
+    pl: 'pl',
+    de: 'de',
+};
+
+const LANG_LABEL: Record<AudioLanguage, string> = {
+    uk: 'UA',
+    en: 'EN',
+    pl: 'PL',
+    de: 'DE',
+};
+
 export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Props) {
     const {t} = useTranslation();
     const {isAuthenticated, user} = useAuth();
@@ -20,6 +35,7 @@ export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Pr
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<AudioLanguage | 'all'>('all');
     const [showUpload, setShowUpload] = useState(false);
+    const [editingAudio, setEditingAudio] = useState<ObjectAudio | null>(null);
 
     useEffect(() => {
         setLoading(true);
@@ -66,19 +82,32 @@ export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Pr
             </div>
 
             {audios.length > 1 && availableLanguages.length > 1 && (
-                <div className="flex gap-1.5 mb-3 flex-wrap">
+                <div className="flex gap-2 mb-3 flex-wrap">
                     {(['all', ...availableLanguages] as const).map(l => (
                         <button
                             key={l}
                             type="button"
                             onClick={() => setFilter(l as AudioLanguage | 'all')}
-                            className={`px-2.5 py-1 text-xs rounded-full border cursor-pointer ${
+                            className={`inline-flex items-center gap-2 px-3.5 py-1.5 text-sm font-medium rounded-full border cursor-pointer transition-colors ${
                                 filter === l
                                     ? 'bg-amber-100 dark:bg-amber-900/40 border-amber-400 dark:border-amber-600 text-amber-800 dark:text-amber-300'
                                     : 'border-gray-200 dark:border-stone-700 text-gray-600 dark:text-stone-300 hover:border-gray-400'
                             }`}
                         >
-                            {l === 'all' ? t('audio.filterAll') : t(`audio.langShort.${l}`)}
+                            {l === 'all' ? (
+                                t('audio.filterAll')
+                            ) : (
+                                <>
+                                    <img
+                                        src={`https://flagcdn.com/20x15/${LANG_TO_ISO[l as AudioLanguage]}.png`}
+                                        alt=""
+                                        width={20}
+                                        height={15}
+                                        className="rounded-[2px]"
+                                    />
+                                    {LANG_LABEL[l as AudioLanguage]}
+                                </>
+                            )}
                         </button>
                     ))}
                 </div>
@@ -99,7 +128,7 @@ export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Pr
                                 {a.status !== 'approved' && (
                                     <div className="mb-1">
                                         <span className={`px-2 py-0.5 text-xs rounded ${a.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'}`}>
-                                            {a.status_label}
+                                            {t(`audio.status.${a.status}`)}
                                         </span>
                                         {a.moderation_note && (
                                             <span className="ml-2 text-xs text-gray-500 dark:text-stone-400">
@@ -109,18 +138,29 @@ export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Pr
                                     </div>
                                 )}
                                 <AudioPlayer audio={a} objectTitle={objectTitle} coverUrl={coverUrl}/>
-                                <p className="text-[10px] text-gray-400 dark:text-stone-500 mt-1">
-                                    @{a.uploaded_by.username} · {a.language_label}
+                                <div className="flex items-center justify-between gap-3 mt-2 flex-wrap">
+                                    <p className="text-xs text-gray-500 dark:text-stone-400">
+                                        @{a.uploaded_by.username} · {a.language_label}
+                                    </p>
                                     {canDelete && (
-                                        <button
-                                            type="button"
-                                            onClick={() => handleDelete(a)}
-                                            className="ml-2 text-red-500 hover:underline cursor-pointer"
-                                        >
-                                            {t('audio.deleteLink')}
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditingAudio(a)}
+                                                className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white rounded-lg cursor-pointer"
+                                            >
+                                                ✏️ {t('audio.editLink')}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDelete(a)}
+                                                className="px-3 py-1.5 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg cursor-pointer"
+                                            >
+                                                🗑 {t('audio.deleteLink')}
+                                            </button>
+                                        </div>
                                     )}
-                                </p>
+                                </div>
                             </div>
                         );
                     })}
@@ -132,6 +172,17 @@ export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Pr
                     objectId={objectId}
                     onClose={() => setShowUpload(false)}
                     onUploaded={handleUploaded}
+                />
+            )}
+
+            {editingAudio && (
+                <AudioEditModal
+                    audio={editingAudio}
+                    onClose={() => setEditingAudio(null)}
+                    onSaved={(updated) => {
+                        setAudios(prev => prev.map(a => a.id === updated.id ? updated : a));
+                        setEditingAudio(null);
+                    }}
                 />
             )}
         </div>

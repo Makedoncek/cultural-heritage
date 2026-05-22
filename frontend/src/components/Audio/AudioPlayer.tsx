@@ -1,4 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
+import {useTranslation} from 'react-i18next';
 import {audioService} from '../../services/audio.service';
 import type {ObjectAudio} from '../../types/audio';
 
@@ -15,6 +16,7 @@ function fmt(s: number): string {
 }
 
 export default function AudioPlayer({audio, objectTitle, coverUrl}: Props) {
+    const {t} = useTranslation();
     const audioRef = useRef<HTMLAudioElement>(null);
     const [playing, setPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -101,8 +103,8 @@ export default function AudioPlayer({audio, objectTitle, coverUrl}: Props) {
                     onChange={onSeek}
                     className="w-full mt-1 accent-amber-500 cursor-pointer"
                 />
-                <p className="text-[10px] text-gray-400 dark:text-stone-500">
-                    ▶ {audio.plays_count}
+                <p className="text-sm text-gray-500 dark:text-stone-400 mt-1">
+                    {t('audio.playsLabel')}: {audio.plays_count}
                 </p>
             </div>
         </div>

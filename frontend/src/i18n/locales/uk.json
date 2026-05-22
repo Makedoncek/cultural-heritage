@@ -5,6 +5,7 @@
     "routes": "Маршрути",
     "myObjects": "Мої об'єкти",
     "myPhotos": "Мої фото",
+    "myContributions": "Мої внески",
     "favorites": "Обране",
     "subscriptions": "Підписки",
     "addObject": "Додати об'єкт",
@@ -109,6 +110,16 @@
       "active": "Активна",
       "upcoming": "Майбутня",
       "finished": "Подія завершена"
+    },
+    "about": "Про об'єкт",
+    "contributionsTitle": "Мої внески",
+    "duplicateWarning": {
+      "title": "Поряд уже є об'єкти",
+      "subtitle": "У радіусі 100 м знайдено інші об'єкти. Перевірте, чи це не дублікат:",
+      "distance": "{{meters}} м",
+      "veryClose": "поряд",
+      "cancel": "Скасувати",
+      "proceed": "Все одно створити"
     },
     "addToRoute": "Додати у маршрут",
     "pickRoute": "Оберіть маршрут",
@@ -404,6 +415,14 @@
       "routeCompleted": "Маршрут пройдено!"
     }
   },
+  "contributions": {
+    "title": "Мої внески",
+    "subtitle": "Фото та аудіо-наративи, які ви додали до культурних об'єктів спільноти.",
+    "tabPhotos": "Фото",
+    "tabAudios": "Аудіо",
+    "audiosEmpty": "Ви ще не додавали аудіо-наративів. Знайдіть об'єкт на карті і додайте свій голосовий гайд.",
+    "myAudiosCount": "Аудіо:"
+  },
   "audio": {
     "sectionTitle": "Аудіо-наративи",
     "addBtn": "+ Додати",
@@ -411,17 +430,35 @@
     "emptyForLang": "Немає аудіо цією мовою.",
     "loading": "Завантаження...",
     "filterAll": "Усі",
-    "deleteLink": "видалити",
+    "editLink": "Редагувати",
+    "deleteLink": "Видалити",
     "deleteConfirm": "Видалити це аудіо?",
     "deleteSuccess": "Видалено",
     "deleteError": "Не вдалося видалити",
     "loadError": "Не вдалося завантажити аудіо",
+    "playsLabel": "Кількість прослуховувань",
+    "contributionsAudiosCount": "Аудіо:",
+    "status": {
+      "pending": "На модерації",
+      "approved": "Опубліковано",
+      "rejected": "Відхилено"
+    },
+    "edit": {
+      "title": "Редагувати аудіо",
+      "warningRePending": "Після збереження аудіо буде відправлено на повторну модерацію.",
+      "saveBtn": "Зберегти",
+      "saving": "Збереження...",
+      "savedRePending": "Збережено. Аудіо повернуто на модерацію.",
+      "saveError": "Не вдалося зберегти"
+    },
     "modal": {
       "title": "Додати аудіо-нарратив",
       "tabUpload": "📁 Завантажити",
       "tabRecord": "🎙 Записати",
       "fileLabel": "Файл (mp3, m4a, webm, ogg, wav, до 10 МБ)",
+      "preview": "Прослухати перед відправкою:",
       "fileTooBig": "Файл більший за 10 МБ",
+      "unsupportedFormat": "Непідтримуваний формат: {{type}}",
       "recordingDone": "Запис завершено",
       "recordingFile": "✓ Запис: {{kb}} КБ",
       "fileSize": "{{name}} ({{kb}} КБ)",
@@ -442,7 +479,7 @@
     "recorder": {
       "start": "🎙 Почати запис",
       "stop": "⏹ Зупинити",
-      "errPermission": "Доступ до мікрофона заборонено",
+      "errPermission": "Доступ до мікрофона заборонено — будь ласка, надайте доступ для запису у налаштуваннях браузера",
       "errNoMic": "Мікрофон не знайдено",
       "errGeneric": "Не вдалося розпочати запис"
     },

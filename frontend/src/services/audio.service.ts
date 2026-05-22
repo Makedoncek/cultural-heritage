@@ -1,5 +1,5 @@
 import api from './api';
-import type {AudioLanguage, AudioUploadPayload, ObjectAudio} from '../types/audio';
+import type {AudioLanguage, AudioUploadPayload, ObjectAudio, ObjectWithMyAudios} from '../types/audio';
 
 export const audioService = {
     async list(objectId: number, language?: AudioLanguage): Promise<ObjectAudio[]> {
@@ -34,5 +34,10 @@ export const audioService = {
 
     async incrementPlayCount(objectId: number, audioId: number): Promise<void> {
         await api.post(`/objects/${objectId}/audios/${audioId}/play/`);
+    },
+
+    async listMine(): Promise<ObjectWithMyAudios[]> {
+        const {data} = await api.get<ObjectWithMyAudios[]>('/objects/with-my-audios/');
+        return data;
     },
 };

@@ -39,7 +39,7 @@ export default function Header() {
                                     <NavLink to="/popular" className={linkClass}>{t('nav.popular')}</NavLink>
                                     <NavLink to="/routes" className={linkClass}>🗺 Маршрути</NavLink>
                                     <NavLink to="/my-objects" className={linkClass}>{t('nav.myObjects')}</NavLink>
-                                    <NavLink to="/my-photos" className={linkClass}>{t('nav.myPhotos')}</NavLink>
+                                    <NavLink to="/my-contributions" className={linkClass}>{t('nav.myContributions')}</NavLink>
                                     <NavLink to="/favorites" className={linkClass}>{t('nav.favorites')}</NavLink>
                                     <NavLink to="/favorite-authors" className={linkClass}>{t('nav.subscriptions')}</NavLink>
                                     <NavLink to="/objects/add" className={linkClass}>{t('nav.addObject')}</NavLink>
@@ -110,8 +110,8 @@ export default function Header() {
                                      onClick={() => setMenuOpen(false)}>🗺 {t('nav.routes')}</NavLink>
                             <NavLink to="/my-objects" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>{t('nav.myObjects')}</NavLink>
-                            <NavLink to="/my-photos" className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>{t('nav.myPhotos')}</NavLink>
+                            <NavLink to="/my-contributions" className={linkClass}
+                                     onClick={() => setMenuOpen(false)}>{t('nav.myContributions')}</NavLink>
                             <NavLink to="/favorites" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>{t('nav.favorites')}</NavLink>
                             <NavLink to="/favorite-authors" className={linkClass}

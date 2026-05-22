@@ -661,6 +661,40 @@ class ObjectViewSet(viewsets.ModelViewSet):
             ),
         ],
     )
+    @action(detail=False, methods=['post'], url_path='check-duplicates', permission_classes=[AllowAny])
+    def check_duplicates(self, request):
+        """Returns approved objects within 100 m of the given coordinates.
+
+        Used by the create-object form as a soft duplicate warning: client
+        shows the list, user decides whether to proceed or pick an existing one.
+        Read-only — does not create or modify anything.
+        """
+        from .services.geo import find_nearby_objects
+        try:
+            latitude = float(request.data.get('latitude'))
+            longitude = float(request.data.get('longitude'))
+        except (TypeError, ValueError):
+            return Response({'detail': _('latitude і longitude обовʼязкові')},
+                            status=status.HTTP_400_BAD_REQUEST)
+        exclude_id = request.data.get('exclude_id')
+        try:
+            exclude_id = int(exclude_id) if exclude_id is not None else None
+        except (TypeError, ValueError):
+            exclude_id = None
+        nearby = find_nearby_objects(latitude, longitude, radius_m=100.0, exclude_id=exclude_id)
+        return Response({
+            'nearby': [
+                {
+                    'id': obj.id,
+                    'title': obj.title,
+                    'latitude': str(obj.latitude),
+                    'longitude': str(obj.longitude),
+                    'distance_m': round(distance, 1),
+                }
+                for obj, distance in nearby[:5]
+            ],
+        })
+
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my(self, request):
         objects = (CulturalObject.objects
@@ -704,6 +738,31 @@ class ObjectViewSet(viewsets.ModelViewSet):
 
         serializer = ObjectWithMyPhotosSerializer(objects, many=True, context={'request': request})
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='with-my-audios', permission_classes=[IsAuthenticated])
+    def with_my_audios(self, request):
+        """Objects (any author) where the current user has uploaded at least one audio narrative."""
+        object_ids = (ObjectAudio.objects
+                      .filter(uploaded_by=request.user)
+                      .values_list('cultural_object_id', flat=True)
+                      .distinct())
+        objects = (CulturalObject.objects
+                   .select_related('author')
+                   .prefetch_related('tags')
+                   .filter(id__in=object_ids)
+                   .exclude(status='archived')
+                   .order_by('-created_at'))
+        result = []
+        for obj in objects:
+            my_audios = list(obj.audios.filter(uploaded_by=request.user).order_by('-created_at'))
+            result.append({
+                'id': obj.id,
+                'title': obj.title,
+                'tags': [{'id': tg.id, 'name': tg.name, 'icon': tg.icon} for tg in obj.tags.all()],
+                'author_name': obj.author.username,
+                'my_audios': ObjectAudioSerializer(my_audios, many=True).data,
+            })
+        return Response(result)
 
     @extend_schema(
         tags=['Objects'],
@@ -1953,10 +2012,11 @@ class ObjectAudioViewSet(viewsets.ViewSet):
             return Response(ObjectAudioSerializer(audio).data)
         for k, v in update_kwargs.items():
             setattr(audio, k, v)
-        # Edits by non-admins push back to pending (re-moderation).
-        if not request.user.is_staff and audio.status == ObjectAudio.Status.APPROVED:
+        # Edits by non-admins push back to pending (re-moderation) — both from approved and rejected.
+        if not request.user.is_staff and audio.status in (ObjectAudio.Status.APPROVED, ObjectAudio.Status.REJECTED):
             audio.status = ObjectAudio.Status.PENDING
             audio.moderated_at = None
+            audio.moderation_note = ''
         audio.save()
         return Response(ObjectAudioSerializer(audio).data)
 
@@ -1974,6 +2034,9 @@ class ObjectAudioViewSet(viewsets.ViewSet):
         if audio.status != ObjectAudio.Status.APPROVED:
             return Response({'detail': _('Цей аудіонарратив недоступний.')},
                             status=status.HTTP_403_FORBIDDEN)
+        # Don't inflate the counter with self-plays — the uploader's own listens don't count.
+        if request.user.is_authenticated and request.user.id == audio.uploaded_by_id:
+            return Response({'detail': 'self-play not counted'})
         ObjectAudio.objects.filter(pk=audio.pk).update(plays_count=F('plays_count') + 1)
         return Response({'detail': 'ok'})
 

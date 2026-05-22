@@ -30,3 +30,11 @@ export interface AudioUploadPayload {
     narrator_name?: string;
     copyright_confirmed: boolean;
 }
+
+export interface ObjectWithMyAudios {
+    id: number;
+    title: string;
+    tags: {id: number; name: string; icon: string}[];
+    author_name: string;
+    my_audios: ObjectAudio[];
+}

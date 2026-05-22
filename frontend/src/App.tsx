@@ -8,7 +8,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ObjectDetailPage from './pages/ObjectDetailPage';
 import MyObjectsPage from './pages/MyObjectsPage';
-import MyPhotosPage from './pages/MyPhotosPage';
+import MyContributionsPage from './pages/MyContributionsPage';
 import AddObjectPage from './pages/AddObjectPage';
 import EditObjectPage from './pages/EditObjectPage';
 import FavoritesPage from './pages/FavoritesPage';
@@ -63,7 +63,8 @@ function App() {
                     <Route path="/objects/add" element={<AddObjectPage/>}/>
                     <Route path="/objects/:id/edit" element={<EditObjectPage/>}/>
                     <Route path="/my-objects" element={<MyObjectsPage/>}/>
-                    <Route path="/my-photos" element={<MyPhotosPage/>}/>
+                    <Route path="/my-contributions" element={<MyContributionsPage/>}/>
+                    <Route path="/my-photos" element={<MyContributionsPage/>}/>
                     <Route path="/my-reports" element={<MyReportsPage/>}/>
                     <Route path="/reports-on-my-objects" element={<ReportsOnMyObjectsPage/>}/>
                     <Route path="/passport" element={<CulturalPassportPage/>}/>

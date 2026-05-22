@@ -5,6 +5,7 @@
     "routes": "Routes",
     "myObjects": "My objects",
     "myPhotos": "My photos",
+    "myContributions": "My contributions",
     "favorites": "Favorites",
     "subscriptions": "Subscriptions",
     "addObject": "Add object",
@@ -109,6 +110,15 @@
       "active": "Active",
       "upcoming": "Upcoming",
       "finished": "Event ended"
+    },
+    "about": "About",
+    "duplicateWarning": {
+      "title": "There are objects nearby",
+      "subtitle": "Found other objects within 100 m. Make sure this isn't a duplicate:",
+      "distance": "{{meters}} m",
+      "veryClose": "very close",
+      "cancel": "Cancel",
+      "proceed": "Create anyway"
     },
     "addToRoute": "Add to route",
     "pickRoute": "Pick a route",
@@ -404,6 +414,14 @@
       "routeCompleted": "Route completed!"
     }
   },
+  "contributions": {
+    "title": "My contributions",
+    "subtitle": "Photos and audio narratives you've contributed to community cultural sites.",
+    "tabPhotos": "Photos",
+    "tabAudios": "Audio",
+    "audiosEmpty": "You haven't added any audio narratives yet. Find an object on the map and record your voice guide.",
+    "myAudiosCount": "Audio:"
+  },
   "audio": {
     "sectionTitle": "Audio narratives",
     "addBtn": "+ Add",
@@ -411,17 +429,34 @@
     "emptyForLang": "No audio in this language.",
     "loading": "Loading...",
     "filterAll": "All",
-    "deleteLink": "delete",
+    "editLink": "Edit",
+    "deleteLink": "Delete",
     "deleteConfirm": "Delete this audio?",
     "deleteSuccess": "Deleted",
     "deleteError": "Failed to delete",
     "loadError": "Failed to load audio",
+    "playsLabel": "Number of plays",
+    "status": {
+      "pending": "Under review",
+      "approved": "Published",
+      "rejected": "Rejected"
+    },
+    "edit": {
+      "title": "Edit audio",
+      "warningRePending": "After saving, the audio will be sent back to moderation.",
+      "saveBtn": "Save",
+      "saving": "Saving...",
+      "savedRePending": "Saved. Audio returned to moderation.",
+      "saveError": "Failed to save"
+    },
     "modal": {
       "title": "Add audio narrative",
       "tabUpload": "📁 Upload",
       "tabRecord": "🎙 Record",
       "fileLabel": "File (mp3, m4a, webm, ogg, wav, up to 10 MB)",
+      "preview": "Listen before uploading:",
       "fileTooBig": "File larger than 10 MB",
+      "unsupportedFormat": "Unsupported format: {{type}}",
       "recordingDone": "Recording finished",
       "recordingFile": "✓ Recording: {{kb}} KB",
       "fileSize": "{{name}} ({{kb}} KB)",
@@ -442,7 +477,7 @@
     "recorder": {
       "start": "🎙 Start recording",
       "stop": "⏹ Stop",
-      "errPermission": "Microphone access denied",
+      "errPermission": "Microphone access denied — please grant permission to record in your browser settings",
       "errNoMic": "Microphone not found",
       "errGeneric": "Failed to start recording"
     },
