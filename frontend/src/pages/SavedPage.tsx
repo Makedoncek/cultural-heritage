@@ -1,5 +1,5 @@
 import {useCallback, useState, type ReactNode} from 'react';
-import {useSearchParams, useLocation} from 'react-router';
+import {useSearchParams} from 'react-router';
 import {useTranslation} from 'react-i18next';
 import FavoriteObjectsTab from '../components/Saved/FavoriteObjectsTab';
 import FavoriteAuthorsTab from '../components/Saved/FavoriteAuthorsTab';
@@ -8,10 +8,8 @@ type Tab = 'objects' | 'authors';
 
 export default function SavedPage() {
     const {t} = useTranslation();
-    const location = useLocation();
     const [params, setParams] = useSearchParams();
-    // Legacy routes /favorites and /favorite-authors map to default tab; explicit ?tab= wins.
-    const initialTab: Tab = params.get('tab') === 'authors' || location.pathname === '/favorite-authors' ? 'authors' : 'objects';
+    const initialTab: Tab = params.get('tab') === 'authors' ? 'authors' : 'objects';
     const [tab, setTab] = useState<Tab>(initialTab);
     const [objCount, setObjCount] = useState<number | null>(null);
     const [authorCount, setAuthorCount] = useState<number | null>(null);

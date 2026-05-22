@@ -13,7 +13,7 @@ from .models import Tag
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Count, Exists, OuterRef, Subquery, F
+from django.db.models import Q, Count, Exists, OuterRef, Subquery, F, Max
 from .models import CulturalObject, Favorite, FavoriteAuthor
 from .serializers import ObjectListSerializer, ObjectDetailSerializer, ObjectWriteSerializer, UserProfileSerializer, ObjectWithMyPhotosSerializer
 
@@ -1803,7 +1803,9 @@ class RouteViewSet(viewsets.ModelViewSet):
                 {'detail': _('Цей об\'єкт уже доданий у маршрут.')},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        last_order = route.stops.count()
+        # Use max(order)+1 instead of count()+1 to avoid duplicate `order` when
+        # legacy data has gaps (e.g. an old delete that didn't recompact).
+        last_order = route.stops.aggregate(m=Max('order'))['m'] or 0
         stop = RouteStop.objects.create(
             route=route,
             cultural_object=cultural_object,
@@ -1849,6 +1851,12 @@ class RouteViewSet(viewsets.ModelViewSet):
             return Response({'detail': _('Зупинку не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
         if request.method == 'DELETE':
             stop.delete()
+            # Recompact: keep stop orders sequential 1..N (no gaps after delete).
+            remaining = list(RouteStop.objects.filter(route=route).order_by('order'))
+            for idx, s in enumerate(remaining, start=1):
+                if s.order != idx:
+                    s.order = idx
+            RouteStop.objects.bulk_update(remaining, ['order'])
             return Response(status=status.HTTP_204_NO_CONTENT)
         # PATCH
         if 'note' in request.data:

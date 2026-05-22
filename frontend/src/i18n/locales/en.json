@@ -421,6 +421,8 @@
       "stopUnavailable": "⚠ Object temporarily unavailable",
       "stopDetails": "Details →",
       "copiedFrom": "Created as a copy of route",
+      "fullscreen": "Expand map",
+      "exitFullscreen": "Exit",
       "progress": "✓ {{visited}} of {{total}} stops visited",
       "iWasHere": "🚶 I was here",
       "visited": "Visited",

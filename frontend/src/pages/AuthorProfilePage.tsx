@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useState, type ReactNode} from 'react';
-import {useParams, useSearchParams, useLocation} from 'react-router';
+import {useParams, useSearchParams} from 'react-router';
 import {useTranslation} from 'react-i18next';
 import {usersService} from '../services/users.service';
 import {useAuth} from '../context/AuthContext';
@@ -21,10 +21,8 @@ export default function AuthorProfilePage() {
     const [error, setError] = useState<string | null>(null);
     const [visitCount, setVisitCount] = useState<number | null>(null);
 
-    const location = useLocation();
     const [params, setParams] = useSearchParams();
-    // `/authors/<u>/passport` legacy route lands here too — default to visits tab in that case.
-    const initialTab: Tab = params.get('tab') === 'visits' || location.pathname.endsWith('/passport') ? 'visits' : 'objects';
+    const initialTab: Tab = params.get('tab') === 'visits' ? 'visits' : 'objects';
     const [tab, setTab] = useState<Tab>(initialTab);
 
     const isOwnProfile = user?.username === username;

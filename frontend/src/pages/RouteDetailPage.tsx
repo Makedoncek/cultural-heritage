@@ -48,6 +48,14 @@ export default function RouteDetailPage() {
     const isOwner = user && route && user.username === route.author_name;
     const canEdit = isOwner || user?.is_staff;
     const [togglingStopId, setTogglingStopId] = useState<number | null>(null);
+    const [mapFullscreen, setMapFullscreen] = useState(false);
+
+    useEffect(() => {
+        if (!mapFullscreen) return;
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMapFullscreen(false); };
+        document.addEventListener('keydown', onKey);
+        return () => document.removeEventListener('keydown', onKey);
+    }, [mapFullscreen]);
 
     const visitedCount = route?.stops.filter(s => s.is_visited).length ?? 0;
     const totalCount = route?.stops.length ?? 0;
@@ -271,7 +279,7 @@ export default function RouteDetailPage() {
 
                 {/* Map */}
                 {coords.length > 0 && (
-                    <div className="h-80 rounded-lg overflow-hidden border border-gray-200 dark:border-stone-700 mb-4">
+                    <div className="relative h-80 rounded-lg overflow-hidden border border-gray-200 dark:border-stone-700 mb-4">
                         <MapContainer center={coords[0]} zoom={10} scrollWheelZoom className="h-full w-full">
                             <ThemedTileLayer/>
                             <FitToStops coords={coords}/>
@@ -298,6 +306,62 @@ export default function RouteDetailPage() {
                                 </Marker>
                             ))}
                         </MapContainer>
+                        <button
+                            type="button"
+                            onClick={() => setMapFullscreen(true)}
+                            className="absolute top-2 right-2 z-[1000] bg-white dark:bg-stone-800 border border-gray-300 dark:border-stone-600 rounded-lg px-2.5 py-1.5 text-sm text-gray-700 dark:text-stone-200 hover:bg-gray-50 dark:hover:bg-stone-700 shadow-sm cursor-pointer"
+                            title={t('routes.detail.fullscreen')}
+                        >
+                            ⛶
+                        </button>
+                    </div>
+                )}
+
+                {/* Fullscreen overlay */}
+                {mapFullscreen && coords.length > 0 && (
+                    <div className="fixed inset-0 z-[9999] bg-white dark:bg-stone-950 flex flex-col">
+                        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-stone-700">
+                            <span className="text-sm text-gray-700 dark:text-stone-200 font-medium truncate">
+                                🗺 {route.title}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setMapFullscreen(false)}
+                                className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-stone-700 text-gray-700 dark:text-stone-200 rounded-lg hover:bg-gray-300 dark:hover:bg-stone-600 cursor-pointer"
+                            >
+                                ✕ {t('routes.detail.exitFullscreen')}
+                            </button>
+                        </div>
+                        <div className="flex-1">
+                            <MapContainer center={coords[0]} zoom={10} scrollWheelZoom className="h-full w-full">
+                                <ThemedTileLayer/>
+                                <FitToStops coords={coords}/>
+                                {coords.length >= 2 && (
+                                    <Polyline positions={coords} pathOptions={{color: '#d97706', weight: 4, opacity: 0.7}}/>
+                                )}
+                                {route.stops.map(s => (
+                                    <Marker
+                                        key={s.id}
+                                        position={[parseFloat(s.latitude), parseFloat(s.longitude)]}
+                                        icon={numberedIcon(s.order, s.is_unavailable ? '#6b7280' : '#d97706')}
+                                    >
+                                        <Popup>
+                                            <strong>{s.order}. {s.object_title}</strong>
+                                            {s.is_unavailable && (
+                                                <p style={{color: '#dc2626', fontSize: '12px', margin: '4px 0 0'}}>
+                                                    {t('routes.detail.stopUnavailable')}
+                                                </p>
+                                            )}
+                                            <p style={{margin: '4px 0 0'}}>
+                                                <Link to={`/objects/${s.object_id}`} onClick={() => setMapFullscreen(false)}>
+                                                    {t('routes.detail.stopDetails')}
+                                                </Link>
+                                            </p>
+                                        </Popup>
+                                    </Marker>
+                                ))}
+                            </MapContainer>
+                        </div>
                     </div>
                 )}
 

@@ -422,6 +422,8 @@
       "stopUnavailable": "⚠ Об'єкт тимчасово недоступний",
       "stopDetails": "Деталі →",
       "copiedFrom": "Створено як копія маршруту",
+      "fullscreen": "Розгорнути карту",
+      "exitFullscreen": "Вийти",
       "progress": "✓ {{visited}} з {{total}} зупинок відвідано",
       "iWasHere": "🚶 Я тут",
       "visited": "Відвідано",

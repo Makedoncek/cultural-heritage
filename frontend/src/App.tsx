@@ -52,25 +52,19 @@ function App() {
                 <Route path="/objects/:id" element={<ObjectDetailPage/>}/>
                 <Route path="/popular" element={<PopularPage/>}/>
                 <Route path="/authors/:username" element={<AuthorProfilePage/>}/>
-                <Route path="/authors/:username/passport" element={<AuthorProfilePage/>}/>
                 <Route path="/routes" element={<RoutesListPage/>}/>
                 <Route path="/routes/:id" element={<RouteDetailPage/>}/>
                 <Route element={<RequireAuth/>}>
                     <Route path="/saved" element={<SavedPage/>}/>
-                    <Route path="/favorite-authors" element={<SavedPage/>}/>
                     <Route path="/objects/add" element={<AddObjectPage/>}/>
                     <Route path="/objects/:id/edit" element={<EditObjectPage/>}/>
                     <Route path="/my-objects" element={<MyObjectsPage/>}/>
                     <Route path="/my-contributions" element={<MyContributionsPage/>}/>
-                    <Route path="/my-photos" element={<MyContributionsPage/>}/>
                     <Route path="/reports" element={<ReportsCenterPage/>}/>
-                    <Route path="/my-reports" element={<ReportsCenterPage/>}/>
-                    <Route path="/reports-on-my-objects" element={<ReportsCenterPage/>}/>
                     <Route path="/passport" element={<CulturalPassportPage/>}/>
                     <Route path="/my-routes" element={<MyRoutesPage/>}/>
                     <Route path="/routes/add" element={<AddEditRoutePage/>}/>
                     <Route path="/routes/:id/edit" element={<AddEditRoutePage/>}/>
-                    <Route path="/favorites" element={<SavedPage/>}/>
                 </Route>
             </Route>
         </Routes>
