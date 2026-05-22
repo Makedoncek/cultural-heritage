@@ -1,4 +1,19 @@
 {
+  "footer": {
+    "contact": "Contact us"
+  },
+  "saved": {
+    "title": "Saved",
+    "subtitle": "Objects you've favorited and authors you follow.",
+    "tabObjects": "Objects",
+    "tabAuthors": "Authors"
+  },
+  "reports": {
+    "title": "Reports center",
+    "subtitle": "Inaccuracy reports — both yours and those on your objects.",
+    "tabMine": "My reports",
+    "tabOnMine": "On my objects"
+  },
   "nav": {
     "map": "Map",
     "popular": "Popular",
@@ -8,6 +23,7 @@
     "myContributions": "My contributions",
     "favorites": "Favorites",
     "subscriptions": "Subscriptions",
+    "saved": "Saved",
     "addObject": "Add object",
     "admin": "Admin",
     "login": "Log in",
@@ -270,6 +286,7 @@
     "likesCount": "likes",
     "followersCount": "followers",
     "authorObjects": "Author's objects",
+    "visitsTab": "Visited",
     "noPublishedObjects": "No published objects yet",
     "userNotFound": "User not found.",
     "loadError": "Loading error."

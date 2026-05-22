@@ -62,7 +62,7 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
         return () => window.removeEventListener('auth:logout', handleForceLogout);
     }, []);
 
-    const checkAuth = () => {
+    const checkAuth = async () => {
         const token = localStorage.getItem('access_token');
         if (token) {
             try {
@@ -71,12 +71,30 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
                     setUser(userFromPayload(payload));
                     // Returning user — server is source of truth for preferences.
                     void syncPreferencesFromServer(false);
-                } else {
-                    clearAuth();
+                    setLoading(false);
+                    return;
                 }
+            } catch {
+                // Malformed token — fall through and try refresh as a recovery path.
+            }
+        }
+        // Access token missing or expired — try refresh before bouncing the user.
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+            try {
+                const tokens = await authService.refresh(refreshToken);
+                localStorage.setItem('access_token', tokens.access);
+                if (tokens.refresh) {
+                    localStorage.setItem('refresh_token', tokens.refresh);
+                }
+                const payload = parseJwtPayload(tokens.access);
+                setUser(userFromPayload(payload));
+                void syncPreferencesFromServer(false);
             } catch {
                 clearAuth();
             }
+        } else {
+            clearAuth();
         }
         setLoading(false);
     };

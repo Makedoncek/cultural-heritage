@@ -40,8 +40,7 @@ export default function Header() {
                                     <NavLink to="/routes" className={linkClass}>🗺 Маршрути</NavLink>
                                     <NavLink to="/my-objects" className={linkClass}>{t('nav.myObjects')}</NavLink>
                                     <NavLink to="/my-contributions" className={linkClass}>{t('nav.myContributions')}</NavLink>
-                                    <NavLink to="/favorites" className={linkClass}>{t('nav.favorites')}</NavLink>
-                                    <NavLink to="/favorite-authors" className={linkClass}>{t('nav.subscriptions')}</NavLink>
+                                    <NavLink to="/saved" className={linkClass}>{t('nav.saved')}</NavLink>
                                     <NavLink to="/objects/add" className={linkClass}>{t('nav.addObject')}</NavLink>
                                     {user?.is_staff && (
                                         <a
@@ -112,10 +111,8 @@ export default function Header() {
                                      onClick={() => setMenuOpen(false)}>{t('nav.myObjects')}</NavLink>
                             <NavLink to="/my-contributions" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>{t('nav.myContributions')}</NavLink>
-                            <NavLink to="/favorites" className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>{t('nav.favorites')}</NavLink>
-                            <NavLink to="/favorite-authors" className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>{t('nav.subscriptions')}</NavLink>
+                            <NavLink to="/saved" className={linkClass}
+                                     onClick={() => setMenuOpen(false)}>{t('nav.saved')}</NavLink>
                             <NavLink to="/objects/add" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>{t('nav.addObject')}</NavLink>
                             {user?.is_staff && (

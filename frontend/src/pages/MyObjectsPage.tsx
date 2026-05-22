@@ -107,14 +107,14 @@ export default function MyObjectsPage() {
                         Культурний паспорт
                     </Link>
                     <Link
-                        to="/my-reports"
+                        to="/reports?tab=mine"
                         className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-amber-300 dark:border-stone-600 bg-amber-50 dark:bg-stone-800 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-stone-700 hover:border-amber-400 dark:hover:border-amber-500 transition-colors"
                     >
                         <span className="text-base">⚠</span>
                         Мої репорти
                     </Link>
                     <Link
-                        to="/reports-on-my-objects"
+                        to="/reports?tab=on-mine"
                         className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-amber-300 dark:border-stone-600 bg-amber-50 dark:bg-stone-800 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-stone-700 hover:border-amber-400 dark:hover:border-amber-500 transition-colors"
                     >
                         <span className="text-base">📨</span>

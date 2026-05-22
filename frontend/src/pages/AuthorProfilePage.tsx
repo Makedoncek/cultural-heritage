@@ -1,15 +1,14 @@
-import {useState, useEffect} from 'react';
-import {useParams, Link} from 'react-router';
-import {MapContainer} from 'react-leaflet';
-import MarkerClusterGroup from 'react-leaflet-cluster';
+import {useCallback, useEffect, useState, type ReactNode} from 'react';
+import {useParams, useSearchParams, useLocation} from 'react-router';
 import {useTranslation} from 'react-i18next';
-import ObjectMarker from '../components/Map/ObjectMarker';
-import ThemedTileLayer from '../components/Map/ThemedTileLayer';
-import FavoriteButton from '../components/Objects/FavoriteButton';
 import {usersService} from '../services/users.service';
 import {useAuth} from '../context/AuthContext';
+import AuthorObjectsTab from '../components/Author/AuthorObjectsTab';
+import AuthorVisitsTab from '../components/Author/AuthorVisitsTab';
 import type {AuthorProfile, CulturalObject} from '../types';
 import '../utils/leaflet-fix';
+
+type Tab = 'objects' | 'visits';
 
 export default function AuthorProfilePage() {
     const {username} = useParams<{ username: string }>();
@@ -20,6 +19,13 @@ export default function AuthorProfilePage() {
     const [objects, setObjects] = useState<CulturalObject[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [visitCount, setVisitCount] = useState<number | null>(null);
+
+    const location = useLocation();
+    const [params, setParams] = useSearchParams();
+    // `/authors/<u>/passport` legacy route lands here too — default to visits tab in that case.
+    const initialTab: Tab = params.get('tab') === 'visits' || location.pathname.endsWith('/passport') ? 'visits' : 'objects';
+    const [tab, setTab] = useState<Tab>(initialTab);
 
     const isOwnProfile = user?.username === username;
 
@@ -46,6 +52,13 @@ export default function AuthorProfilePage() {
         setProfile({...profile, is_followed: result.is_followed, followers_count: result.followers_count});
     };
 
+    const handleTabChange = (next: Tab) => {
+        setTab(next);
+        setParams({tab: next}, {replace: true});
+    };
+
+    const onVisitsCount = useCallback((n: number) => setVisitCount(n), []);
+
     if (loading) {
         return (
             <div className="flex-1 flex items-center justify-center">
@@ -68,7 +81,7 @@ export default function AuthorProfilePage() {
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
-                {/* Author info */}
+                {/* Author info card */}
                 <div className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg p-5 mb-6">
                     <div className="flex items-center justify-between mb-3">
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">{profile.username}</h1>
@@ -112,89 +125,50 @@ export default function AuthorProfilePage() {
                             <span className="text-gray-500 dark:text-stone-400 ml-1">{t('profile.followersCount')}</span>
                         </div>
                     </div>
-                    <div className="mt-3">
-                        <Link
-                            to={`/authors/${profile.username}/passport`}
-                            className="inline-flex items-center gap-1 text-sm text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 hover:underline"
-                        >
-                            🎒 Переглянути культурний паспорт →
-                        </Link>
-                    </div>
                 </div>
 
-                {/* Map */}
-                {objects.length > 0 && (
-                    <div className="h-80 rounded-lg overflow-hidden border border-gray-200 dark:border-stone-700 mb-6">
-                        <MapContainer
-                            center={[49.0, 32.0]}
-                            zoom={6}
-                            scrollWheelZoom={true}
-                            className="h-full w-full"
-                        >
-                            <ThemedTileLayer/>
-                            <MarkerClusterGroup chunkedLoading>
-                                {objects.map(obj => (
-                                    <ObjectMarker key={obj.id} object={obj}/>
-                                ))}
-                            </MarkerClusterGroup>
-                        </MapContainer>
-                    </div>
-                )}
+                {/* Tabs */}
+                <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-stone-700">
+                    <TabBtn active={tab === 'objects'} onClick={() => handleTabChange('objects')} count={objects.length}>
+                        🗺 {t('profile.authorObjects')}
+                    </TabBtn>
+                    <TabBtn active={tab === 'visits'} onClick={() => handleTabChange('visits')} count={visitCount}>
+                        🎒 {t('profile.visitsTab')}
+                    </TabBtn>
+                </div>
 
-                {/* Objects list */}
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-stone-100 mb-3">
-                    {t('profile.authorObjects')}
-                </h2>
-                {objects.length === 0 ? (
-                    <p className="text-gray-500 dark:text-stone-400 text-center py-8">{t('profile.noPublishedObjects')}</p>
-                ) : (
-                    <div className="space-y-3">
-                        {objects.map(obj => (
-                            <div
-                                key={obj.id}
-                                className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg px-4 py-3"
-                            >
-                                <div className="min-w-0">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-gray-900 dark:text-stone-100 font-medium">{obj.title}</span>
-                                        {obj.object_type === 'event' && (
-                                            <span className="px-2 py-0.5 text-xs font-medium rounded bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300">
-                                                {t('object.objectType.event')}
-                                            </span>
-                                        )}
-                                        {obj.status === 'pending' && (
-                                            <span className="px-2 py-0.5 text-xs font-medium rounded bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">
-                                                {t('object.moderationStatus.pending')}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-stone-400 mt-1">
-                                        {obj.tags.length > 0 && (
-                                            <span>{obj.tags.map(t => t.icon).join(' ')}</span>
-                                        )}
-                                        <span>❤️ {obj.favorites_count ?? 0}</span>
-                                    </div>
-                                </div>
-                                <div className="flex gap-2 flex-wrap shrink-0">
-                                    {isAuthenticated && (
-                                        <FavoriteButton
-                                            objectId={obj.id}
-                                            initialFavorited={obj.is_favorited ?? false}
-                                            initialCount={obj.favorites_count ?? 0}
-                                        />
-                                    )}
-                                    <Link
-                                        to={`/objects/${obj.id}`}
-                                        className="px-3 py-1.5 text-sm bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg"
-                                    >
-                                        {t('myObjects.view')}
-                                    </Link>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                {tab === 'objects'
+                    ? <AuthorObjectsTab objects={objects} isAuthenticated={isAuthenticated}/>
+                    : <AuthorVisitsTab username={username!} onCountChange={onVisitsCount}/>}
             </div>
         </div>
+    );
+}
+
+interface TabBtnProps {
+    active: boolean;
+    onClick: () => void;
+    count: number | null;
+    children: ReactNode;
+}
+
+function TabBtn({active, onClick, count, children}: TabBtnProps) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer ${
+                active
+                    ? 'border-amber-500 text-amber-700 dark:text-amber-400'
+                    : 'border-transparent text-gray-500 dark:text-stone-400 hover:text-gray-700 dark:hover:text-stone-200'
+            }`}
+        >
+            {children}
+            {count !== null && (
+                <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${active ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' : 'bg-gray-100 dark:bg-stone-800 text-gray-600 dark:text-stone-400'}`}>
+                    {count}
+                </span>
+            )}
+        </button>
     );
 }

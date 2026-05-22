@@ -11,17 +11,14 @@ import MyObjectsPage from './pages/MyObjectsPage';
 import MyContributionsPage from './pages/MyContributionsPage';
 import AddObjectPage from './pages/AddObjectPage';
 import EditObjectPage from './pages/EditObjectPage';
-import FavoritesPage from './pages/FavoritesPage';
+import SavedPage from './pages/SavedPage';
 import PopularPage from './pages/PopularPage';
 import AuthorProfilePage from './pages/AuthorProfilePage';
-import FavoriteAuthorsPage from './pages/FavoriteAuthorsPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
-import MyReportsPage from './pages/MyReportsPage';
-import ReportsOnMyObjectsPage from './pages/ReportsOnMyObjectsPage';
+import ReportsCenterPage from './pages/ReportsCenterPage';
 import CulturalPassportPage from './pages/CulturalPassportPage';
-import PublicPassportPage from './pages/PublicPassportPage';
 import RoutesListPage from './pages/RoutesListPage';
 import RouteDetailPage from './pages/RouteDetailPage';
 import AddEditRoutePage from './pages/AddEditRoutePage';
@@ -55,23 +52,25 @@ function App() {
                 <Route path="/objects/:id" element={<ObjectDetailPage/>}/>
                 <Route path="/popular" element={<PopularPage/>}/>
                 <Route path="/authors/:username" element={<AuthorProfilePage/>}/>
-                <Route path="/authors/:username/passport" element={<PublicPassportPage/>}/>
+                <Route path="/authors/:username/passport" element={<AuthorProfilePage/>}/>
                 <Route path="/routes" element={<RoutesListPage/>}/>
                 <Route path="/routes/:id" element={<RouteDetailPage/>}/>
                 <Route element={<RequireAuth/>}>
-                    <Route path="/favorite-authors" element={<FavoriteAuthorsPage/>}/>
+                    <Route path="/saved" element={<SavedPage/>}/>
+                    <Route path="/favorite-authors" element={<SavedPage/>}/>
                     <Route path="/objects/add" element={<AddObjectPage/>}/>
                     <Route path="/objects/:id/edit" element={<EditObjectPage/>}/>
                     <Route path="/my-objects" element={<MyObjectsPage/>}/>
                     <Route path="/my-contributions" element={<MyContributionsPage/>}/>
                     <Route path="/my-photos" element={<MyContributionsPage/>}/>
-                    <Route path="/my-reports" element={<MyReportsPage/>}/>
-                    <Route path="/reports-on-my-objects" element={<ReportsOnMyObjectsPage/>}/>
+                    <Route path="/reports" element={<ReportsCenterPage/>}/>
+                    <Route path="/my-reports" element={<ReportsCenterPage/>}/>
+                    <Route path="/reports-on-my-objects" element={<ReportsCenterPage/>}/>
                     <Route path="/passport" element={<CulturalPassportPage/>}/>
                     <Route path="/my-routes" element={<MyRoutesPage/>}/>
                     <Route path="/routes/add" element={<AddEditRoutePage/>}/>
                     <Route path="/routes/:id/edit" element={<AddEditRoutePage/>}/>
-                    <Route path="/favorites" element={<FavoritesPage/>}/>
+                    <Route path="/favorites" element={<SavedPage/>}/>
                 </Route>
             </Route>
         </Routes>
