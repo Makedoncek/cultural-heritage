@@ -12,7 +12,7 @@ export default function PopularPage() {
     const [objects, setObjects] = useState<CulturalObject[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const {isAuthenticated} = useAuth();
+    const {isAuthenticated, user} = useAuth();
 
     useEffect(() => {
         objectsService.getPopular()
@@ -76,16 +76,18 @@ export default function PopularPage() {
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-stone-400 mt-1">
+                                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                             {obj.tags.length > 0 && (
-                                                <span>{obj.tags.map(t => t.icon).join(' ')}</span>
+                                                <span className="text-base">{obj.tags.map(t => t.icon).join(' ')}</span>
                                             )}
-                                            <span>❤️ {obj.favorites_count ?? 0}</span>
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 text-sm font-semibold">
+                                                ❤️ {obj.favorites_count ?? 0}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex gap-2 flex-wrap shrink-0">
-                                    {isAuthenticated && (
+                                    {isAuthenticated && user?.username !== obj.author_name && (
                                         <FavoriteButton
                                             objectId={obj.id}
                                             initialFavorited={obj.is_favorited ?? false}

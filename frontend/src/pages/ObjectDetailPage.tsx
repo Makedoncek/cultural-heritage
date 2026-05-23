@@ -158,11 +158,13 @@ export default function ObjectDetailPage() {
                     <div className="flex flex-wrap gap-2">
                         {isAuthenticated && (
                             <>
-                                <FavoriteButton
-                                    objectId={object.id}
-                                    initialFavorited={object.is_favorited ?? false}
-                                    initialCount={object.favorites_count ?? 0}
-                                />
+                                {!isAuthor && (
+                                    <FavoriteButton
+                                        objectId={object.id}
+                                        initialFavorited={object.is_favorited ?? false}
+                                        initialCount={object.favorites_count ?? 0}
+                                    />
+                                )}
                                 {!isAuthor && object.status === 'approved' && (
                                     <>
                                         <VisitedToggleButton

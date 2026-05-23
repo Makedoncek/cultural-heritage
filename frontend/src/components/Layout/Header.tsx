@@ -37,7 +37,7 @@ export default function Header() {
                                 <>
                                     <NavLink to="/" end className={linkClass}>{t('nav.map')}</NavLink>
                                     <NavLink to="/popular" className={linkClass}>{t('nav.popular')}</NavLink>
-                                    <NavLink to="/routes" className={linkClass}>🗺 Маршрути</NavLink>
+                                    <NavLink to="/routes" className={linkClass}>{t('nav.routes')}</NavLink>
                                     <NavLink to="/my-objects" className={linkClass}>{t('nav.myObjects')}</NavLink>
                                     <NavLink to="/my-contributions" className={linkClass}>{t('nav.myContributions')}</NavLink>
                                     <NavLink to="/saved" className={linkClass}>{t('nav.saved')}</NavLink>
@@ -66,7 +66,7 @@ export default function Header() {
                             ) : (
                                 <>
                                     <NavLink to="/popular" className={linkClass}>{t('nav.popular')}</NavLink>
-                                    <NavLink to="/routes" className={linkClass}>🗺 Маршрути</NavLink>
+                                    <NavLink to="/routes" className={linkClass}>{t('nav.routes')}</NavLink>
                                     <ThemeSwitcher/>
                                     <LanguageSwitcher/>
                                     <Link to="/login" className="border border-amber-600 dark:border-amber-500 text-amber-700 dark:text-amber-300 px-4 py-2 rounded-lg hover:bg-amber-50 dark:hover:bg-stone-800 transition-colors">{t('nav.login')}</Link>
@@ -106,7 +106,7 @@ export default function Header() {
                             <NavLink to="/popular" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>{t('nav.popular')}</NavLink>
                             <NavLink to="/routes" className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>🗺 {t('nav.routes')}</NavLink>
+                                     onClick={() => setMenuOpen(false)}>{t('nav.routes')}</NavLink>
                             <NavLink to="/my-objects" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>{t('nav.myObjects')}</NavLink>
                             <NavLink to="/my-contributions" className={linkClass}
@@ -146,7 +146,7 @@ export default function Header() {
                             <NavLink to="/popular" className={linkClass}
                                      onClick={() => setMenuOpen(false)}>{t('nav.popular')}</NavLink>
                             <NavLink to="/routes" className={linkClass}
-                                     onClick={() => setMenuOpen(false)}>🗺 {t('nav.routes')}</NavLink>
+                                     onClick={() => setMenuOpen(false)}>{t('nav.routes')}</NavLink>
                             <div className="flex items-center gap-2">
                                 <ThemeSwitcher/>
                                 <LanguageSwitcher/>

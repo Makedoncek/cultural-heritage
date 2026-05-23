@@ -5,6 +5,7 @@ import {useTranslation} from 'react-i18next';
 import ObjectMarker from '../Map/ObjectMarker';
 import ThemedTileLayer from '../Map/ThemedTileLayer';
 import FavoriteButton from '../Objects/FavoriteButton';
+import {useAuth} from '../../context/AuthContext';
 import type {CulturalObject} from '../../types';
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
 
 export default function AuthorObjectsTab({objects, isAuthenticated}: Props) {
     const {t} = useTranslation();
+    const {user} = useAuth();
 
     if (objects.length === 0) {
         return <p className="text-gray-500 dark:text-stone-400 text-center py-8">{t('profile.noPublishedObjects')}</p>;
@@ -65,7 +67,7 @@ export default function AuthorObjectsTab({objects, isAuthenticated}: Props) {
                             </div>
                         </div>
                         <div className="flex gap-2 flex-wrap shrink-0">
-                            {isAuthenticated && (
+                            {isAuthenticated && user?.username !== obj.author_name && (
                                 <FavoriteButton
                                     objectId={obj.id}
                                     initialFavorited={obj.is_favorited ?? false}

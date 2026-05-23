@@ -779,6 +779,11 @@ class ObjectViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def favorite(self, request, pk=None):
         obj = self.get_object()
+        if obj.author_id == request.user.id:
+            return Response(
+                {'detail': _('Не можна додати власний об\'єкт до обраного.')},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         fav, created = Favorite.objects.get_or_create(user=request.user, cultural_object=obj)
         if not created:
             fav.delete()
