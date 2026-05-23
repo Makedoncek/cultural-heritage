@@ -113,6 +113,18 @@ export const routesService = {
         return data;
     },
 
+    async listCompleted(params?: {page?: number; page_size?: number}) {
+        const {data} = await api.get<{count: number; next: string | null; previous: string | null; results: RouteListItem[]}>(
+            '/users/me/completed-routes/', {params},
+        );
+        return data;
+    },
+
+    async listCompletedByUrl(url: string) {
+        const {data} = await api.get<{count: number; next: string | null; previous: string | null; results: RouteListItem[]}>(url);
+        return data;
+    },
+
     exportUrl(id: number, format: 'gpx' | 'kml' | 'kmz'): string {
         const base = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000/api';
         return `${base}/routes/${id}/export/?fmt=${format}`;

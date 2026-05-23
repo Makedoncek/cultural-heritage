@@ -450,15 +450,19 @@ class VisitSerializer(serializers.ModelSerializer):
     object_title = serializers.SerializerMethodField()
     object_cover_url = serializers.SerializerMethodField()
     object_tags = serializers.SerializerMethodField()
+    object_latitude = serializers.DecimalField(source='cultural_object.latitude', max_digits=9, decimal_places=6, read_only=True)
+    object_longitude = serializers.DecimalField(source='cultural_object.longitude', max_digits=9, decimal_places=6, read_only=True)
 
     class Meta:
         model = Visit
         fields = [
             'id', 'object_id', 'object_title', 'object_cover_url', 'object_tags',
+            'object_latitude', 'object_longitude',
             'visited_at', 'impression', 'is_public',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'object_id', 'object_title', 'object_cover_url', 'object_tags',
+                            'object_latitude', 'object_longitude',
                             'created_at', 'updated_at']
 
     def get_object_title(self, obj):
@@ -476,14 +480,18 @@ class PlannedVisitSerializer(serializers.ModelSerializer):
     object_title = serializers.SerializerMethodField()
     object_cover_url = serializers.SerializerMethodField()
     object_tags = serializers.SerializerMethodField()
+    object_latitude = serializers.DecimalField(source='cultural_object.latitude', max_digits=9, decimal_places=6, read_only=True)
+    object_longitude = serializers.DecimalField(source='cultural_object.longitude', max_digits=9, decimal_places=6, read_only=True)
 
     class Meta:
         model = PlannedVisit
         fields = [
             'id', 'object_id', 'object_title', 'object_cover_url', 'object_tags',
+            'object_latitude', 'object_longitude',
             'planned_date', 'note', 'created_at',
         ]
-        read_only_fields = ['id', 'object_id', 'object_title', 'object_cover_url', 'object_tags', 'created_at']
+        read_only_fields = ['id', 'object_id', 'object_title', 'object_cover_url', 'object_tags',
+                            'object_latitude', 'object_longitude', 'created_at']
 
     def get_object_title(self, obj):
         return obj.cultural_object.title

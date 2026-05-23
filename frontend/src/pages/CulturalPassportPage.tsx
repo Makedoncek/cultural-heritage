@@ -3,9 +3,12 @@ import {Link} from 'react-router';
 import {useTranslation} from 'react-i18next';
 import toast from 'react-hot-toast';
 import {visitsService, plannedVisitsService} from '../services/visits.service';
+import {routesService} from '../services/routes.service';
 import type {Visit, PlannedVisit, VisitsStats} from '../types/visits';
+import type {RouteListItem} from '../types/routes';
 import VisitImpressionModal from '../components/Objects/VisitImpressionModal';
 import LoadMoreButton from '../components/common/LoadMoreButton';
+import PassportMap from '../components/Passport/PassportMap';
 
 export default function CulturalPassportPage() {
     const {t, i18n} = useTranslation();
@@ -21,22 +24,46 @@ export default function CulturalPassportPage() {
     const [visitsTotal, setVisitsTotal] = useState(0);
     const [loadingMoreVisits, setLoadingMoreVisits] = useState(false);
 
+    const [completedRoutes, setCompletedRoutes] = useState<RouteListItem[]>([]);
+    const [completedNextUrl, setCompletedNextUrl] = useState<string | null>(null);
+    const [completedTotal, setCompletedTotal] = useState(0);
+    const [loadingMoreCompleted, setLoadingMoreCompleted] = useState(false);
+
     useEffect(() => {
         Promise.all([
             visitsService.listMine(),
             plannedVisitsService.listMine(),
             visitsService.stats(),
+            routesService.listCompleted(),
         ])
-            .then(([v, p, s]) => {
+            .then(([v, p, s, cr]) => {
                 setVisits(v.results);
                 setVisitsNextUrl(v.next);
                 setVisitsTotal(v.count);
                 setPlanned(p.results);
                 setStats(s);
+                setCompletedRoutes(cr.results);
+                setCompletedNextUrl(cr.next);
+                setCompletedTotal(cr.count);
             })
             .catch(() => setError('Не вдалося завантажити паспорт.'))
             .finally(() => setLoading(false));
     }, []);
+
+    const loadMoreCompleted = async () => {
+        if (!completedNextUrl || loadingMoreCompleted) return;
+        setLoadingMoreCompleted(true);
+        try {
+            const path = completedNextUrl.replace(/^https?:\/\/[^/]+\/api/, '');
+            const data = await routesService.listCompletedByUrl(path);
+            setCompletedRoutes(prev => [...prev, ...data.results]);
+            setCompletedNextUrl(data.next);
+        } catch {
+            toast.error(t('common.loadMoreError'));
+        } finally {
+            setLoadingMoreCompleted(false);
+        }
+    };
 
     const loadMoreVisits = async () => {
         if (!visitsNextUrl || loadingMoreVisits) return;
@@ -151,6 +178,8 @@ export default function CulturalPassportPage() {
                     </div>
                 )}
 
+                <PassportMap visits={visits} planned={planned}/>
+
                 {/* Visits list */}
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-stone-100 mb-3">
                     📋 Хронологія візитів ({visits.length})
@@ -240,6 +269,47 @@ export default function CulturalPassportPage() {
                                 </button>
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {/* Completed routes */}
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-stone-100 mt-6 mb-3">
+                    🏆 {t('passport.completedRoutesTitle')} ({completedTotal})
+                </h2>
+                {completedRoutes.length === 0 ? (
+                    <p className="text-gray-500 dark:text-stone-400 text-sm">
+                        {t('passport.completedRoutesEmpty')}
+                    </p>
+                ) : (
+                    <div className="space-y-2">
+                        {completedRoutes.map(r => (
+                            <div
+                                key={r.id}
+                                className="flex items-center justify-between gap-2 border border-green-200 dark:border-green-800 bg-green-50/40 dark:bg-green-900/10 rounded-lg px-4 py-3"
+                            >
+                                <div className="flex-1 min-w-0">
+                                    <Link to={`/routes/${r.id}`}
+                                          className="text-gray-900 dark:text-stone-100 font-medium hover:text-amber-700 dark:hover:text-amber-300">
+                                        {r.title}
+                                    </Link>
+                                    <p className="text-xs text-gray-500 dark:text-stone-400 mt-1">
+                                        {t('passport.completedRoutesStops', {count: r.stops_count})}
+                                        <span className="mx-2">·</span>
+                                        {t('passport.completedBy', {author: r.author_name})}
+                                    </p>
+                                </div>
+                                <span className="shrink-0 px-2.5 py-1 text-xs rounded-full bg-green-600 dark:bg-green-500 text-white font-semibold">
+                                    ✓ {t('passport.completedBadge')}
+                                </span>
+                            </div>
+                        ))}
+                        <LoadMoreButton
+                            show={!!completedNextUrl}
+                            loading={loadingMoreCompleted}
+                            shown={completedRoutes.length}
+                            total={completedTotal}
+                            onClick={loadMoreCompleted}
+                        />
                     </div>
                 )}
             </div>

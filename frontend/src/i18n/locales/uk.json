@@ -297,6 +297,24 @@
     "userNotFound": "Користувача не знайдено.",
     "loadError": "Помилка завантаження."
   },
+  "passport": {
+    "mapTitle": "Карта подорожей",
+    "mapSubtitle": "Зелені — куди ви вже потрапили, сині — заплановані",
+    "legendVisited": "Відвідано",
+    "legendPlanned": "Заплановано",
+    "mapEmpty": "Поки що жодних точок на карті — додавайте відвідування та плани.",
+    "fullscreen": "Розгорнути карту",
+    "exitFullscreen": "Вийти",
+    "popupVisited": "Відвідано {{date}}",
+    "popupPlanned": "Заплановано на {{date}}",
+    "popupPlannedNoDate": "У ваших планах",
+    "objectDetails": "Деталі об'єкта",
+    "completedRoutesTitle": "Пройдені маршрути",
+    "completedRoutesEmpty": "Поки що жодного маршруту не пройдено. Відвідайте всі зупинки маршруту, щоб він зарахувався.",
+    "completedRoutesStops": "{{count}} зупинок",
+    "completedBy": "автор: {{author}}",
+    "completedBadge": "Пройдено"
+  },
   "errors": {
     "networkError": "немає з'єднання",
     "unauthorized": "потрібна авторизація",

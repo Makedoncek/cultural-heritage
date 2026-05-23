@@ -2112,6 +2112,32 @@ def my_routes(request):
     )
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_completed_routes(request):
+    """List routes where the current user has a Visit for every stop."""
+    from .models import Route
+    from .serializers import RouteListSerializer
+    from .pagination import SmallPagePagination
+    qs = (Route.objects.filter(stops__isnull=False)
+          .select_related('author').prefetch_related('tags')
+          .annotate(
+              total_stops=Count('stops', distinct=True),
+              visited_stops=Count(
+                  'stops',
+                  filter=Q(stops__cultural_object__visits__user=request.user),
+                  distinct=True,
+              ),
+          )
+          .filter(total_stops__gt=0, visited_stops=F('total_stops'))
+          .order_by('-updated_at'))
+    paginator = SmallPagePagination()
+    page = paginator.paginate_queryset(qs, request)
+    return paginator.get_paginated_response(
+        RouteListSerializer(page, many=True, context={'request': request}).data,
+    )
+
+
 MAX_AUDIOS_PER_OBJECT = 10
 
 

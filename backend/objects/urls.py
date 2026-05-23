@@ -51,4 +51,5 @@ urlpatterns = [
 
     # Routes
     path('users/me/routes/', views.my_routes, name='my_routes'),
+    path('users/me/completed-routes/', views.my_completed_routes, name='my_completed_routes'),
 ] + router.urls + photos_router.urls + audios_router.urls

@@ -296,6 +296,24 @@
     "userNotFound": "User not found.",
     "loadError": "Loading error."
   },
+  "passport": {
+    "mapTitle": "Travel map",
+    "mapSubtitle": "Green — places you've already been, blue — planned",
+    "legendVisited": "Visited",
+    "legendPlanned": "Planned",
+    "mapEmpty": "No points on the map yet — add visits and plans.",
+    "fullscreen": "Expand map",
+    "exitFullscreen": "Exit",
+    "popupVisited": "Visited on {{date}}",
+    "popupPlanned": "Planned for {{date}}",
+    "popupPlannedNoDate": "In your plans",
+    "objectDetails": "Object details",
+    "completedRoutesTitle": "Completed routes",
+    "completedRoutesEmpty": "No completed routes yet. Visit every stop of a route to mark it as completed.",
+    "completedRoutesStops": "{{count}} stops",
+    "completedBy": "author: {{author}}",
+    "completedBadge": "Completed"
+  },
   "errors": {
     "networkError": "no connection",
     "unauthorized": "authentication required",

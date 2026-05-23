@@ -11,9 +11,13 @@ import {useAuth} from '../context/AuthContext';
 import type {RouteDetail} from '../types/routes';
 import '../utils/leaflet-fix';
 
-function numberedIcon(n: number, color = '#d97706'): L.DivIcon {
+function numberedIcon(n: number, color = '#d97706', visited = false): L.DivIcon {
+    const bg = visited ? '#16a34a' : color;
+    const badge = visited
+        ? `<div style="position:absolute;top:-4px;right:-4px;background:#fff;color:#16a34a;border:2px solid #16a34a;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10px;line-height:1;">✓</div>`
+        : '';
     return L.divIcon({
-        html: `<div style="background:${color};color:#fff;border:2px solid #fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;box-shadow:0 2px 4px rgba(0,0,0,0.4);">${n}</div>`,
+        html: `<div style="position:relative;width:28px;height:28px;"><div style="background:${bg};color:#fff;border:2px solid #fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;box-shadow:0 2px 4px rgba(0,0,0,0.4);">${n}</div>${badge}</div>`,
         className: 'route-stop-marker',
         iconSize: [28, 28],
         iconAnchor: [14, 14],
@@ -501,7 +505,7 @@ export default function RouteDetailPage() {
                                 <Marker
                                     key={s.id}
                                     position={[parseFloat(s.latitude), parseFloat(s.longitude)]}
-                                    icon={numberedIcon(s.order, s.is_unavailable ? '#6b7280' : '#d97706')}
+                                    icon={numberedIcon(s.order, s.is_unavailable ? '#6b7280' : '#d97706', s.is_visited && !s.is_unavailable)}
                                 >
                                     <Popup>
                                         <strong>{s.order}. {s.object_title}</strong>
@@ -554,7 +558,7 @@ export default function RouteDetailPage() {
                                     <Marker
                                         key={s.id}
                                         position={[parseFloat(s.latitude), parseFloat(s.longitude)]}
-                                        icon={numberedIcon(s.order, s.is_unavailable ? '#6b7280' : '#d97706')}
+                                        icon={numberedIcon(s.order, s.is_unavailable ? '#6b7280' : '#d97706', s.is_visited && !s.is_unavailable)}
                                     >
                                         <Popup>
                                             <strong>{s.order}. {s.object_title}</strong>

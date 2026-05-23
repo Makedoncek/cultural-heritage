@@ -6,6 +6,8 @@ export interface Visit {
     object_title: string;
     object_cover_url: string | null;
     object_tags: Tag[];
+    object_latitude: string;
+    object_longitude: string;
     visited_at: string;          // ISO datetime 'YYYY-MM-DDTHH:mm:ssZ'
     impression: string;
     is_public: boolean;
@@ -19,6 +21,8 @@ export interface PlannedVisit {
     object_title: string;
     object_cover_url: string | null;
     object_tags: Tag[];
+    object_latitude: string;
+    object_longitude: string;
     planned_date: string | null;
     note: string;
     created_at: string;

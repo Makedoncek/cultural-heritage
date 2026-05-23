@@ -1,10 +1,10 @@
-"""Management command для перевірки використання Cloudinary квоти."""
+"""Management command для перевірки використання Cloudinary квоти (фото, аудіо та інші media)."""
 from cloudinary import api as cloudinary_api
 from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = 'Показує поточне використання Cloudinary квоти (storage, bandwidth, transformations).'
+    help = 'Показує поточне використання Cloudinary квоти (storage, bandwidth, transformations) для всіх media — фото, аудіо тощо.'
 
     def handle(self, *args, **options):
         try:
