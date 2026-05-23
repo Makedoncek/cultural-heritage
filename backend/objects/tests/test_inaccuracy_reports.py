@@ -149,8 +149,8 @@ class InaccuracyReportFlowTests(APITestCase):
         url = reverse('objects:reports_on_my_objects')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['reporter_username'], 'reporter')
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['reporter_username'], 'reporter')
 
     def test_my_reports_returns_only_own(self):
         InaccuracyReport.objects.create(
@@ -165,8 +165,8 @@ class InaccuracyReportFlowTests(APITestCase):
         url = reverse('objects:my_reports')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['reporter_username'], 'reporter')
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['reporter_username'], 'reporter')
 
     def test_non_admin_cannot_access_admin_endpoints(self):
         self.client.force_authenticate(self.reporter)

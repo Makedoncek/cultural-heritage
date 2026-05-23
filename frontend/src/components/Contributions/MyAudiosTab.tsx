@@ -1,8 +1,10 @@
-import {useState, useEffect} from 'react';
+import {useState} from 'react';
 import {Link} from 'react-router';
 import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import {audioService} from '../../services/audio.service';
+import {usePaginatedList} from '../../hooks/usePaginatedList';
+import LoadMoreButton from '../common/LoadMoreButton';
 import AudioPlayer from '../Audio/AudioPlayer';
 import AudioEditModal from '../Audio/AudioEditModal';
 import type {ObjectAudio, ObjectWithMyAudios} from '../../types/audio';
@@ -15,17 +17,13 @@ function countByStatus(audios: ObjectAudio[]) {
 
 export default function MyAudiosTab() {
     const {t} = useTranslation();
-    const [items, setItems] = useState<ObjectWithMyAudios[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const {items, setItems, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<ObjectWithMyAudios>({
+        initialFetch: () => audioService.listMine(),
+        fetchByUrl: (url) => audioService.listMineByUrl(url),
+        onError: () => toast.error(t('common.loadMoreError')),
+        deps: [],
+    });
     const [editingAudio, setEditingAudio] = useState<ObjectAudio | null>(null);
-
-    useEffect(() => {
-        audioService.listMine()
-            .then(setItems)
-            .catch(() => setError(t('audio.loadError')))
-            .finally(() => setLoading(false));
-    }, [t]);
 
     const handleAudioUpdated = (objectId: number, updated: ObjectAudio) => {
         setItems(prev => prev.map(obj =>
@@ -54,8 +52,8 @@ export default function MyAudiosTab() {
             </div>
         );
     }
-    if (error) {
-        return <p className="text-red-600 text-center py-6">{error}</p>;
+    if (error && items.length === 0) {
+        return <p className="text-red-600 text-center py-6">{t('audio.loadError')}</p>;
     }
     if (items.length === 0) {
         return (
@@ -152,6 +150,13 @@ export default function MyAudiosTab() {
                         </div>
                     );
                 })}
+                <LoadMoreButton
+                    show={!!nextUrl}
+                    loading={loadingMore}
+                    shown={items.length}
+                    total={totalCount}
+                    onClick={loadMore}
+                />
             </div>
             {editingAudio && (
                 <AudioEditModal

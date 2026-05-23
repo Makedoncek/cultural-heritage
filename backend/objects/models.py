@@ -505,7 +505,7 @@ class Visit(models.Model):
         related_name='visits',
         on_delete=models.CASCADE,
     )
-    visited_at = models.DateField(default=timezone.localdate)
+    visited_at = models.DateTimeField(default=timezone.now)
     impression = models.TextField(
         max_length=1000,
         blank=True,
@@ -605,6 +605,12 @@ class Route(models.Model):
         related_name='copies',
         help_text='Якщо маршрут створений як копія',
     )
+    # Cached real-road geometry computed via OpenRouteService.
+    # geometry is a list of [lng, lat] pairs; null until first calculation.
+    route_geometry = models.JSONField(null=True, blank=True)
+    route_distance_m = models.PositiveIntegerField(null=True, blank=True)
+    route_duration_s = models.PositiveIntegerField(null=True, blank=True)
+    geometry_updated_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

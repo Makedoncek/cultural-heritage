@@ -1,4 +1,9 @@
 {
+  "common": {
+    "loadMore": "Завантажити ще ({{shown}} з {{total}})",
+    "loadingMore": "Завантаження...",
+    "loadMoreError": "Не вдалося завантажити ще"
+  },
   "footer": {
     "contact": "Зворотній зв'язок"
   },
@@ -323,6 +328,7 @@
     "featured": "Рекомендований",
     "stops": "зупинок",
     "hours": "год",
+    "minutes": "хв",
     "loadError": "Не вдалося завантажити маршрути.",
     "status": {
       "draft": "Чернетка",
@@ -371,7 +377,20 @@
       "noteSaveFailed": "Не вдалося зберегти нотатку",
       "visitFailed": "Не вдалося оновити відвідування",
       "routeCompleted": "Маршрут пройдено! Усі зупинки додано у паспорт",
-      "routeCompletedFailed": "Не вдалося позначити маршрут"
+      "routeCompletedFailed": "Не вдалося позначити маршрут",
+      "geometryComputed": "Маршрут розраховано реальними дорогами",
+      "geometryFailed": "Не вдалося розрахувати геометрію",
+      "orderOptimized": "Порядок зупинок оптимізовано",
+      "optimizeFailed": "Не вдалося оптимізувати",
+      "linkCopied": "Посилання скопійовано у буфер обміну",
+      "hintTryAnotherProfile": "💡 Спробуйте інший профіль (🚶 Пішки часто має ширшу мережу шляхів) або перевірте координати зазначених зупинок у режимі редагування.",
+      "hintPointOffRoad": "💡 Одна із зупинок розташована далеко від доріг. Перенесіть її на найближчу дорогу через сторінку об'єкта (редагування координат).",
+      "dismiss": "Закрити",
+      "orsErr": {
+        "unroutablePoint": "Зупинка №{{index}} {{title}}знаходиться далі ніж {{radius}} м від найближчої дороги ({{lng}}, {{lat}}).",
+        "unreachablePair": "Не вдалося прокласти маршрут між зупинками №{{a}} {{titleA}}і №{{b}} {{titleB}}({{aLng}}, {{aLat}} → {{bLng}}, {{bLat}}).",
+        "unfoundLocation": "Не знайдено маршрут від точки {{title}}({{lng}}, {{lat}}) — ізольована від мережі доріг у поточному режимі."
+      }
     },
     "searchPlaceholder": "Пошук за назвою чи описом...",
     "anyDuration": "Будь-яка тривалість",
@@ -418,12 +437,28 @@
       "kmlBtn": "📥 KML",
       "gpxTitle": "GPS Exchange Format — для Garmin, OsmAnd, Maps.me, Strava",
       "kmlTitle": "Keyhole Markup Language — для Google Earth, Google My Maps",
+      "kmzBtn": "📥 KMZ",
+      "kmzTitle": "KML архів із вбудованими фото — для Google Earth (відкрити подвійним кліком)",
+      "shareBtn": "Поділитися",
+      "shareTitle": "Скопіювати посилання на маршрут",
       "stopsHeader": "📋 Зупинки маршруту",
       "stopUnavailable": "⚠ Об'єкт тимчасово недоступний",
       "stopDetails": "Деталі →",
       "copiedFrom": "Створено як копія маршруту",
       "fullscreen": "Розгорнути карту",
       "exitFullscreen": "Вийти",
+      "computeGeometry": "По дорогах",
+      "computeGeometryHint": "Розрахувати маршрут реальними дорогами через OpenRouteService",
+      "profile": {
+        "foot-walking": "Пішки",
+        "cycling-regular": "Велосипед",
+        "driving-car": "Автомобіль"
+      },
+      "optimize": "Оптимізувати",
+      "optimizeHint": "Знайти найкоротший порядок зупинок (TSP через vroom engine)",
+      "optimizeConfirm": "Переставити зупинки у оптимальному порядку? Це автоматично перерахує маршрут.",
+      "realRoads": "по дорогах",
+      "straightLineHint": "Зараз показано прямі лінії. Натисніть «По дорогах» щоб розрахувати реальний маршрут.",
       "progress": "✓ {{visited}} з {{total}} зупинок відвідано",
       "iWasHere": "🚶 Я тут",
       "visited": "Відвідано",

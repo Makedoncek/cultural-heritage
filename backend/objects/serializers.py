@@ -568,7 +568,10 @@ class RouteDetailSerializer(RouteListSerializer):
     copied_from = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta(RouteListSerializer.Meta):
-        fields = list(RouteListSerializer.Meta.fields) + ['stops', 'copied_from']
+        fields = list(RouteListSerializer.Meta.fields) + [
+            'stops', 'copied_from',
+            'route_geometry', 'route_distance_m', 'route_duration_s', 'geometry_updated_at',
+        ]
         read_only_fields = fields
 
 

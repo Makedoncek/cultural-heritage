@@ -1,3 +1,5 @@
+import logging
+
 from rest_framework import status, viewsets, filters
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny
@@ -7,6 +9,8 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample, inline_serializer
 from rest_framework import serializers as s
 from .filters import ObjectFilter
+
+logger = logging.getLogger(__name__)
 from .serializers import RegisterSerializer, TagSerializer, CustomTokenObtainPairSerializer
 from .email import send_verification_email, send_password_reset_email, verify_email_token, verify_password_reset_token
 from .models import Tag
@@ -697,19 +701,16 @@ class ObjectViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my(self, request):
+        from .pagination import SmallPagePagination
         objects = (CulturalObject.objects
                    .select_related('author')
                    .prefetch_related('tags')
                    .filter(author=request.user)
                    .order_by('-created_at'))
-
-        page = self.paginate_queryset(objects)
-        if page is not None:
-            serializer = ObjectListSerializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = ObjectListSerializer(objects, many=True)
-        return Response(serializer.data)
+        paginator = SmallPagePagination()
+        page = paginator.paginate_queryset(objects, request, view=self)
+        serializer = ObjectListSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
         tags=['Objects'],
@@ -719,6 +720,7 @@ class ObjectViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=['get'], url_path='with-my-photos', permission_classes=[IsAuthenticated])
     def with_my_photos(self, request):
+        from .pagination import SmallPagePagination
         object_ids = (ObjectPhoto.objects
                       .filter(uploaded_by=request.user)
                       .values_list('cultural_object_id', flat=True)
@@ -731,17 +733,15 @@ class ObjectViewSet(viewsets.ModelViewSet):
                    .exclude(status='archived')
                    .order_by('-created_at'))
 
-        page = self.paginate_queryset(objects)
-        if page is not None:
-            serializer = ObjectWithMyPhotosSerializer(page, many=True, context={'request': request})
-            return self.get_paginated_response(serializer.data)
-
-        serializer = ObjectWithMyPhotosSerializer(objects, many=True, context={'request': request})
-        return Response(serializer.data)
+        paginator = SmallPagePagination()
+        page = paginator.paginate_queryset(objects, request, view=self)
+        serializer = ObjectWithMyPhotosSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='with-my-audios', permission_classes=[IsAuthenticated])
     def with_my_audios(self, request):
         """Objects (any author) where the current user has uploaded at least one audio narrative."""
+        from .pagination import SmallPagePagination
         object_ids = (ObjectAudio.objects
                       .filter(uploaded_by=request.user)
                       .values_list('cultural_object_id', flat=True)
@@ -752,17 +752,20 @@ class ObjectViewSet(viewsets.ModelViewSet):
                    .filter(id__in=object_ids)
                    .exclude(status='archived')
                    .order_by('-created_at'))
-        result = []
-        for obj in objects:
+
+        def serialize(obj):
             my_audios = list(obj.audios.filter(uploaded_by=request.user).order_by('-created_at'))
-            result.append({
+            return {
                 'id': obj.id,
                 'title': obj.title,
                 'tags': [{'id': tg.id, 'name': tg.name, 'icon': tg.icon} for tg in obj.tags.all()],
                 'author_name': obj.author.username,
                 'my_audios': ObjectAudioSerializer(my_audios, many=True).data,
-            })
-        return Response(result)
+            }
+
+        paginator = SmallPagePagination()
+        page = paginator.paginate_queryset(objects, request, view=self)
+        return paginator.get_paginated_response([serialize(o) for o in page])
 
     @extend_schema(
         tags=['Objects'],
@@ -791,16 +794,14 @@ class ObjectViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def favorites(self, request):
+        from .pagination import SmallPagePagination
         favorite_ids = Favorite.objects.filter(user=request.user).values_list('cultural_object_id', flat=True)
         objects = self.get_queryset().filter(id__in=favorite_ids).order_by('-created_at')
-
-        page = self.paginate_queryset(objects)
-        if page is not None:
-            serializer = ObjectListSerializer(page, many=True, context={'request': request})
-            return self.get_paginated_response(serializer.data)
-
-        serializer = ObjectListSerializer(objects, many=True, context={'request': request})
-        return Response(serializer.data)
+        paginator = SmallPagePagination()
+        page = paginator.paginate_queryset(objects, request, view=self)
+        return paginator.get_paginated_response(
+            ObjectListSerializer(page, many=True, context={'request': request}).data,
+        )
 
     @extend_schema(
         tags=['Objects'],
@@ -935,10 +936,12 @@ class UserProfileViewSet(viewsets.GenericViewSet):
     )
     @action(detail=False, methods=['get'], url_path='favorite-authors', permission_classes=[IsAuthenticated])
     def favorite_authors(self, request):
+        from .pagination import SmallPagePagination
         author_ids = FavoriteAuthor.objects.filter(user=request.user).values_list('author_id', flat=True)
         authors = self.get_queryset().filter(id__in=author_ids)
-        serializer = self.get_serializer(authors, many=True)
-        return Response(serializer.data)
+        paginator = SmallPagePagination()
+        page = paginator.paginate_queryset(authors, request, view=self)
+        return paginator.get_paginated_response(self.get_serializer(page, many=True).data)
 
 
 @extend_schema(
@@ -1287,8 +1290,11 @@ def delete_own_report(request, report_pk):
 def my_reports(request):
     from .models import InaccuracyReport
     from .serializers import InaccuracyReportSerializer
+    from .pagination import SmallPagePagination
     qs = InaccuracyReport.objects.filter(reporter=request.user).select_related('cultural_object')
-    return Response(InaccuracyReportSerializer(qs, many=True).data)
+    paginator = SmallPagePagination()
+    page = paginator.paginate_queryset(qs, request)
+    return paginator.get_paginated_response(InaccuracyReportSerializer(page, many=True).data)
 
 
 @api_view(['GET'])
@@ -1296,10 +1302,13 @@ def my_reports(request):
 def reports_on_my_objects(request):
     from .models import InaccuracyReport
     from .serializers import InaccuracyReportSerializer
+    from .pagination import SmallPagePagination
     qs = (InaccuracyReport.objects
           .filter(cultural_object__author=request.user)
           .select_related('cultural_object', 'reporter'))
-    return Response(InaccuracyReportSerializer(qs, many=True).data)
+    paginator = SmallPagePagination()
+    page = paginator.paginate_queryset(qs, request)
+    return paginator.get_paginated_response(InaccuracyReportSerializer(page, many=True).data)
 
 
 @api_view(['GET'])
@@ -1395,16 +1404,21 @@ def update_visit(request, visit_pk):
     updates = {k: v for k, v in request.data.items() if k in allowed}
 
     if 'visited_at' in updates:
-        from datetime import date
+        from datetime import datetime
+        raw = str(updates['visited_at'])
         try:
-            parsed = date.fromisoformat(str(updates['visited_at']))
+            # Accept full ISO datetime or legacy date-only ('YYYY-MM-DD' → midnight local).
+            parsed = datetime.fromisoformat(raw.replace('Z', '+00:00'))
         except ValueError:
-            return Response({'visited_at': [_('Невірний формат дати.')]}, status=status.HTTP_400_BAD_REQUEST)
-        if parsed > timezone.localdate():
+            return Response({'visited_at': [_('Невірний формат дати/часу.')]}, status=status.HTTP_400_BAD_REQUEST)
+        if parsed.tzinfo is None:
+            parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
+        if parsed > timezone.now():
             return Response(
                 {'visited_at': [_('Дата візиту не може бути у майбутньому.')]},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        updates['visited_at'] = parsed
 
     for k, v in updates.items():
         setattr(visit, k, v)
@@ -1426,8 +1440,11 @@ def visits_count(request, object_pk):
 def my_visits(request):
     from .models import Visit
     from .serializers import VisitSerializer
+    from .pagination import SmallPagePagination
     qs = Visit.objects.filter(user=request.user).select_related('cultural_object')
-    return Response(VisitSerializer(qs, many=True).data)
+    paginator = SmallPagePagination()
+    page = paginator.paginate_queryset(qs, request)
+    return paginator.get_paginated_response(VisitSerializer(page, many=True).data)
 
 
 @api_view(['GET'])
@@ -1435,12 +1452,15 @@ def my_visits(request):
 def public_visits(request, username):
     from .models import Visit
     from .serializers import VisitSerializer
+    from .pagination import SmallPagePagination
     try:
         target = User.objects.get(username=username)
     except User.DoesNotExist:
         return Response({'detail': _('Користувача не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
     qs = Visit.objects.filter(user=target, is_public=True).select_related('cultural_object')
-    return Response(VisitSerializer(qs, many=True).data)
+    paginator = SmallPagePagination()
+    page = paginator.paginate_queryset(qs, request)
+    return paginator.get_paginated_response(VisitSerializer(page, many=True).data)
 
 
 @api_view(['GET'])
@@ -1554,13 +1574,64 @@ def convert_planned_to_visit(request, planned_pk):
 def my_planned_visits(request):
     from .models import PlannedVisit
     from .serializers import PlannedVisitSerializer
+    from .pagination import SmallPagePagination
     qs = PlannedVisit.objects.filter(user=request.user).select_related('cultural_object')
-    return Response(PlannedVisitSerializer(qs, many=True).data)
+    paginator = SmallPagePagination()
+    page = paginator.paginate_queryset(qs, request)
+    return paginator.get_paginated_response(PlannedVisitSerializer(page, many=True).data)
 
 
 # --- Routes ---
 
 MAX_STOPS_PER_ROUTE = 50
+
+
+def _enrich_ors_error(message: str, stops: list) -> str:
+    """Add stop titles to ORS error messages that only reference coordinates.
+
+    ORS errors mention points either as `coordinate N: lng lat`, `points N (lng lat) and M (lng lat)`,
+    or `location [lng,lat]`. We re-emit the same text with the matching stop's title attached so
+    the user can identify which object on the map is causing the problem.
+    """
+    import re
+
+    def stop_label(lng: float, lat: float) -> str:
+        # Match coordinates to stops with 1e-3 tolerance (~100m) — handles ORS rounding.
+        for s in stops:
+            obj_lng = float(s.cultural_object.longitude)
+            obj_lat = float(s.cultural_object.latitude)
+            if abs(obj_lng - lng) < 1e-3 and abs(obj_lat - lat) < 1e-3:
+                return f'«{s.cultural_object.title}»'
+        return ''
+
+    # Pattern A: "coordinate 0: 33.7894950 51.5395490"
+    def fix_coord(m: re.Match) -> str:
+        idx, lng, lat = m.group(1), float(m.group(2)), float(m.group(3))
+        title = stop_label(lng, lat)
+        return f'coordinate {idx} {title} ({lng}, {lat})' if title else m.group(0)
+    message = re.sub(r'coordinate (\d+):\s*([\d.\-]+)\s+([\d.\-]+)', fix_coord, message)
+
+    # Pattern B: "points 3 (31.7680290 49.5359790) and 4 (30.2706490 51.3600520)"
+    def fix_pair(m: re.Match) -> str:
+        a, a_lng, a_lat = m.group(1), float(m.group(2)), float(m.group(3))
+        b, b_lng, b_lat = m.group(4), float(m.group(5)), float(m.group(6))
+        ta, tb = stop_label(a_lng, a_lat), stop_label(b_lng, b_lat)
+        sa = f'{a} {ta}' if ta else f'{a} ({a_lng}, {a_lat})'
+        sb = f'{b} {tb}' if tb else f'{b} ({b_lng}, {b_lat})'
+        return f'points {sa} and {sb}'
+    message = re.sub(
+        r'points (\d+) \(([\d.\-]+)\s+([\d.\-]+)\) and (\d+) \(([\d.\-]+)\s+([\d.\-]+)\)',
+        fix_pair, message,
+    )
+
+    # Pattern C: "location [30.270649,51.360052]" (vroom)
+    def fix_location(m: re.Match) -> str:
+        lng, lat = float(m.group(1)), float(m.group(2))
+        title = stop_label(lng, lat)
+        return f'location {title} [{lng}, {lat}]' if title else m.group(0)
+    message = re.sub(r'location \[([\d.\-]+),([\d.\-]+)\]', fix_location, message)
+
+    return message
 
 
 class RouteViewSet(viewsets.ModelViewSet):
@@ -1864,6 +1935,91 @@ class RouteViewSet(viewsets.ModelViewSet):
             stop.save(update_fields=['note'])
         return Response(RouteStopSerializer(stop).data)
 
+    @action(detail=True, methods=['post'], url_path='compute-geometry', permission_classes=[IsAuthenticated])
+    def compute_geometry(self, request, pk=None):
+        """Recompute real-road geometry for the route via OpenRouteService.
+
+        Stores polyline + distance + duration on the Route — frontend then draws
+        the cached version (no per-load API calls).
+        """
+        from .services.ors import get_directions, ORSError
+        from django.utils import timezone
+        route = self.get_object()
+        if route.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору чи адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        stops = list(route.stops.order_by('order'))
+        if len(stops) < 2:
+            return Response({'detail': _('Маршрут має містити щонайменше 2 зупинки.')},
+                            status=status.HTTP_400_BAD_REQUEST)
+        coords = [(float(s.cultural_object.longitude), float(s.cultural_object.latitude)) for s in stops]
+        profile = request.data.get('profile') or 'foot-walking'
+        try:
+            result = get_directions(coords, profile=profile)
+        except ORSError as exc:
+            return Response({'detail': _enrich_ors_error(str(exc), stops)},
+                            status=status.HTTP_502_BAD_GATEWAY)
+        route.route_geometry = result['geometry']
+        route.route_distance_m = result['distance_m']
+        route.route_duration_s = result['duration_s']
+        route.geometry_updated_at = timezone.now()
+        route.save(update_fields=['route_geometry', 'route_distance_m',
+                                  'route_duration_s', 'geometry_updated_at', 'updated_at'])
+        return Response({
+            'geometry': result['geometry'],
+            'distance_m': result['distance_m'],
+            'duration_s': result['duration_s'],
+        })
+
+    @action(detail=True, methods=['post'], url_path='optimize-order', permission_classes=[IsAuthenticated])
+    def optimize_order(self, request, pk=None):
+        """Reorder stops via ORS Optimization (vroom engine TSP-like solver)."""
+        from .models import RouteStop
+        from .services.ors import optimize_order as ors_optimize, ORSError
+        route = self.get_object()
+        if route.author_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору чи адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        stops = list(route.stops.order_by('order'))
+        if len(stops) < 3:
+            return Response({'detail': _('Для оптимізації потрібно мінімум 3 зупинки.')},
+                            status=status.HTTP_400_BAD_REQUEST)
+        coords = [(float(s.cultural_object.longitude), float(s.cultural_object.latitude)) for s in stops]
+        profile = request.data.get('profile') or 'foot-walking'
+        try:
+            new_indices = ors_optimize(coords, profile=profile)
+        except ORSError as exc:
+            return Response({'detail': _enrich_ors_error(str(exc), stops)},
+                            status=status.HTTP_502_BAD_GATEWAY)
+        # Apply the new order: reorder existing RouteStop rows by their indices.
+        reordered_stops = [stops[i] for i in new_indices]
+        for new_pos, stop in enumerate(reordered_stops, start=1):
+            stop.order = new_pos
+        RouteStop.objects.bulk_update(reordered_stops, ['order'])
+        # Refresh cached geometry along the new order (best-effort — non-fatal).
+        from .services.ors import get_directions
+        from django.utils import timezone
+        new_coords = [coords[i] for i in new_indices]
+        try:
+            geo = get_directions(new_coords, profile=profile)
+            route.route_geometry = geo['geometry']
+            route.route_distance_m = geo['distance_m']
+            route.route_duration_s = geo['duration_s']
+            route.geometry_updated_at = timezone.now()
+        except ORSError:
+            route.route_geometry = None
+            route.route_distance_m = None
+            route.route_duration_s = None
+            route.geometry_updated_at = None
+        route.save(update_fields=['route_geometry', 'route_distance_m',
+                                  'route_duration_s', 'geometry_updated_at', 'updated_at'])
+        return Response({
+            'new_order': new_indices,
+            'stops_count': len(reordered_stops),
+            'distance_m': route.route_distance_m,
+            'duration_s': route.route_duration_s,
+        })
+
     @action(detail=True, methods=['post'], url_path='mark-completed', permission_classes=[IsAuthenticated])
     def mark_completed(self, request, pk=None):
         """Bulk-create Visits for every stop the user has not yet visited.
@@ -1884,7 +2040,7 @@ class RouteViewSet(viewsets.ModelViewSet):
             Visit.objects.create(
                 user=request.user,
                 cultural_object_id=object_id,
-                visited_at=timezone.localdate(),
+                visited_at=timezone.now(),
                 impression='',
             )
             created += 1
@@ -1892,25 +2048,42 @@ class RouteViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='export')
     def export(self, request, pk=None):
-        from .services.route_export import export_route_as_gpx, export_route_as_kml
+        from .services.route_export import (
+            export_route_as_gpx, export_route_as_kml, export_route_as_kmz,
+        )
         from django.http import HttpResponse
         route = self.get_object()
         fmt = request.query_params.get('fmt', 'gpx').lower()
+        # Use the requesting browser's origin so dev/staging deploys produce links
+        # pointing back at the same host (e.g. http://localhost:5173) rather than the
+        # hardcoded production FRONTEND_BASE_URL.
+        base_url = request.headers.get('Origin') or request.META.get('HTTP_REFERER', '').rstrip('/').split('/objects')[0].split('/routes')[0] or None
         if fmt == 'gpx':
-            content = export_route_as_gpx(route)
+            content = export_route_as_gpx(route, base_url=base_url)
             content_type = 'application/gpx+xml'
             ext = 'gpx'
         elif fmt == 'kml':
-            content = export_route_as_kml(route)
+            content = export_route_as_kml(route, base_url=base_url)
             content_type = 'application/vnd.google-earth.kml+xml'
             ext = 'kml'
+        elif fmt == 'kmz':
+            content = export_route_as_kmz(route, base_url=base_url)
+            content_type = 'application/vnd.google-earth.kmz'
+            ext = 'kmz'
         else:
-            return Response({'detail': _('Підтримувані формати: gpx, kml.')},
+            return Response({'detail': _('Підтримувані формати: gpx, kml, kmz.')},
                             status=status.HTTP_400_BAD_REQUEST)
         response = HttpResponse(content, content_type=content_type)
         from django.utils.text import slugify
-        filename = slugify(route.title) or f'route-{route.pk}'
-        response['Content-Disposition'] = f'attachment; filename="{filename}.{ext}"'
+        from urllib.parse import quote
+        # Preserve Cyrillic in filename via RFC 6266 — modern browsers honor `filename*`
+        # (UTF-8 percent-encoded), older ones fall back to the ASCII-safe `filename` token.
+        unicode_name = slugify(route.title, allow_unicode=True) or f'route-{route.pk}'
+        ascii_name = slugify(route.title) or f'route-{route.pk}'
+        encoded = quote(f'{unicode_name}.{ext}')
+        response['Content-Disposition'] = (
+            f"attachment; filename=\"{ascii_name}.{ext}\"; filename*=UTF-8''{encoded}"
+        )
         return response
 
 
@@ -1920,13 +2093,18 @@ def my_routes(request):
     """List routes authored by the current user (any status)."""
     from .models import Route
     from .serializers import RouteListSerializer
+    from .pagination import SmallPagePagination
     qs = (Route.objects.filter(author=request.user)
           .select_related('author').prefetch_related('tags')
           .order_by('-updated_at'))
     status_filter = request.query_params.get('status')
     if status_filter:
         qs = qs.filter(status=status_filter)
-    return Response(RouteListSerializer(qs, many=True, context={'request': request}).data)
+    paginator = SmallPagePagination()
+    page = paginator.paginate_queryset(qs, request)
+    return paginator.get_paginated_response(
+        RouteListSerializer(page, many=True, context={'request': request}).data,
+    )
 
 
 MAX_AUDIOS_PER_OBJECT = 10

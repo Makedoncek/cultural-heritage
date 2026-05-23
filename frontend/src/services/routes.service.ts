@@ -57,6 +57,22 @@ export const routesService = {
         return data;
     },
 
+    async computeGeometry(id: number, profile?: 'foot-walking' | 'cycling-regular' | 'driving-car') {
+        const {data} = await api.post<{geometry: [number, number][]; distance_m: number; duration_s: number}>(
+            `/routes/${id}/compute-geometry/`,
+            profile ? {profile} : {},
+        );
+        return data;
+    },
+
+    async optimizeOrder(id: number, profile?: 'foot-walking' | 'cycling-regular' | 'driving-car') {
+        const {data} = await api.post<{new_order: number[]; stops_count: number; distance_m: number | null; duration_s: number | null}>(
+            `/routes/${id}/optimize-order/`,
+            profile ? {profile} : {},
+        );
+        return data;
+    },
+
     async submit(id: number): Promise<RouteDetail> {
         const {data} = await api.post<RouteDetail>(`/routes/${id}/submit/`);
         return data;
@@ -85,14 +101,19 @@ export const routesService = {
         await api.post(`/routes/${id}/reorder/`, {order: items});
     },
 
-    async listMine(status?: RouteStatus): Promise<RouteListItem[]> {
-        const {data} = await api.get<RouteListItem[]>('/users/me/routes/', {
-            params: status ? {status} : undefined,
-        });
+    async listMine(params?: {status?: RouteStatus; page?: number; page_size?: number}) {
+        const {data} = await api.get<{count: number; next: string | null; previous: string | null; results: RouteListItem[]}>(
+            '/users/me/routes/', {params},
+        );
         return data;
     },
 
-    exportUrl(id: number, format: 'gpx' | 'kml'): string {
+    async listMineByUrl(url: string) {
+        const {data} = await api.get<{count: number; next: string | null; previous: string | null; results: RouteListItem[]}>(url);
+        return data;
+    },
+
+    exportUrl(id: number, format: 'gpx' | 'kml' | 'kmz'): string {
         const base = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000/api';
         return `${base}/routes/${id}/export/?fmt=${format}`;
     },

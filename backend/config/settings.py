@@ -125,6 +125,14 @@ cloudinary.config(
 
 # Photo gallery limits
 PHOTO_MAX_SIZE_MB = 5
+
+# OpenRouteService — real-road geometry and TSP optimization for Heritage Routes.
+# Free tier: 2000 requests/day. Sign up at https://openrouteservice.org/dev/#/signup
+ORS_API_KEY = config('ORS_API_KEY', default='')
+
+# Public origin of the deployed frontend — used to build URLs inside exported GPX/KMZ
+# (POI links back to objects/routes pages).
+FRONTEND_BASE_URL = config('FRONTEND_BASE_URL', default='https://culturemap.ua')
 PHOTO_ALLOWED_FORMATS = ['JPEG', 'PNG', 'WEBP']
 PHOTO_MAX_PER_AUTHOR = 5
 PHOTO_MAX_PER_CONTRIBUTOR = 3

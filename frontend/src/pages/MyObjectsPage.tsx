@@ -1,8 +1,10 @@
-import {useState, useEffect} from 'react';
+import {useState} from 'react';
 import {Link} from 'react-router';
 import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import {objectsService} from '../services/objects.service';
+import {usePaginatedList} from '../hooks/usePaginatedList';
+import LoadMoreButton from '../components/common/LoadMoreButton';
 import type {CulturalObject} from '../types';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -14,9 +16,12 @@ const STATUS_COLORS: Record<string, string> = {
 export default function MyObjectsPage() {
     const {t, i18n} = useTranslation();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
-    const [objects, setObjects] = useState<CulturalObject[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const {items: objects, setItems: setObjects, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<CulturalObject>({
+        initialFetch: () => objectsService.getMy(),
+        fetchByUrl: (url) => objectsService.getMyByUrl(url),
+        onError: () => toast.error(t('common.loadMoreError')),
+        deps: [],
+    });
     const [deletingId, setDeletingId] = useState<number | null>(null);
 
     const handleDelete = async (id: number) => {
@@ -27,7 +32,7 @@ export default function MyObjectsPage() {
             setObjects(prev => prev.map(obj => obj.id === id ? {...obj, status: 'archived'} : obj));
             toast.success(t('object.archived'));
         } catch {
-            setError(t('object.deleteError'));
+            toast.error(t('object.deleteError'));
         } finally {
             setDeletingId(null);
         }
@@ -60,12 +65,6 @@ export default function MyObjectsPage() {
         }
     };
 
-    useEffect(() => {
-        objectsService.getMy()
-            .then(data => setObjects(data.results))
-            .catch(() => setError(t('home.loadError')))
-            .finally(() => setLoading(false));
-    }, [t]);
 
     if (loading) {
         return (
@@ -78,10 +77,10 @@ export default function MyObjectsPage() {
         );
     }
 
-    if (error) {
+    if (error && objects.length === 0) {
         return (
             <div className="flex-1 flex items-center justify-center">
-                <p className="text-red-600">{error}</p>
+                <p className="text-red-600">{t('home.loadError')}</p>
             </div>
         );
     }
@@ -202,6 +201,13 @@ export default function MyObjectsPage() {
                                 </div>
                             </div>
                         ))}
+                        <LoadMoreButton
+                            show={!!nextUrl}
+                            loading={loadingMore}
+                            shown={objects.length}
+                            total={totalCount}
+                            onClick={loadMore}
+                        />
                     </div>
                 )}
             </div>

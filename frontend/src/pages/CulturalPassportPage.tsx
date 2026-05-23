@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import {visitsService, plannedVisitsService} from '../services/visits.service';
 import type {Visit, PlannedVisit, VisitsStats} from '../types/visits';
 import VisitImpressionModal from '../components/Objects/VisitImpressionModal';
+import LoadMoreButton from '../components/common/LoadMoreButton';
 
 export default function CulturalPassportPage() {
     const {t, i18n} = useTranslation();
@@ -16,6 +17,10 @@ export default function CulturalPassportPage() {
     const [error, setError] = useState<string | null>(null);
     const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
 
+    const [visitsNextUrl, setVisitsNextUrl] = useState<string | null>(null);
+    const [visitsTotal, setVisitsTotal] = useState(0);
+    const [loadingMoreVisits, setLoadingMoreVisits] = useState(false);
+
     useEffect(() => {
         Promise.all([
             visitsService.listMine(),
@@ -23,13 +28,30 @@ export default function CulturalPassportPage() {
             visitsService.stats(),
         ])
             .then(([v, p, s]) => {
-                setVisits(v);
-                setPlanned(p);
+                setVisits(v.results);
+                setVisitsNextUrl(v.next);
+                setVisitsTotal(v.count);
+                setPlanned(p.results);
                 setStats(s);
             })
             .catch(() => setError('Не вдалося завантажити паспорт.'))
             .finally(() => setLoading(false));
     }, []);
+
+    const loadMoreVisits = async () => {
+        if (!visitsNextUrl || loadingMoreVisits) return;
+        setLoadingMoreVisits(true);
+        try {
+            const path = visitsNextUrl.replace(/^https?:\/\/[^/]+\/api/, '');
+            const data = await visitsService.listMineByUrl(path);
+            setVisits(prev => [...prev, ...data.results]);
+            setVisitsNextUrl(data.next);
+        } catch {
+            toast.error(t('common.loadMoreError'));
+        } finally {
+            setLoadingMoreVisits(false);
+        }
+    };
 
     const togglePublic = async (v: Visit) => {
         try {
@@ -150,7 +172,7 @@ export default function CulturalPassportPage() {
                                         {v.object_title}
                                     </Link>
                                     <p className="text-xs text-gray-500 dark:text-stone-400 mt-1">
-                                        {new Date(v.visited_at).toLocaleDateString(dateLocale)}
+                                        {new Date(v.visited_at).toLocaleString(dateLocale, {dateStyle: 'short', timeStyle: 'short'})}
                                         {v.impression && (
                                             <span className="ml-2 italic">«{v.impression}»</span>
                                         )}
@@ -159,10 +181,10 @@ export default function CulturalPassportPage() {
                                 <div className="flex items-center gap-2 shrink-0">
                                     <button
                                         onClick={() => setEditingVisit(v)}
-                                        className="text-xs px-2 py-1 border border-gray-300 dark:border-stone-600 text-gray-700 dark:text-stone-200 rounded hover:bg-gray-50 dark:hover:bg-stone-800 cursor-pointer"
+                                        className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white rounded-lg cursor-pointer"
                                         title="Редагувати враження і дату"
                                     >
-                                        ✎ Edit
+                                        {t('object.edit')}
                                     </button>
                                     <button
                                         onClick={() => togglePublic(v)}
@@ -174,6 +196,13 @@ export default function CulturalPassportPage() {
                                 </div>
                             </div>
                         ))}
+                        <LoadMoreButton
+                            show={!!visitsNextUrl}
+                            loading={loadingMoreVisits}
+                            shown={visits.length}
+                            total={visitsTotal}
+                            onClick={loadMoreVisits}
+                        />
                     </div>
                 )}
 

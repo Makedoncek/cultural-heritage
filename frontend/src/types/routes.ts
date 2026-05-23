@@ -36,6 +36,10 @@ export interface RouteListItem {
 export interface RouteDetail extends RouteListItem {
     stops: RouteStop[];
     copied_from: number | null;
+    route_geometry: [number, number][] | null;
+    route_distance_m: number | null;
+    route_duration_s: number | null;
+    geometry_updated_at: string | null;
 }
 
 export interface RouteWritePayload {

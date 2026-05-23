@@ -20,6 +20,14 @@ function numberedIcon(n: number, color = '#d97706'): L.DivIcon {
     });
 }
 
+function formatDuration(seconds: number, t: (key: string) => string): string {
+    const totalMin = Math.round(seconds / 60);
+    if (totalMin < 60) return `${totalMin} ${t('routes.minutes')}`;
+    const hours = Math.floor(totalMin / 60);
+    const min = totalMin % 60;
+    return min === 0 ? `${hours} ${t('routes.hours')}` : `${hours} ${t('routes.hours')} ${min} ${t('routes.minutes')}`;
+}
+
 function FitToStops({coords}: {coords: [number, number][]}) {
     const map = useMap();
     useEffect(() => {
@@ -49,6 +57,7 @@ export default function RouteDetailPage() {
     const canEdit = isOwner || user?.is_staff;
     const [togglingStopId, setTogglingStopId] = useState<number | null>(null);
     const [mapFullscreen, setMapFullscreen] = useState(false);
+    const [profile, setProfile] = useState<'foot-walking' | 'cycling-regular' | 'driving-car'>('foot-walking');
 
     useEffect(() => {
         if (!mapFullscreen) return;
@@ -76,6 +85,104 @@ export default function RouteDetailPage() {
             toast.success(t('routes.toast.routeCompleted'));
         } catch {
             toast.error(t('routes.toast.routeCompletedFailed'));
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const translateOrsMessage = (raw: string): string => {
+        // Backend injects «Object title» between coordinate index and the (lng,lat) tuple.
+        const titleRe = '«([^»]+)»\\s*';
+        const fmtTitle = (s?: string) => s ? `«${s}» ` : '';
+
+        // Directions 2010 — point outside any road network.
+        const m1 = raw.match(new RegExp(`Could not find routable point within a radius of ([\\d.]+) meters of specified coordinate (\\d+)(?:\\s+${titleRe})?\\s*[(:]?\\s*([\\d.\\-]+)[, ]\\s*([\\d.\\-]+)`, 'i'));
+        if (m1) {
+            return t('routes.toast.orsErr.unroutablePoint', {
+                radius: m1[1], index: m1[2], title: fmtTitle(m1[3]), lng: m1[4], lat: m1[5],
+            });
+        }
+        // Directions 2009 — pair unreachable in current profile.
+        const m2 = raw.match(new RegExp(`points (\\d+)(?:\\s+${titleRe})?\\s*\\(?([\\d.\\-]+)[, ]\\s*([\\d.\\-]+)\\)? and (\\d+)(?:\\s+${titleRe})?\\s*\\(?([\\d.\\-]+)[, ]\\s*([\\d.\\-]+)`, 'i'));
+        if (m2) {
+            return t('routes.toast.orsErr.unreachablePair', {
+                a: m2[1], titleA: fmtTitle(m2[2]), aLng: m2[3], aLat: m2[4],
+                b: m2[5], titleB: fmtTitle(m2[6]), bLng: m2[7], bLat: m2[8],
+            });
+        }
+        // Optimization (vroom) — unfound location.
+        const m3 = raw.match(new RegExp(`Unfound route\\(s\\) from location (?:${titleRe})?\\[([\\d.\\-]+)[, ]\\s*([\\d.\\-]+)\\]`, 'i'));
+        if (m3) {
+            return t('routes.toast.orsErr.unfoundLocation', {
+                title: fmtTitle(m3[1]), lng: m3[2], lat: m3[3],
+            });
+        }
+        return raw;  // unknown English message — show as-is
+    };
+
+    const showOrsErrorToast = (rawDetail: string | undefined, fallback: string) => {
+        const message = rawDetail ? translateOrsMessage(rawDetail) : fallback;
+        const isPointIssue = rawDetail && /Could not find routable point|coordinate \d+:/i.test(rawDetail);
+        const isPairIssue = rawDetail && (/Unable to find a route|between points/i.test(rawDetail) || /Unfound route/i.test(rawDetail));
+        const hint = isPointIssue
+            ? t('routes.toast.hintPointOffRoad')
+            : isPairIssue
+                ? t('routes.toast.hintTryAnotherProfile')
+                : null;
+        toast.error(
+            (tInst) => (
+                <div className="flex flex-col gap-2 max-w-md">
+                    <p className="text-sm font-medium leading-snug">{message}</p>
+                    {hint && (
+                        <p className="text-xs leading-snug opacity-80 border-t border-current/20 pt-2">
+                            {hint}
+                        </p>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => toast.dismiss(tInst.id)}
+                        className="self-end text-xs underline opacity-70 hover:opacity-100 cursor-pointer"
+                    >
+                        {t('routes.toast.dismiss')}
+                    </button>
+                </div>
+            ),
+            {duration: 10000},
+        );
+    };
+
+    const handleComputeGeometry = async () => {
+        if (!route) return;
+        setActionLoading(true);
+        try {
+            const result = await routesService.computeGeometry(route.id, profile);
+            setRoute(prev => prev ? {
+                ...prev,
+                route_geometry: result.geometry,
+                route_distance_m: result.distance_m,
+                route_duration_s: result.duration_s,
+            } : prev);
+            toast.success(t('routes.toast.geometryComputed'));
+        } catch (e) {
+            const detail = (e as {response?: {data?: {detail?: string}}}).response?.data?.detail;
+            showOrsErrorToast(detail, t('routes.toast.geometryFailed'));
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleOptimizeOrder = async () => {
+        if (!route) return;
+        if (!confirm(t('routes.detail.optimizeConfirm'))) return;
+        setActionLoading(true);
+        try {
+            await routesService.optimizeOrder(route.id, profile);
+            const fresh = await routesService.detail(route.id);
+            setRoute(fresh);
+            toast.success(t('routes.toast.orderOptimized'));
+        } catch (e) {
+            const detail = (e as {response?: {data?: {detail?: string}}}).response?.data?.detail;
+            showOrsErrorToast(detail, t('routes.toast.optimizeFailed'));
         } finally {
             setActionLoading(false);
         }
@@ -171,6 +278,10 @@ export default function RouteDetailPage() {
     }
 
     const coords: [number, number][] = route.stops.map(s => [parseFloat(s.latitude), parseFloat(s.longitude)]);
+    // ORS returns [lng, lat]; Leaflet expects [lat, lng] — swap.
+    const realRoadCoords: [number, number][] | null = route.route_geometry
+        ? route.route_geometry.map(([lng, lat]) => [lat, lng])
+        : null;
 
     return (
         <div className="flex-1 overflow-y-auto">
@@ -255,9 +366,9 @@ export default function RouteDetailPage() {
                             <button
                                 onClick={handleArchive}
                                 disabled={actionLoading}
-                                className="px-3 py-1.5 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg cursor-pointer disabled:opacity-50"
+                                className="px-3 py-1.5 text-sm bg-stone-200 hover:bg-stone-300 dark:bg-stone-700 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 rounded-lg cursor-pointer disabled:opacity-50"
                             >
-                                {t('routes.detail.archiveBtn')}
+                                📦 {t('routes.detail.archiveBtn')}
                             </button>
                         </>
                     )}
@@ -275,7 +386,105 @@ export default function RouteDetailPage() {
                     >
                         {t('routes.detail.kmlBtn')}
                     </a>
+                    <a
+                        href={routesService.exportUrl(route.id, 'kmz')}
+                        className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-stone-800 text-gray-700 dark:text-stone-200 border border-gray-300 dark:border-stone-600 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-700"
+                        title={t('routes.detail.kmzTitle')}
+                    >
+                        {t('routes.detail.kmzBtn')}
+                    </a>
+                    {route.visibility === 'public' && route.status === 'approved' && (
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                const url = `${window.location.origin}/routes/${route.id}`;
+                                // Use native share only on touch-primary devices (phones/tablets) —
+                                // on desktop the OS share dialog feels foreign for a web app.
+                                const isTouchPrimary = window.matchMedia('(pointer: coarse)').matches;
+                                try {
+                                    if (isTouchPrimary && navigator.share) {
+                                        await navigator.share({title: route.title, url});
+                                    } else {
+                                        await navigator.clipboard.writeText(url);
+                                        toast.success(t('routes.toast.linkCopied'));
+                                    }
+                                } catch {
+                                    // user cancelled share dialog — silent
+                                }
+                            }}
+                            className="px-3 py-1.5 text-sm bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/60 cursor-pointer"
+                            title={t('routes.detail.shareTitle')}
+                        >
+                            🔗 {t('routes.detail.shareBtn')}
+                        </button>
+                    )}
                 </div>
+
+                {/* Route stats */}
+                {coords.length > 0 && (
+                    <div className="mb-3 text-sm">
+                        {route.route_distance_m != null && route.route_duration_s != null ? (
+                            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-stone-800 border border-amber-200 dark:border-stone-700 rounded-lg text-gray-800 dark:text-stone-100">
+                                <strong>🛣 {(route.route_distance_m / 1000).toFixed(1)} км</strong>
+                                <span className="text-gray-500 dark:text-stone-400">·</span>
+                                <strong>⏱ {formatDuration(route.route_duration_s, t)}</strong>
+                                <span className="text-xs text-gray-500 dark:text-stone-400">({t('routes.detail.realRoads')})</span>
+                            </span>
+                        ) : coords.length >= 2 && (
+                            <span className="text-xs text-gray-500 dark:text-stone-400 italic">
+                                {t('routes.detail.straightLineHint')}
+                            </span>
+                        )}
+                    </div>
+                )}
+
+                {/* ORS controls — own row so the buttons stay together */}
+                {canEdit && coords.length >= 2 && (
+                    <div className="flex flex-wrap items-center gap-2 mb-3 text-sm">
+                        <div className="inline-flex rounded-lg border border-gray-300 dark:border-stone-600 overflow-hidden" role="group">
+                            {(['foot-walking', 'cycling-regular', 'driving-car'] as const).map(p => {
+                                const icon = p === 'foot-walking' ? '🚶' : p === 'cycling-regular' ? '🚲' : '🚗';
+                                const isActive = profile === p;
+                                return (
+                                    <button
+                                        key={p}
+                                        type="button"
+                                        onClick={() => setProfile(p)}
+                                        disabled={actionLoading}
+                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors cursor-pointer disabled:opacity-50 ${
+                                            isActive
+                                                ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-stone-900'
+                                                : 'bg-white dark:bg-stone-800 text-gray-700 dark:text-stone-200 hover:bg-gray-100 dark:hover:bg-stone-700'
+                                        }`}
+                                    >
+                                        <span>{icon}</span>
+                                        <span className="hidden sm:inline">{t(`routes.detail.profile.${p}`)}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleComputeGeometry}
+                            disabled={actionLoading}
+                            className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white rounded-lg cursor-pointer disabled:opacity-50"
+                            title={t('routes.detail.computeGeometryHint')}
+                        >
+                            🛣 {t('routes.detail.computeGeometry')}
+                        </button>
+                        {coords.length >= 3 && (
+                            <button
+                                type="button"
+                                onClick={handleOptimizeOrder}
+                                disabled={actionLoading}
+                                className="px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-400 text-white rounded-lg cursor-pointer disabled:opacity-50"
+                                title={t('routes.detail.optimizeHint')}
+                            >
+                                ⚡ {t('routes.detail.optimize')}
+                            </button>
+                        )}
+                    </div>
+                )}
 
                 {/* Map */}
                 {coords.length > 0 && (
@@ -283,9 +492,11 @@ export default function RouteDetailPage() {
                         <MapContainer center={coords[0]} zoom={10} scrollWheelZoom className="h-full w-full">
                             <ThemedTileLayer/>
                             <FitToStops coords={coords}/>
-                            {coords.length >= 2 && (
-                                <Polyline positions={coords} pathOptions={{color: '#d97706', weight: 4, opacity: 0.7}}/>
-                            )}
+                            {realRoadCoords ? (
+                                <Polyline positions={realRoadCoords} pathOptions={{color: '#d97706', weight: 4, opacity: 0.85}}/>
+                            ) : coords.length >= 2 ? (
+                                <Polyline positions={coords} pathOptions={{color: '#d97706', weight: 4, opacity: 0.7, dashArray: '8 6'}}/>
+                            ) : null}
                             {route.stops.map(s => (
                                 <Marker
                                     key={s.id}

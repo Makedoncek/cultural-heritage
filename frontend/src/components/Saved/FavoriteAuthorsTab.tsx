@@ -1,7 +1,10 @@
-import {useEffect, useState} from 'react';
+import {useEffect} from 'react';
 import {Link} from 'react-router';
+import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import {usersService} from '../../services/users.service';
+import {usePaginatedList} from '../../hooks/usePaginatedList';
+import LoadMoreButton from '../common/LoadMoreButton';
 import type {AuthorProfile} from '../../types';
 
 interface Props {
@@ -10,16 +13,14 @@ interface Props {
 
 export default function FavoriteAuthorsTab({onCountChange}: Props) {
     const {t} = useTranslation();
-    const [authors, setAuthors] = useState<AuthorProfile[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const {items: authors, setItems: setAuthors, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<AuthorProfile>({
+        initialFetch: () => usersService.getFavoriteAuthors(),
+        fetchByUrl: (url) => usersService.getFavoriteAuthorsByUrl(url),
+        onError: () => toast.error(t('common.loadMoreError')),
+        deps: [],
+    });
 
-    useEffect(() => {
-        usersService.getFavoriteAuthors()
-            .then(data => { setAuthors(data); onCountChange?.(data.length); })
-            .catch(() => setError(t('subscriptions.loadError')))
-            .finally(() => setLoading(false));
-    }, [t, onCountChange]);
+    useEffect(() => { onCountChange?.(totalCount); }, [totalCount, onCountChange]);
 
     const handleUnfollow = async (username: string) => {
         await usersService.toggleFollow(username);
@@ -31,7 +32,7 @@ export default function FavoriteAuthorsTab({onCountChange}: Props) {
     };
 
     if (loading) return <div className="flex justify-center py-8"><div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/></div>;
-    if (error) return <p className="text-red-600 text-center py-6">{error}</p>;
+    if (error && authors.length === 0) return <p className="text-red-600 text-center py-6">{t('subscriptions.loadError')}</p>;
     if (authors.length === 0) {
         return (
             <div className="text-center py-12">
@@ -67,6 +68,13 @@ export default function FavoriteAuthorsTab({onCountChange}: Props) {
                     </button>
                 </div>
             ))}
+            <LoadMoreButton
+                show={!!nextUrl}
+                loading={loadingMore}
+                shown={authors.length}
+                total={totalCount}
+                onClick={loadMore}
+            />
         </div>
     );
 }

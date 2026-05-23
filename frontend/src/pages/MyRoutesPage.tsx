@@ -1,8 +1,10 @@
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 import {Link} from 'react-router';
 import {useTranslation} from 'react-i18next';
 import toast from 'react-hot-toast';
 import {routesService} from '../services/routes.service';
+import {usePaginatedList} from '../hooks/usePaginatedList';
+import LoadMoreButton from '../components/common/LoadMoreButton';
 import type {RouteListItem, RouteStatus} from '../types/routes';
 
 const STATUS_BADGE: Record<RouteStatus, string> = {
@@ -20,9 +22,12 @@ const VISIBILITY_BADGE = {
 export default function MyRoutesPage() {
     const {t, i18n} = useTranslation();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
-    const [routes, setRoutes] = useState<RouteListItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const {items: routes, setItems: setRoutes, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<RouteListItem>({
+        initialFetch: () => routesService.listMine(),
+        fetchByUrl: (url) => routesService.listMineByUrl(url),
+        onError: () => toast.error(t('common.loadMoreError')),
+        deps: [],
+    });
     const [actionId, setActionId] = useState<number | null>(null);
 
     const handleRestore = async (id: number) => {
@@ -66,13 +71,6 @@ export default function MyRoutesPage() {
         }
     };
 
-    useEffect(() => {
-        routesService.listMine()
-            .then(setRoutes)
-            .catch(() => setError(t('routes.loadError')))
-            .finally(() => setLoading(false));
-    }, [t]);
-
     if (loading) {
         return (
             <div className="flex-1 flex items-center justify-center">
@@ -83,10 +81,10 @@ export default function MyRoutesPage() {
             </div>
         );
     }
-    if (error) {
+    if (error && routes.length === 0) {
         return (
             <div className="flex-1 flex items-center justify-center">
-                <p className="text-red-600">{error}</p>
+                <p className="text-red-600">{t('routes.loadError')}</p>
             </div>
         );
     }
@@ -187,6 +185,13 @@ export default function MyRoutesPage() {
                                 </div>
                             </div>
                         ))}
+                        <LoadMoreButton
+                            show={!!nextUrl}
+                            loading={loadingMore}
+                            shown={routes.length}
+                            total={totalCount}
+                            onClick={loadMore}
+                        />
                     </div>
                 )}
             </div>

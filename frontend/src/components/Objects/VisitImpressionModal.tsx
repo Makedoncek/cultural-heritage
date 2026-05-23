@@ -9,14 +9,25 @@ interface Props {
     onUpdated: (updated: Visit) => void;
 }
 
+// Convert ISO datetime to the local-time string that <input type="datetime-local"> expects.
+function toLocalInputValue(iso: string): string {
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function nowLocalInputValue(): string {
+    return toLocalInputValue(new Date().toISOString());
+}
+
 export default function VisitImpressionModal({visit, onClose, onUpdated}: Props) {
     const [impression, setImpression] = useState(visit.impression);
-    const [visitedAt, setVisitedAt] = useState(visit.visited_at);
+    const [visitedAt, setVisitedAt] = useState(toLocalInputValue(visit.visited_at));
     const [isPublic, setIsPublic] = useState(visit.is_public);
     const [saving, setSaving] = useState(false);
 
-    const today = new Date().toISOString().slice(0, 10);
-    const futureDate = visitedAt > today;
+    const nowLocal = nowLocalInputValue();
+    const futureDate = visitedAt > nowLocal;
 
     const handleSave = async () => {
         if (futureDate) {
@@ -25,9 +36,11 @@ export default function VisitImpressionModal({visit, onClose, onUpdated}: Props)
         }
         setSaving(true);
         try {
+            // The <input type="datetime-local"> returns 'YYYY-MM-DDTHH:mm' (no timezone).
+            // Treat it as local time and serialize to ISO with timezone info.
             const updated = await visitsService.update(visit.id, {
                 impression: impression.trim(),
-                visited_at: visitedAt,
+                visited_at: new Date(visitedAt).toISOString(),
                 is_public: isPublic,
             });
             onUpdated(updated);
@@ -51,12 +64,12 @@ export default function VisitImpressionModal({visit, onClose, onUpdated}: Props)
                 </p>
 
                 <label className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-1">
-                    Дата візиту
+                    Дата і час візиту
                 </label>
                 <input
-                    type="date"
+                    type="datetime-local"
                     value={visitedAt}
-                    max={today}
+                    max={nowLocal}
                     onChange={(e) => setVisitedAt(e.target.value)}
                     className={`w-full bg-white dark:bg-stone-800 border ${
                         futureDate ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-stone-700'

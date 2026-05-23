@@ -1,7 +1,10 @@
-import {useEffect, useState} from 'react';
+import {useEffect} from 'react';
 import {Link} from 'react-router';
+import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import {reportsService} from '../../services/reports.service';
+import {usePaginatedList} from '../../hooks/usePaginatedList';
+import LoadMoreButton from '../common/LoadMoreButton';
 import type {InaccuracyReport, ReportStatus} from '../../types/reports';
 
 const STATUS_BADGE: Record<ReportStatus, string> = {
@@ -15,21 +18,19 @@ interface Props {
 }
 
 export default function ReportsOnMyObjectsTab({onCountChange}: Props) {
-    const {i18n} = useTranslation();
+    const {t, i18n} = useTranslation();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
-    const [reports, setReports] = useState<InaccuracyReport[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const {items: reports, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<InaccuracyReport>({
+        initialFetch: () => reportsService.listOnMyObjects(),
+        fetchByUrl: (url) => reportsService.listOnMyObjectsByUrl(url),
+        onError: () => toast.error(t('common.loadMoreError')),
+        deps: [],
+    });
 
-    useEffect(() => {
-        reportsService.listOnMyObjects()
-            .then(data => { setReports(data); onCountChange?.(data.length); })
-            .catch(() => setError('Не вдалося завантажити список.'))
-            .finally(() => setLoading(false));
-    }, [onCountChange]);
+    useEffect(() => { onCountChange?.(totalCount); }, [totalCount, onCountChange]);
 
     if (loading) return <div className="flex justify-center py-8"><div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/></div>;
-    if (error) return <p className="text-red-600 text-center py-6">{error}</p>;
+    if (error && reports.length === 0) return <p className="text-red-600 text-center py-6">Не вдалося завантажити список.</p>;
     if (reports.length === 0) {
         return <div className="text-center py-12"><p className="text-gray-500 dark:text-stone-400">Поки що жодного репорту.</p></div>;
     }
@@ -59,6 +60,13 @@ export default function ReportsOnMyObjectsTab({onCountChange}: Props) {
                     </div>
                 </>
             )}
+            <LoadMoreButton
+                show={!!nextUrl}
+                loading={loadingMore}
+                shown={reports.length}
+                total={totalCount}
+                onClick={loadMore}
+            />
         </>
     );
 }

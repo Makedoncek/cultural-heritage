@@ -1,4 +1,9 @@
 {
+  "common": {
+    "loadMore": "Load more ({{shown}} of {{total}})",
+    "loadingMore": "Loading...",
+    "loadMoreError": "Failed to load more"
+  },
   "footer": {
     "contact": "Contact us"
   },
@@ -322,6 +327,7 @@
     "featured": "Featured",
     "stops": "stops",
     "hours": "h",
+    "minutes": "min",
     "loadError": "Failed to load routes.",
     "status": {
       "draft": "Draft",
@@ -370,7 +376,20 @@
       "noteSaveFailed": "Failed to save note",
       "visitFailed": "Failed to update visit",
       "routeCompleted": "Route completed! All stops added to your passport",
-      "routeCompletedFailed": "Failed to mark route as completed"
+      "routeCompletedFailed": "Failed to mark route as completed",
+      "geometryComputed": "Route computed along real roads",
+      "geometryFailed": "Failed to compute geometry",
+      "orderOptimized": "Stop order optimized",
+      "optimizeFailed": "Optimization failed",
+      "linkCopied": "Link copied to clipboard",
+      "hintTryAnotherProfile": "💡 Try a different profile (🚶 Walking often has a wider path network) or check the coordinates of the listed stops in edit mode.",
+      "hintPointOffRoad": "💡 One of the stops is far from any road. Move it to the nearest road by editing the object's coordinates.",
+      "dismiss": "Dismiss",
+      "orsErr": {
+        "unroutablePoint": "Stop #{{index}} {{title}}is further than {{radius}} m from the nearest road ({{lng}}, {{lat}}).",
+        "unreachablePair": "Couldn't find a route between stops #{{a}} {{titleA}}and #{{b}} {{titleB}}({{aLng}}, {{aLat}} → {{bLng}}, {{bLat}}).",
+        "unfoundLocation": "No route found from point {{title}}({{lng}}, {{lat}}) — isolated from the road network in the current profile."
+      }
     },
     "searchPlaceholder": "Search by title or description...",
     "anyDuration": "Any duration",
@@ -417,12 +436,28 @@
       "kmlBtn": "📥 KML",
       "gpxTitle": "GPS Exchange Format — for Garmin, OsmAnd, Maps.me, Strava",
       "kmlTitle": "Keyhole Markup Language — for Google Earth, Google My Maps",
+      "kmzBtn": "📥 KMZ",
+      "kmzTitle": "KML archive with embedded photos — for Google Earth (double-click to open)",
+      "shareBtn": "Share",
+      "shareTitle": "Copy route link",
       "stopsHeader": "📋 Route stops",
       "stopUnavailable": "⚠ Object temporarily unavailable",
       "stopDetails": "Details →",
       "copiedFrom": "Created as a copy of route",
       "fullscreen": "Expand map",
       "exitFullscreen": "Exit",
+      "computeGeometry": "On real roads",
+      "computeGeometryHint": "Compute the route along real roads via OpenRouteService",
+      "profile": {
+        "foot-walking": "Walking",
+        "cycling-regular": "Cycling",
+        "driving-car": "Driving"
+      },
+      "optimize": "Optimize",
+      "optimizeHint": "Find the shortest stop order (TSP via vroom engine)",
+      "optimizeConfirm": "Reorder stops in the optimal sequence? This will automatically recompute the route.",
+      "realRoads": "on real roads",
+      "straightLineHint": "Showing straight lines. Click 'On real roads' to compute the actual route.",
       "progress": "✓ {{visited}} of {{total}} stops visited",
       "iWasHere": "🚶 I was here",
       "visited": "Visited",

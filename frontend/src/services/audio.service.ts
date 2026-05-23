@@ -36,8 +36,15 @@ export const audioService = {
         await api.post(`/objects/${objectId}/audios/${audioId}/play/`);
     },
 
-    async listMine(): Promise<ObjectWithMyAudios[]> {
-        const {data} = await api.get<ObjectWithMyAudios[]>('/objects/with-my-audios/');
+    async listMine(params?: {page?: number; page_size?: number}) {
+        const {data} = await api.get<{count: number; next: string | null; previous: string | null; results: ObjectWithMyAudios[]}>(
+            '/objects/with-my-audios/', {params},
+        );
+        return data;
+    },
+
+    async listMineByUrl(url: string) {
+        const {data} = await api.get<{count: number; next: string | null; previous: string | null; results: ObjectWithMyAudios[]}>(url);
         return data;
     },
 };

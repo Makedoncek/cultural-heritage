@@ -37,21 +37,30 @@ export const objectsService = {
     hardDelete: (id: number) =>
         api.delete(`/objects/${id}/hard-delete/`).then(res => res.data),
 
-    getMy: () =>
-        api.get<PaginatedResponse<CulturalObject>>('/objects/my/').then(res => res.data),
+    getMy: (params?: {page?: number; page_size?: number}) =>
+        api.get<PaginatedResponse<CulturalObject>>('/objects/my/', {params}).then(res => res.data),
+
+    getMyByUrl: (url: string) =>
+        api.get<PaginatedResponse<CulturalObject>>(url).then(res => res.data),
 
     toggleFavorite: (id: number) =>
         api.post<FavoriteToggleResponse>(`/objects/${id}/favorite/`).then(res => res.data),
 
-    getFavorites: (params?: { page?: number }) =>
+    getFavorites: (params?: {page?: number; page_size?: number}) =>
         api.get<PaginatedResponse<CulturalObject>>('/objects/favorites/', {params}).then(res => res.data),
+
+    getFavoritesByUrl: (url: string) =>
+        api.get<PaginatedResponse<CulturalObject>>(url).then(res => res.data),
 
     getPopular: () =>
         api.get<CulturalObject[]>('/objects/popular/').then(res => res.data),
 
-    getWithMyPhotos: (params?: { page?: number }) =>
+    getWithMyPhotos: (params?: {page?: number; page_size?: number}) =>
         api.get<PaginatedResponse<CulturalObjectWithMyPhotos>>(
             '/objects/with-my-photos/',
             {params},
         ).then(res => res.data),
+
+    getWithMyPhotosByUrl: (url: string) =>
+        api.get<PaginatedResponse<CulturalObjectWithMyPhotos>>(url).then(res => res.data),
 };

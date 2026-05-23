@@ -1,7 +1,10 @@
-import {useEffect, useState} from 'react';
+import {useEffect} from 'react';
 import {Link} from 'react-router';
+import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import {visitsService} from '../../services/visits.service';
+import {usePaginatedList} from '../../hooks/usePaginatedList';
+import LoadMoreButton from '../common/LoadMoreButton';
 import type {Visit} from '../../types/visits';
 
 interface Props {
@@ -10,21 +13,19 @@ interface Props {
 }
 
 export default function AuthorVisitsTab({username, onCountChange}: Props) {
-    const {i18n} = useTranslation();
+    const {t, i18n} = useTranslation();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
-    const [visits, setVisits] = useState<Visit[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const {items: visits, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<Visit>({
+        initialFetch: () => visitsService.listPublic(username),
+        fetchByUrl: (url) => visitsService.listPublicByUrl(url),
+        onError: () => toast.error(t('common.loadMoreError')),
+        deps: [username],
+    });
 
-    useEffect(() => {
-        visitsService.listPublic(username)
-            .then(data => { setVisits(data); onCountChange?.(data.length); })
-            .catch(() => setError('Не вдалося завантажити публічні візити.'))
-            .finally(() => setLoading(false));
-    }, [username, onCountChange]);
+    useEffect(() => { onCountChange?.(totalCount); }, [totalCount, onCountChange]);
 
     if (loading) return <div className="flex justify-center py-8"><div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/></div>;
-    if (error) return <p className="text-red-600 text-center py-6">{error}</p>;
+    if (error && visits.length === 0) return <p className="text-red-600 text-center py-6">Не вдалося завантажити публічні візити.</p>;
     if (visits.length === 0) {
         return (
             <div className="text-center py-12">
@@ -48,7 +49,9 @@ export default function AuthorVisitsTab({username, onCountChange}: Props) {
                             {v.object_tags.length > 0 && (
                                 <span>{v.object_tags.map(tag => tag.icon).join(' ')}</span>
                             )}
-                            <span>{new Date(v.visited_at).toLocaleDateString(dateLocale)}</span>
+                            <span>
+                                {new Date(v.visited_at).toLocaleString(dateLocale, {dateStyle: 'short', timeStyle: 'short'})}
+                            </span>
                         </div>
                         {v.impression && (
                             <p className="text-sm text-gray-700 dark:text-stone-200 italic mt-2">
@@ -58,6 +61,13 @@ export default function AuthorVisitsTab({username, onCountChange}: Props) {
                     </div>
                 ))}
             </div>
+            <LoadMoreButton
+                show={!!nextUrl}
+                loading={loadingMore}
+                shown={visits.length}
+                total={totalCount}
+                onClick={loadMore}
+            />
         </>
     );
 }

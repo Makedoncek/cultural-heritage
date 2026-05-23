@@ -49,13 +49,13 @@ class VisitFlowTests(APITestCase):
         response = self.client.patch(url, {
             'impression': 'Чудовий вид з башти',
             'is_public': True,
-            'visited_at': '2026-04-15',
+            'visited_at': '2026-04-15T14:30:00+00:00',
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         visit.refresh_from_db()
         self.assertEqual(visit.impression, 'Чудовий вид з башти')
         self.assertTrue(visit.is_public)
-        self.assertEqual(str(visit.visited_at), '2026-04-15')
+        self.assertEqual(visit.visited_at.date().isoformat(), '2026-04-15')
 
     def test_future_visited_at_rejected(self):
         from datetime import date, timedelta
@@ -85,8 +85,8 @@ class VisitFlowTests(APITestCase):
         url = reverse('objects:public_visits', kwargs={'username': self.user.username})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['object_title'], 'Test Castle')
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['object_title'], 'Test Castle')
 
     def test_visits_count_public_aggregate(self):
         Visit.objects.create(user=self.user, cultural_object=self.obj)

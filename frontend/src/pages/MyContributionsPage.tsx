@@ -14,11 +14,13 @@ export default function MyContributionsPage() {
     const [audioCount, setAudioCount] = useState<number | null>(null);
 
     useEffect(() => {
-        objectsService.getWithMyPhotos()
-            .then(data => setPhotoCount(data.results.reduce((acc, o) => acc + o.my_photos.length, 0)))
+        // Use server-side `count` (total across all pages) as tab badge — flatten of `results`
+        // would only show the first 20 from page 1.
+        objectsService.getWithMyPhotos({page_size: 1})
+            .then(data => setPhotoCount(data.count))
             .catch(() => setPhotoCount(0));
-        audioService.listMine()
-            .then(data => setAudioCount(data.reduce((acc, o) => acc + o.my_audios.length, 0)))
+        audioService.listMine({page_size: 1})
+            .then(data => setAudioCount(data.count))
             .catch(() => setAudioCount(0));
     }, []);
 

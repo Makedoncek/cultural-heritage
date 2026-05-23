@@ -6,7 +6,7 @@ export interface Visit {
     object_title: string;
     object_cover_url: string | null;
     object_tags: Tag[];
-    visited_at: string;          // ISO date 'YYYY-MM-DD'
+    visited_at: string;          // ISO datetime 'YYYY-MM-DDTHH:mm:ssZ'
     impression: string;
     is_public: boolean;
     created_at: string;

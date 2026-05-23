@@ -1,9 +1,11 @@
-import {useState, useEffect} from 'react';
+import {useState} from 'react';
 import {Link} from 'react-router';
 import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import {objectsService} from '../../services/objects.service';
 import {photosService} from '../../services/photos.service';
+import {usePaginatedList} from '../../hooks/usePaginatedList';
+import LoadMoreButton from '../common/LoadMoreButton';
 import Lightbox from '../Objects/Lightbox';
 import CoverImage from '../Objects/CoverImage';
 import type {CulturalObjectWithMyPhotos, ObjectPhoto} from '../../types';
@@ -135,17 +137,13 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
 
 export default function MyPhotosTab() {
     const {t} = useTranslation();
-    const [items, setItems] = useState<CulturalObjectWithMyPhotos[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const {items, setItems, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<CulturalObjectWithMyPhotos>({
+        initialFetch: () => objectsService.getWithMyPhotos(),
+        fetchByUrl: (url) => objectsService.getWithMyPhotosByUrl(url),
+        onError: () => toast.error(t('common.loadMoreError')),
+        deps: [],
+    });
     const [lightbox, setLightbox] = useState<{photos: ObjectPhoto[]; idx: number} | null>(null);
-
-    useEffect(() => {
-        objectsService.getWithMyPhotos()
-            .then(data => setItems(data.results))
-            .catch(() => setError(t('myPhotos.loadError')))
-            .finally(() => setLoading(false));
-    }, [t]);
 
     const handlePhotoUpdated = (objectId: number, updated: ObjectPhoto) => {
         setItems(prev => prev.map(obj => {
@@ -168,8 +166,8 @@ export default function MyPhotosTab() {
             </div>
         );
     }
-    if (error) {
-        return <p className="text-red-600 text-center py-6">{error}</p>;
+    if (error && items.length === 0) {
+        return <p className="text-red-600 text-center py-6">{t('myPhotos.loadError')}</p>;
     }
     if (items.length === 0) {
         return (
@@ -254,6 +252,13 @@ export default function MyPhotosTab() {
                         </div>
                     );
                 })}
+                <LoadMoreButton
+                    show={!!nextUrl}
+                    loading={loadingMore}
+                    shown={items.length}
+                    total={totalCount}
+                    onClick={loadMore}
+                />
             </div>
             {lightbox && (
                 <Lightbox

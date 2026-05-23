@@ -17,13 +17,27 @@ export const visitsService = {
         return data.visits_count;
     },
 
-    async listMine(): Promise<Visit[]> {
-        const {data} = await api.get<Visit[]>('/users/me/visits/');
+    async listMine(params?: {page?: number; page_size?: number}) {
+        const {data} = await api.get<{count: number; next: string | null; previous: string | null; results: Visit[]}>(
+            '/users/me/visits/', {params},
+        );
         return data;
     },
 
-    async listPublic(username: string): Promise<Visit[]> {
-        const {data} = await api.get<Visit[]>(`/users/${encodeURIComponent(username)}/visits/`);
+    async listMineByUrl(url: string) {
+        const {data} = await api.get<{count: number; next: string | null; previous: string | null; results: Visit[]}>(url);
+        return data;
+    },
+
+    async listPublic(username: string, params?: {page?: number; page_size?: number}) {
+        const {data} = await api.get<{count: number; next: string | null; previous: string | null; results: Visit[]}>(
+            `/users/${encodeURIComponent(username)}/visits/`, {params},
+        );
+        return data;
+    },
+
+    async listPublicByUrl(url: string) {
+        const {data} = await api.get<{count: number; next: string | null; previous: string | null; results: Visit[]}>(url);
         return data;
     },
 
@@ -49,8 +63,15 @@ export const plannedVisitsService = {
         return data;
     },
 
-    async listMine(): Promise<PlannedVisit[]> {
-        const {data} = await api.get<PlannedVisit[]>('/users/me/planned-visits/');
+    async listMine(params?: {page?: number; page_size?: number}) {
+        const {data} = await api.get<{count: number; next: string | null; previous: string | null; results: PlannedVisit[]}>(
+            '/users/me/planned-visits/', {params},
+        );
+        return data;
+    },
+
+    async listMineByUrl(url: string) {
+        const {data} = await api.get<{count: number; next: string | null; previous: string | null; results: PlannedVisit[]}>(url);
         return data;
     },
 };

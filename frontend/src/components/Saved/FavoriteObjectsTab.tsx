@@ -1,7 +1,10 @@
-import {useEffect, useState} from 'react';
+import {useEffect} from 'react';
 import {Link} from 'react-router';
+import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import {objectsService} from '../../services/objects.service';
+import {usePaginatedList} from '../../hooks/usePaginatedList';
+import LoadMoreButton from '../common/LoadMoreButton';
 import FavoriteButton from '../Objects/FavoriteButton';
 import type {CulturalObject} from '../../types';
 
@@ -12,32 +15,14 @@ interface Props {
 export default function FavoriteObjectsTab({onCountChange}: Props) {
     const {t, i18n} = useTranslation();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
-    const [objects, setObjects] = useState<CulturalObject[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const {items: objects, setItems: setObjects, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<CulturalObject>({
+        initialFetch: () => objectsService.getFavorites(),
+        fetchByUrl: (url) => objectsService.getFavoritesByUrl(url),
+        onError: () => toast.error(t('common.loadMoreError')),
+        deps: [],
+    });
 
-    useEffect(() => {
-        const fetchAll = async () => {
-            try {
-                const allObjects: CulturalObject[] = [];
-                let page = 1;
-                let hasNext = true;
-                while (hasNext) {
-                    const response = await objectsService.getFavorites({page});
-                    allObjects.push(...response.results);
-                    hasNext = response.next !== null;
-                    page++;
-                }
-                setObjects(allObjects);
-                onCountChange?.(allObjects.length);
-            } catch {
-                setError(t('favorites.loadError'));
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchAll();
-    }, [t, onCountChange]);
+    useEffect(() => { onCountChange?.(totalCount); }, [totalCount, onCountChange]);
 
     const handleUnfavorited = (id: number) => {
         setObjects(prev => {
@@ -48,7 +33,7 @@ export default function FavoriteObjectsTab({onCountChange}: Props) {
     };
 
     if (loading) return <div className="flex justify-center py-8"><div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/></div>;
-    if (error) return <p className="text-red-600 text-center py-6">{error}</p>;
+    if (error && objects.length === 0) return <p className="text-red-600 text-center py-6">{t('favorites.loadError')}</p>;
     if (objects.length === 0) {
         return (
             <div className="text-center py-12">
@@ -99,6 +84,13 @@ export default function FavoriteObjectsTab({onCountChange}: Props) {
                     </div>
                 </div>
             ))}
+            <LoadMoreButton
+                show={!!nextUrl}
+                loading={loadingMore}
+                shown={objects.length}
+                total={totalCount}
+                onClick={loadMore}
+            />
         </div>
     );
 }
