@@ -43,13 +43,6 @@ class Tag(models.Model):
         help_text="Display name of the tag (e.g., 'Castle', 'Church')"
     )
 
-    name_en = models.CharField(
-        max_length=100,
-        blank=True,
-        default='',
-        help_text="English translation; falls back to `name` when empty."
-    )
-
     slug = models.SlugField(
         max_length=100,
         unique=True,

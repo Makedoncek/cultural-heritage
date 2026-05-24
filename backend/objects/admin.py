@@ -22,10 +22,10 @@ class TagTranslationInline(admin.TabularInline):
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ['name', 'name_en', 'slug', 'icon', 'tag_type']
+    list_display = ['name', 'slug', 'icon', 'tag_type']
     list_filter = ['tag_type']
     prepopulated_fields = {'slug': ('name',)}
-    search_fields = ['name', 'name_en', 'slug']
+    search_fields = ['name', 'slug']
     ordering = ['name']
     inlines = [TagTranslationInline]
 

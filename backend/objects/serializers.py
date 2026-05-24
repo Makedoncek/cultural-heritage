@@ -74,9 +74,6 @@ def _resolve_tag_name(tag, lang):
         match = tag.translations.filter(language=lang).first()
     if match is not None:
         return match.name
-    # Legacy: Tag.name_en fallback before TagTranslation exists.
-    if lang == 'en' and getattr(tag, 'name_en', ''):
-        return tag.name_en
     return tag.name
 
 
