@@ -8,8 +8,12 @@ import ThemedTileLayer from '../components/Map/ThemedTileLayer';
 import {routesService} from '../services/routes.service';
 import {visitsService} from '../services/visits.service';
 import {useAuth} from '../context/AuthContext';
+import ContentLanguageSelector, {type ContentLanguage} from '../components/Translation/ContentLanguageSelector';
+import TranslationSubmitModal from '../components/Translation/TranslationSubmitModal';
 import type {RouteDetail} from '../types/routes';
 import '../utils/leaflet-fix';
+
+const ALL_CONTENT_LANGUAGES: ContentLanguage[] = ['uk', 'en', 'pl', 'de'];
 
 function numberedIcon(n: number, color = '#d97706', visited = false): L.DivIcon {
     const bg = visited ? '#16a34a' : color;
@@ -62,6 +66,8 @@ export default function RouteDetailPage() {
     const [togglingStopId, setTogglingStopId] = useState<number | null>(null);
     const [mapFullscreen, setMapFullscreen] = useState(false);
     const [profile, setProfile] = useState<'foot-walking' | 'cycling-regular' | 'driving-car'>('foot-walking');
+    const [showTranslationModal, setShowTranslationModal] = useState(false);
+    const [contentLang, setContentLang] = useState<ContentLanguage | null>(null);
 
     useEffect(() => {
         if (!mapFullscreen) return;
@@ -210,10 +216,22 @@ export default function RouteDetailPage() {
     useEffect(() => {
         if (routeId == null) return;
         routesService.detail(routeId)
-            .then(setRoute)
+            .then(data => {
+                setRoute(data);
+                const uiLang = (i18n.resolvedLanguage || 'uk') as ContentLanguage;
+                setContentLang(data.available_languages.includes(uiLang) ? uiLang : data.original_language);
+            })
             .catch(() => setError(t('routes.toast.loadFailed')))
             .finally(() => setLoading(false));
-    }, [routeId, t]);
+    }, [routeId, t, i18n]);
+
+    const handleSelectContentLang = (lang: ContentLanguage) => {
+        if (routeId == null || lang === contentLang) return;
+        setContentLang(lang);
+        routesService.detail(routeId, lang)
+            .then(setRoute)
+            .catch(() => toast.error(t('routes.toast.loadFailed')));
+    };
 
     const handleSubmit = async () => {
         if (!route) return;
@@ -293,6 +311,13 @@ export default function RouteDetailPage() {
                 <Link to="/routes" className="text-sm text-amber-700 dark:text-amber-400 hover:underline mb-2 inline-block">
                     {t('routes.detail.back')}
                 </Link>
+
+                <ContentLanguageSelector
+                    available={route.available_languages}
+                    selected={contentLang ?? route.original_language}
+                    onSelect={handleSelectContentLang}
+                    onSuggest={isAuthenticated ? () => setShowTranslationModal(true) : undefined}
+                />
 
                 <div className="flex items-start justify-between flex-wrap gap-2 mb-2">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">
@@ -685,6 +710,16 @@ export default function RouteDetailPage() {
                     </p>
                 )}
             </div>
+
+            <TranslationSubmitModal
+                open={showTranslationModal}
+                onClose={() => setShowTranslationModal(false)}
+                targetOptions={ALL_CONTENT_LANGUAGES}
+                originalLanguage={route.original_language}
+                onSubmit={async payload => {
+                    await routesService.submitTranslation(route.id, payload);
+                }}
+            />
         </div>
     );
 }

@@ -16,6 +16,14 @@ from django.utils.translation import gettext_lazy as _
 from .validators import validate_coordinates_within_ukraine
 
 
+LANGUAGE_CHOICES = [
+    ('uk', 'Українська'),
+    ('en', 'English'),
+    ('pl', 'Polski'),
+    ('de', 'Deutsch'),
+]
+
+
 class Tag(models.Model):
     """
     Category/type for cultural objects.
@@ -150,6 +158,13 @@ class CulturalObject(models.Model):
         choices=ObjectType.choices,
         default=ObjectType.PERMANENT,
         db_index=True,
+    )
+
+    original_language = models.CharField(
+        max_length=5,
+        choices=LANGUAGE_CHOICES,
+        default='uk',
+        help_text="Мова, якою автор написав title/description.",
     )
 
     event_start_date = models.DateTimeField(
@@ -410,6 +425,8 @@ class UserPreference(models.Model):
     class Language(models.TextChoices):
         UK = 'uk', 'Українська'
         EN = 'en', 'English'
+        PL = 'pl', 'Polski'
+        DE = 'de', 'Deutsch'
 
     class Theme(models.TextChoices):
         LIGHT = 'light', 'Light'
@@ -421,7 +438,7 @@ class UserPreference(models.Model):
         related_name='preference',
     )
     language = models.CharField(
-        max_length=2,
+        max_length=5,
         choices=Language.choices,
         default=Language.UK,
     )
@@ -598,6 +615,12 @@ class Route(models.Model):
     is_featured = models.BooleanField(default=False)
     cover_photo = models.URLField(blank=True)
     estimated_duration_minutes = models.PositiveIntegerField(null=True, blank=True)
+    original_language = models.CharField(
+        max_length=5,
+        choices=LANGUAGE_CHOICES,
+        default='uk',
+        help_text="Мова, якою автор написав title/description.",
+    )
     copied_from = models.ForeignKey(
         'self',
         null=True, blank=True,
@@ -650,3 +673,121 @@ class RouteStop(models.Model):
 
     def __str__(self):
         return f'{self.route.title} #{self.order}: {self.cultural_object.title}'
+
+
+# --- Translations (crowdsourced, admin-moderated) ---
+
+
+class TranslationStatus(models.TextChoices):
+    PENDING = 'pending', 'На розгляді'
+    APPROVED = 'approved', 'Затверджено'
+    REJECTED = 'rejected', 'Відхилено'
+
+
+class CulturalObjectTranslation(models.Model):
+    """Community-contributed translation of CulturalObject.title/description."""
+
+    cultural_object = models.ForeignKey(
+        CulturalObject, related_name='translations', on_delete=models.CASCADE,
+    )
+    language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES)
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=10,
+        choices=TranslationStatus.choices,
+        default=TranslationStatus.PENDING,
+        db_index=True,
+    )
+    submitted_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='submitted_object_translations',
+    )
+    reviewer_note = models.TextField(blank=True, help_text='Нотатка адміна для рецензії/репортів.')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _('Переклад об\'єкта')
+        verbose_name_plural = _('Переклади об\'єктів')
+        constraints = [
+            # Only one approved translation per language is shown publicly; multiple
+            # pending proposals (improvements) may compete for the same language.
+            models.UniqueConstraint(
+                fields=['cultural_object', 'language'],
+                condition=models.Q(status='approved'),
+                name='unique_approved_obj_translation_per_lang',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['cultural_object', 'language', 'status']),
+            models.Index(fields=['status', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f'{self.cultural_object_id} [{self.language}] {self.status}'
+
+
+class RouteTranslation(models.Model):
+    """Community-contributed translation of Route.title/description."""
+
+    route = models.ForeignKey(Route, related_name='translations', on_delete=models.CASCADE)
+    language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES)
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, max_length=2000)
+    status = models.CharField(
+        max_length=10,
+        choices=TranslationStatus.choices,
+        default=TranslationStatus.PENDING,
+        db_index=True,
+    )
+    submitted_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='submitted_route_translations',
+    )
+    reviewer_note = models.TextField(blank=True, help_text='Нотатка адміна для рецензії/репортів.')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _('Переклад маршруту')
+        verbose_name_plural = _('Переклади маршрутів')
+        constraints = [
+            # Only one approved translation per language is shown publicly; multiple
+            # pending proposals (improvements) may compete for the same language.
+            models.UniqueConstraint(
+                fields=['route', 'language'],
+                condition=models.Q(status='approved'),
+                name='unique_approved_route_translation_per_lang',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['route', 'language', 'status']),
+            models.Index(fields=['status', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f'{self.route_id} [{self.language}] {self.status}'
+
+
+class TagTranslation(models.Model):
+    """Admin-curated translation of Tag.name. No moderation (admin-only)."""
+
+    tag = models.ForeignKey(Tag, related_name='translations', on_delete=models.CASCADE)
+    language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES)
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _('Переклад тегу')
+        verbose_name_plural = _('Переклади тегів')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['tag', 'language'],
+                name='unique_tag_translation_per_lang',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.tag.name} [{self.language}] → {self.name}'

@@ -24,8 +24,8 @@ export const routesService = {
         return Array.isArray(data) ? data : (data.results ?? []);
     },
 
-    async detail(id: number): Promise<RouteDetail> {
-        const {data} = await api.get<RouteDetail>(`/routes/${id}/`);
+    async detail(id: number, lang?: string): Promise<RouteDetail> {
+        const {data} = await api.get<RouteDetail>(`/routes/${id}/`, lang ? {params: {lang}} : undefined);
         return data;
     },
 
@@ -128,5 +128,12 @@ export const routesService = {
     exportUrl(id: number, format: 'gpx' | 'kml' | 'kmz'): string {
         const base = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000/api';
         return `${base}/routes/${id}/export/?fmt=${format}`;
+    },
+
+    async submitTranslation(id: number, payload: {language: string; title: string; description: string}) {
+        const {data} = await api.post<{id: number; language: string; title: string; description: string; status: string}>(
+            `/routes/${id}/translations/`, payload,
+        );
+        return data;
     },
 };

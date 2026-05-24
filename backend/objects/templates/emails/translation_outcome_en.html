@@ -1,0 +1,25 @@
+{% extends "emails/base_email_en.html" %}
+{% block content %}
+<h2 style="color:#1f2937;font-size:20px;margin:0 0 16px;">
+    Your proposal was {{ outcome_label }}
+</h2>
+<p style="color:#4b5563;font-size:16px;line-height:1.5;">
+    {{ user.username }}, thank you for contributing to CultureMap!
+</p>
+<p style="color:#4b5563;font-size:16px;line-height:1.5;">
+    Your translation/content proposal ({{ language_code }}) for
+    <strong>“{{ target_title }}”</strong> was <strong>{{ outcome_label }}</strong> by an administrator.
+</p>
+{% if reviewer_note %}
+<div style="background:#fef3c7;border-left:4px solid #d97706;padding:12px 16px;margin:16px 0;border-radius:4px;">
+    <p style="margin:0;color:#92400e;font-size:14px;font-weight:600;">Administrator's note:</p>
+    <p style="margin:4px 0 0;color:#451a03;font-size:14px;line-height:1.5;">{{ reviewer_note }}</p>
+</div>
+{% endif %}
+<div style="text-align:center;margin:24px 0;">
+    <a href="{{ target_url }}"
+       style="display:inline-block;background:#d97706;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
+        View
+    </a>
+</div>
+{% endblock %}

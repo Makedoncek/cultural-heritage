@@ -5,8 +5,73 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from .models import Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, ObjectAudio, InaccuracyReport, Visit, PlannedVisit
+from .models import (
+    Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, ObjectAudio,
+    InaccuracyReport, Visit, PlannedVisit,
+    CulturalObjectTranslation, RouteTranslation, TagTranslation,
+    LANGUAGE_CHOICES, TranslationStatus,
+)
 from .validators import validate_coordinates_within_ukraine
+
+
+SUPPORTED_LANGUAGES = {code for code, _label in LANGUAGE_CHOICES}
+
+
+def _resolve_lang(context):
+    """Pick requested language from ?lang= or Accept-Language; default 'uk'. Returns a supported code."""
+    request = context.get('request') if context else None
+    if request is not None:
+        lang = request.query_params.get('lang') or request.headers.get('Accept-Language', '').split(',')[0].split('-')[0].strip()
+        if lang in SUPPORTED_LANGUAGES:
+            return lang
+    return 'uk'
+
+
+def _resolve_object_translation(obj, lang):
+    """Return (title, description, translation_missing) for the given language.
+
+    Falls back to original fields. Uses prefetched `translations` if available.
+    """
+    if lang == obj.original_language:
+        return obj.title, obj.description, False
+    candidates = list(obj.translations.all()) if hasattr(obj, '_prefetched_objects_cache') and 'translations' in obj._prefetched_objects_cache else None
+    if candidates is None:
+        translation = obj.translations.filter(language=lang, status=TranslationStatus.APPROVED).first()
+    else:
+        translation = next((t for t in candidates if t.language == lang and t.status == TranslationStatus.APPROVED), None)
+    if translation is not None:
+        return translation.title, translation.description, False
+    return obj.title, obj.description, True
+
+
+def _available_languages(obj):
+    """Languages with content: original_language + approved translations, in LANGUAGE_CHOICES order."""
+    langs = {obj.original_language}
+    candidates = getattr(obj, '_prefetched_objects_cache', {}).get('translations')
+    if candidates is not None:
+        langs.update(t.language for t in candidates if t.status == TranslationStatus.APPROVED)
+    else:
+        langs.update(
+            obj.translations.filter(status=TranslationStatus.APPROVED).values_list('language', flat=True)
+        )
+    return [code for code, _label in LANGUAGE_CHOICES if code in langs]
+
+
+def _resolve_tag_name(tag, lang):
+    """Return localized tag name, falling back to original."""
+    if lang == 'uk':
+        return tag.name
+    translations = getattr(tag, '_prefetched_objects_cache', {}).get('translations')
+    if translations is not None:
+        match = next((t for t in translations if t.language == lang), None)
+    else:
+        match = tag.translations.filter(language=lang).first()
+    if match is not None:
+        return match.name
+    # Legacy: Tag.name_en fallback before TagTranslation exists.
+    if lang == 'en' and getattr(tag, 'name_en', ''):
+        return tag.name_en
+    return tag.name
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -95,11 +160,7 @@ class TagSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'name', 'slug', 'icon', 'tag_type']
 
     def get_name(self, obj):
-        """Return English name when the request locale is English; otherwise fall back to `name`."""
-        from django.utils.translation import get_language
-        if get_language() == 'en' and getattr(obj, 'name_en', ''):
-            return obj.name_en
-        return obj.name
+        return _resolve_tag_name(obj, _resolve_lang(self.context))
 
 
 class FavoriteMixin(serializers.Serializer):
@@ -124,6 +185,8 @@ class ObjectListSerializer(FavoriteMixin, serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     cover_url = serializers.CharField(read_only=True, allow_null=True)
     is_visited = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
+    translation_missing = serializers.SerializerMethodField()
 
     class Meta:
         model = CulturalObject
@@ -143,8 +206,18 @@ class ObjectListSerializer(FavoriteMixin, serializers.ModelSerializer):
             'favorites_count',
             'cover_url',
             'is_visited',
+            'original_language',
+            'translation_missing',
         ]
         read_only_fields = fields
+
+    def get_title(self, obj):
+        title, _desc, _missing = _resolve_object_translation(obj, _resolve_lang(self.context))
+        return title
+
+    def get_translation_missing(self, obj):
+        _t, _d, missing = _resolve_object_translation(obj, _resolve_lang(self.context))
+        return missing
 
     def get_is_visited(self, obj):
         request = self.context.get('request')
@@ -164,6 +237,10 @@ class ObjectDetailSerializer(FavoriteMixin, serializers.ModelSerializer):
     is_visited = serializers.SerializerMethodField()
     is_planned = serializers.SerializerMethodField()
     visits_count = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    translation_missing = serializers.SerializerMethodField()
+    available_languages = serializers.SerializerMethodField()
 
     class Meta:
         model = CulturalObject
@@ -178,7 +255,23 @@ class ObjectDetailSerializer(FavoriteMixin, serializers.ModelSerializer):
             'is_favorited', 'favorites_count',
             'photos', 'photo_count', 'cover_url',
             'is_visited', 'is_planned', 'visits_count',
+            'original_language', 'translation_missing', 'available_languages',
         ]
+
+    def get_available_languages(self, obj):
+        return _available_languages(obj)
+
+    def get_title(self, obj):
+        title, _desc, _missing = _resolve_object_translation(obj, _resolve_lang(self.context))
+        return title
+
+    def get_description(self, obj):
+        _title, desc, _missing = _resolve_object_translation(obj, _resolve_lang(self.context))
+        return desc
+
+    def get_translation_missing(self, obj):
+        _t, _d, missing = _resolve_object_translation(obj, _resolve_lang(self.context))
+        return missing
 
     def get_is_visited(self, obj):
         request = self.context.get('request')
@@ -527,7 +620,8 @@ class RouteStopSerializer(serializers.ModelSerializer):
                             'object_status', 'object_cover_url', 'is_unavailable', 'is_visited']
 
     def get_object_title(self, obj):
-        return obj.cultural_object.title
+        title, _desc, _missing = _resolve_object_translation(obj.cultural_object, _resolve_lang(self.context))
+        return title
 
     def get_latitude(self, obj):
         return str(obj.cultural_object.latitude)
@@ -554,6 +648,9 @@ class RouteListSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.username', read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     stops_count = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    translation_missing = serializers.SerializerMethodField()
 
     class Meta:
         from .models import Route
@@ -564,23 +661,41 @@ class RouteListSerializer(serializers.ModelSerializer):
             'cover_photo', 'estimated_duration_minutes',
             'author_name', 'tags', 'stops_count',
             'created_at', 'updated_at',
+            'original_language', 'translation_missing',
         ]
         read_only_fields = fields
 
     def get_stops_count(self, obj):
         return obj.stops.count()
 
+    def get_title(self, obj):
+        title, _desc, _missing = _resolve_object_translation(obj, _resolve_lang(self.context))
+        return title
+
+    def get_description(self, obj):
+        _title, desc, _missing = _resolve_object_translation(obj, _resolve_lang(self.context))
+        return desc
+
+    def get_translation_missing(self, obj):
+        _t, _d, missing = _resolve_object_translation(obj, _resolve_lang(self.context))
+        return missing
+
 
 class RouteDetailSerializer(RouteListSerializer):
     stops = RouteStopSerializer(many=True, read_only=True)
     copied_from = serializers.PrimaryKeyRelatedField(read_only=True)
+    available_languages = serializers.SerializerMethodField()
 
     class Meta(RouteListSerializer.Meta):
         fields = list(RouteListSerializer.Meta.fields) + [
             'stops', 'copied_from',
             'route_geometry', 'route_distance_m', 'route_duration_s', 'geometry_updated_at',
+            'available_languages',
         ]
         read_only_fields = fields
+
+    def get_available_languages(self, obj):
+        return _available_languages(obj)
 
 
 class RouteWriteSerializer(serializers.ModelSerializer):
@@ -593,3 +708,46 @@ class RouteWriteSerializer(serializers.ModelSerializer):
             'title', 'description', 'visibility',
             'tags', 'cover_photo', 'estimated_duration_minutes',
         ]
+
+
+# --- Translation submission / display serializers ---
+
+
+class _TranslationBaseSerializer(serializers.ModelSerializer):
+    submitted_by_username = serializers.CharField(source='submitted_by.username', read_only=True, default=None)
+
+
+class CulturalObjectTranslationSerializer(_TranslationBaseSerializer):
+    class Meta:
+        model = CulturalObjectTranslation
+        fields = [
+            'id', 'cultural_object', 'language', 'title', 'description',
+            'status', 'submitted_by_username', 'reviewer_note',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'cultural_object', 'status',
+                            'submitted_by_username', 'reviewer_note',
+                            'created_at', 'updated_at']
+
+    def validate_language(self, value):
+        if value not in SUPPORTED_LANGUAGES:
+            raise serializers.ValidationError(f'Непідтримувана мова: {value}.')
+        return value
+
+
+class RouteTranslationSerializer(_TranslationBaseSerializer):
+    class Meta:
+        model = RouteTranslation
+        fields = [
+            'id', 'route', 'language', 'title', 'description',
+            'status', 'submitted_by_username', 'reviewer_note',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'route', 'status',
+                            'submitted_by_username', 'reviewer_note',
+                            'created_at', 'updated_at']
+
+    def validate_language(self, value):
+        if value not in SUPPORTED_LANGUAGES:
+            raise serializers.ValidationError(f'Непідтримувана мова: {value}.')
+        return value

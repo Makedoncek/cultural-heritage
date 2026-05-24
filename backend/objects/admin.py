@@ -8,7 +8,14 @@ from django.utils.safestring import mark_safe
 from .models import (
     Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, ObjectAudio,
     InaccuracyReport, Visit, PlannedVisit, Route, RouteStop,
+    CulturalObjectTranslation, RouteTranslation, TagTranslation, TranslationStatus,
 )
+
+
+class TagTranslationInline(admin.TabularInline):
+    model = TagTranslation
+    extra = 1
+    fields = ['language', 'name']
 
 
 @admin.register(Tag)
@@ -18,6 +25,7 @@ class TagAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',)}
     search_fields = ['name', 'name_en', 'slug']
     ordering = ['name']
+    inlines = [TagTranslationInline]
 
 
 class ObjectPhotoInline(SortableTabularInline):
@@ -551,3 +559,140 @@ class ObjectAudioAdmin(admin.ModelAdmin):
             status=ObjectAudio.Status.REJECTED, moderated_at=timezone.now(),
         )
         self.message_user(request, f'Відхилено {n} аудіо.')
+
+
+# --- Translation moderation ---
+
+
+class _TranslationAdminMixin:
+    """Shared moderation actions for CulturalObjectTranslation / RouteTranslation.
+
+    Approving an original-language proposal copies its text into the parent's
+    canonical title/description; the proposal row is kept (status=approved) as an
+    audit record. Approving / rejecting always notifies the submitter by email.
+    """
+
+    # 'object' | 'route' — used to dispatch the outcome email task.
+    email_kind = None
+
+    STATUS_COLORS = {
+        'pending': '#f59e0b',
+        'approved': '#10b981',
+        'rejected': '#ef4444',
+    }
+
+    @admin.display(description='Статус', ordering='status')
+    def colored_status(self, obj):
+        color = self.STATUS_COLORS.get(obj.status, '#6b7280')
+        return format_html(
+            '<span style="background:{};color:#fff;padding:3px 10px;'
+            'border-radius:12px;font-size:11px;font-weight:600;">{}</span>',
+            color, obj.get_status_display(),
+        )
+
+    def _apply_approval(self, translation):
+        """Free the approved slot for this (parent, language) and, for the original
+        language, write the text back into the parent's canonical fields."""
+        self._get_siblings(translation).filter(status=TranslationStatus.APPROVED).delete()
+        parent = self._get_parent(translation)
+        if translation.language == parent.original_language:
+            parent.title = translation.title
+            parent.description = translation.description
+            parent.save(update_fields=['title', 'description'])
+
+    def _notify(self, translation):
+        from .email import send_translation_outcome_email
+        send_translation_outcome_email.delay(self.email_kind, translation.pk)
+
+    @admin.action(description='Затвердити обрані переклади')
+    def approve_translations(self, request, queryset):
+        n = 0
+        for translation in queryset.filter(status=TranslationStatus.PENDING):
+            self._apply_approval(translation)
+            translation.status = TranslationStatus.APPROVED
+            translation.save(update_fields=['status', 'updated_at'])
+            self._notify(translation)
+            n += 1
+        self.message_user(request, f'Затверджено {n} переклад(ів).')
+
+    @admin.action(description='Відхилити обрані переклади')
+    def reject_translations(self, request, queryset):
+        n = 0
+        for translation in queryset.filter(status=TranslationStatus.PENDING):
+            translation.status = TranslationStatus.REJECTED
+            translation.save(update_fields=['status', 'updated_at'])
+            self._notify(translation)
+            n += 1
+        self.message_user(request, f'Відхилено {n} переклад(ів). Додайте reviewer_note у конкретному перекладі, щоб пояснити причину.')
+
+    def save_model(self, request, obj, form, change):
+        prev_status = (
+            type(obj).objects.filter(pk=obj.pk).values_list('status', flat=True).first()
+            if change else None
+        )
+        # Free the unique-approved slot before saving to avoid an integrity error.
+        if change and prev_status == TranslationStatus.PENDING and obj.status == TranslationStatus.APPROVED:
+            self._apply_approval(obj)
+        super().save_model(request, obj, form, change)
+        if change and prev_status == TranslationStatus.PENDING and obj.status in (
+            TranslationStatus.APPROVED, TranslationStatus.REJECTED,
+        ):
+            self._notify(obj)
+
+    def _get_parent(self, translation):
+        raise NotImplementedError
+
+    def _get_siblings(self, translation):
+        raise NotImplementedError
+
+
+@admin.register(CulturalObjectTranslation)
+class CulturalObjectTranslationAdmin(_TranslationAdminMixin, admin.ModelAdmin):
+    email_kind = 'object'
+    list_display = ['id', 'cultural_object', 'language', 'colored_status', 'submitted_by', 'updated_at']
+    list_filter = ['status', 'language', 'updated_at']
+    search_fields = ['cultural_object__title', 'title', 'submitted_by__username']
+    raw_id_fields = ['cultural_object', 'submitted_by']
+    readonly_fields = ['submitted_by', 'created_at', 'updated_at']
+    actions = ['approve_translations', 'reject_translations']
+    fieldsets = (
+        ('Джерело', {'fields': ('cultural_object', 'language', 'submitted_by')}),
+        ('Переклад', {'fields': ('title', 'description')}),
+        ('Модерація', {'fields': ('status', 'reviewer_note')}),
+        ('Дати', {'fields': ('created_at', 'updated_at'), 'classes': ('collapse',)}),
+    )
+
+    def _get_parent(self, translation):
+        return translation.cultural_object
+
+    def _get_siblings(self, translation):
+        return CulturalObjectTranslation.objects.filter(
+            cultural_object=translation.cultural_object,
+            language=translation.language,
+        ).exclude(pk=translation.pk)
+
+
+@admin.register(RouteTranslation)
+class RouteTranslationAdmin(_TranslationAdminMixin, admin.ModelAdmin):
+    email_kind = 'route'
+    list_display = ['id', 'route', 'language', 'colored_status', 'submitted_by', 'updated_at']
+    list_filter = ['status', 'language', 'updated_at']
+    search_fields = ['route__title', 'title', 'submitted_by__username']
+    raw_id_fields = ['route', 'submitted_by']
+    readonly_fields = ['submitted_by', 'created_at', 'updated_at']
+    actions = ['approve_translations', 'reject_translations']
+    fieldsets = (
+        ('Джерело', {'fields': ('route', 'language', 'submitted_by')}),
+        ('Переклад', {'fields': ('title', 'description')}),
+        ('Модерація', {'fields': ('status', 'reviewer_note')}),
+        ('Дати', {'fields': ('created_at', 'updated_at'), 'classes': ('collapse',)}),
+    )
+
+    def _get_parent(self, translation):
+        return translation.route
+
+    def _get_siblings(self, translation):
+        return RouteTranslation.objects.filter(
+            route=translation.route,
+            language=translation.language,
+        ).exclude(pk=translation.pk)

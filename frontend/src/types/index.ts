@@ -45,6 +45,8 @@ export interface Tag {
     tag_type: 'object' | 'event';
 }
 
+export type SupportedLanguage = 'uk' | 'en' | 'pl' | 'de';
+
 export interface CulturalObject {
     id: number;
     title: string;
@@ -61,6 +63,8 @@ export interface CulturalObject {
     favorites_count?: number;
     cover_url?: string | null;
     is_visited?: boolean;
+    original_language: SupportedLanguage;
+    translation_missing: boolean;
 }
 
 export interface FavoriteToggleResponse {
@@ -94,6 +98,9 @@ export interface CulturalObjectDetail {
     is_visited?: boolean;
     is_planned?: boolean;
     visits_count?: number;
+    original_language: SupportedLanguage;
+    translation_missing: boolean;
+    available_languages: SupportedLanguage[];
 }
 
 export interface PhotoUploadedBy {

@@ -13,8 +13,8 @@ export const objectsService = {
     getAll: (params?: ObjectFilters, signal?: AbortSignal) =>
         api.get<PaginatedResponse<CulturalObject>>('/objects/', {params, signal}).then(res => res.data),
 
-    getById: (id: number) =>
-        api.get<CulturalObjectDetail>(`/objects/${id}/`).then(res => res.data),
+    getById: (id: number, lang?: string) =>
+        api.get<CulturalObjectDetail>(`/objects/${id}/`, lang ? {params: {lang}} : undefined).then(res => res.data),
 
     create: (data: CulturalObjectWrite) =>
         api.post<CulturalObjectDetail>('/objects/', data).then(res => res.data),
@@ -63,4 +63,9 @@ export const objectsService = {
 
     getWithMyPhotosByUrl: (url: string) =>
         api.get<PaginatedResponse<CulturalObjectWithMyPhotos>>(url).then(res => res.data),
+
+    submitTranslation: (id: number, payload: {language: string; title: string; description: string}) =>
+        api.post<{id: number; language: string; title: string; description: string; status: string}>(
+            `/objects/${id}/translations/`, payload,
+        ).then(res => res.data),
 };

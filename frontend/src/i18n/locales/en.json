@@ -4,6 +4,25 @@
     "loadingMore": "Loading...",
     "loadMoreError": "Failed to load more"
   },
+  "translations": {
+    "contentLanguage": "Content language",
+    "suggest": "Suggest a translation or new content",
+    "suggestShort": "Translate",
+    "modalTitleGeneric": "Suggest a translation or new content",
+    "modalHint": "Your suggestion will be sent for moderation. Once approved it becomes visible to everyone. You can propose either a translation into another language or an improvement to the original text.",
+    "ownContentNote": "You are not required to translate the existing content word-for-word — you may propose your own information about this place.",
+    "fieldLanguage": "Language",
+    "originalSuffix": " (original)",
+    "fieldTitle": "Title",
+    "fieldDescription": "Description",
+    "submit": "Submit for moderation",
+    "submitting": "Submitting...",
+    "submitted": "Thank you! Your translation has been submitted for moderation.",
+    "errorTitleRequired": "Title is required.",
+    "errorPending": "A translation for this language has already been submitted and is awaiting moderation.",
+    "errorBadRequest": "Unable to submit translation: invalid data.",
+    "errorGeneric": "Unable to submit translation. Try again later."
+  },
   "footer": {
     "contact": "Contact us"
   },
@@ -488,11 +507,21 @@
   },
   "contributions": {
     "title": "My contributions",
-    "subtitle": "Photos and audio narratives you've contributed to community cultural sites.",
+    "subtitle": "Photos, audio narratives and translations you've contributed to community cultural sites.",
     "tabPhotos": "Photos",
     "tabAudios": "Audio",
+    "tabTranslations": "Translations",
     "audiosEmpty": "You haven't added any audio narratives yet. Find an object on the map and record your voice guide.",
-    "myAudiosCount": "Audio:"
+    "myAudiosCount": "Audio:",
+    "translationsEmpty": "You haven't proposed any translations or content yet. Open an object or route and click \"Suggest a translation or new content\".",
+    "kindObject": "Object",
+    "kindRoute": "Route",
+    "reviewerNote": "Administrator's note",
+    "translationStatus": {
+      "pending": "Under review",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    }
   },
   "audio": {
     "sectionTitle": "Audio narratives",

@@ -380,15 +380,16 @@ class FavoriteTest(APITestCase):
         self.obj.tags.add(self.tag)
 
     def test_toggle_favorite_on(self):
-        self.client.force_authenticate(user=self.user)
+        # user2 favorites user's object (self-favorite is forbidden).
+        self.client.force_authenticate(user=self.user2)
         response = self.client.post(f'/api/objects/{self.obj.id}/favorite/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['is_favorited'])
         self.assertEqual(response.data['favorites_count'], 1)
 
     def test_toggle_favorite_off(self):
-        Favorite.objects.create(user=self.user, cultural_object=self.obj)
-        self.client.force_authenticate(user=self.user)
+        Favorite.objects.create(user=self.user2, cultural_object=self.obj)
+        self.client.force_authenticate(user=self.user2)
         response = self.client.post(f'/api/objects/{self.obj.id}/favorite/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(response.data['is_favorited'])

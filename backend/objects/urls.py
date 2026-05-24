@@ -31,6 +31,7 @@ urlpatterns = [
     path('reports/<int:report_pk>/', views.delete_own_report, name='delete_own_report'),
     path('users/me/reports/', views.my_reports, name='my_reports'),
     path('users/me/objects/reports/', views.reports_on_my_objects, name='reports_on_my_objects'),
+    path('users/me/translations/', views.my_translations, name='my_translations'),
     path('admin/reports/', views.admin_reports_list, name='admin_reports_list'),
     path('admin/reports/<int:report_pk>/resolve/', views.admin_resolve_report, name='admin_resolve_report'),
     path('admin/reports/<int:report_pk>/dismiss/', views.admin_dismiss_report, name='admin_dismiss_report'),

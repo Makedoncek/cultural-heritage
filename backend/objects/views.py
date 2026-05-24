@@ -549,7 +549,7 @@ class ObjectViewSet(viewsets.ModelViewSet):
 
         base_qs = (CulturalObject.objects
                    .select_related('author')
-                   .prefetch_related('tags')
+                   .prefetch_related('tags', 'translations')
                    .annotate(favorites_count=Count('favorited_by', distinct=True))
                    .annotate(_cover_thumbnail_url=Subquery(cover_thumb_sq))
                    .order_by('-created_at'))
@@ -711,6 +711,33 @@ class ObjectViewSet(viewsets.ModelViewSet):
         page = paginator.paginate_queryset(objects, request, view=self)
         serializer = ObjectListSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='translations', permission_classes=[IsAuthenticated])
+    def submit_translation(self, request, pk=None):
+        """Submit a community translation for this object (status='pending'; admin moderates via Django Admin)."""
+        from .models import CulturalObjectTranslation
+        from .serializers import CulturalObjectTranslationSerializer
+        try:
+            obj = CulturalObject.objects.get(pk=pk)
+        except CulturalObject.DoesNotExist:
+            return Response({'detail': _('Не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CulturalObjectTranslationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        lang = serializer.validated_data['language']
+        # Proposals are allowed for any language, including the original — an approved
+        # original-language proposal is applied to the canonical content by the admin.
+        # Multiple competing pending proposals per language are allowed.
+        translation = CulturalObjectTranslation.objects.create(
+            cultural_object=obj,
+            language=lang,
+            title=serializer.validated_data['title'],
+            description=serializer.validated_data.get('description', ''),
+            submitted_by=request.user,
+        )
+        return Response(
+            CulturalObjectTranslationSerializer(translation).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     @extend_schema(
         tags=['Objects'],
@@ -1318,6 +1345,44 @@ def reports_on_my_objects(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def my_translations(request):
+    """Translation/content proposals submitted by the current user, across objects and routes."""
+    from .models import CulturalObjectTranslation, RouteTranslation
+    from .pagination import SmallPagePagination
+
+    def payload(tr, kind, parent, url_prefix):
+        return {
+            'id': tr.id,
+            'kind': kind,
+            'target_id': parent.id,
+            'target_title': parent.title,
+            'target_url': f'/{url_prefix}/{parent.id}',
+            'language': tr.language,
+            'title': tr.title,
+            'status': tr.status,
+            'reviewer_note': tr.reviewer_note,
+            'created_at': tr.created_at,
+            'updated_at': tr.updated_at,
+        }
+
+    rows = []
+    for tr in (CulturalObjectTranslation.objects
+               .filter(submitted_by=request.user).select_related('cultural_object')):
+        rows.append((tr.created_at, payload(tr, 'object', tr.cultural_object, 'objects')))
+    for tr in (RouteTranslation.objects
+               .filter(submitted_by=request.user).select_related('route')):
+        rows.append((tr.created_at, payload(tr, 'route', tr.route, 'routes')))
+
+    rows.sort(key=lambda r: r[0], reverse=True)
+    items = [r[1] for r in rows]
+
+    paginator = SmallPagePagination()
+    page = paginator.paginate_queryset(items, request)
+    return paginator.get_paginated_response(page)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def admin_reports_list(request):
     from .models import InaccuracyReport
     from .serializers import InaccuracyReportSerializer
@@ -1658,7 +1723,9 @@ class RouteViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         from .models import Route
-        qs = Route.objects.select_related('author').prefetch_related('tags', 'stops__cultural_object')
+        qs = Route.objects.select_related('author').prefetch_related(
+            'tags', 'stops__cultural_object', 'stops__cultural_object__translations', 'translations',
+        )
         user = self.request.user
 
         if self.action == 'list':
@@ -2050,6 +2117,30 @@ class RouteViewSet(viewsets.ModelViewSet):
             )
             created += 1
         return Response({'created_visits': created, 'total_stops': route.stops.count()})
+
+    @action(detail=True, methods=['post'], url_path='translations', permission_classes=[IsAuthenticated])
+    def submit_translation(self, request, pk=None):
+        """Submit a community translation for this route (status='pending'; admin moderates via Django Admin)."""
+        from .models import RouteTranslation
+        from .serializers import RouteTranslationSerializer
+        route = self.get_object()
+        serializer = RouteTranslationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        lang = serializer.validated_data['language']
+        # Proposals are allowed for any language, including the original — an approved
+        # original-language proposal is applied to the canonical content by the admin.
+        # Multiple competing pending proposals per language are allowed.
+        translation = RouteTranslation.objects.create(
+            route=route,
+            language=lang,
+            title=serializer.validated_data['title'],
+            description=serializer.validated_data.get('description', ''),
+            submitted_by=request.user,
+        )
+        return Response(
+            RouteTranslationSerializer(translation).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     @action(detail=True, methods=['get'], url_path='export')
     def export(self, request, pk=None):

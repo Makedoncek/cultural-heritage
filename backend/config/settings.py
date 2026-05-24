@@ -217,6 +217,8 @@ LANGUAGE_CODE = 'uk'
 LANGUAGES = [
     ('uk', 'Українська'),
     ('en', 'English'),
+    ('pl', 'Polski'),
+    ('de', 'Deutsch'),
 ]
 
 LOCALE_PATHS = [BASE_DIR / 'locale']

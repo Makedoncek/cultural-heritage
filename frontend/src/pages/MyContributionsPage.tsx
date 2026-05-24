@@ -2,16 +2,19 @@ import {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import MyPhotosTab from '../components/Contributions/MyPhotosTab';
 import MyAudiosTab from '../components/Contributions/MyAudiosTab';
+import MyTranslationsTab from '../components/Contributions/MyTranslationsTab';
 import {objectsService} from '../services/objects.service';
 import {audioService} from '../services/audio.service';
+import {translationsService} from '../services/translations.service';
 
-type Tab = 'photos' | 'audios';
+type Tab = 'photos' | 'audios' | 'translations';
 
 export default function MyContributionsPage() {
     const {t} = useTranslation();
     const [tab, setTab] = useState<Tab>('photos');
     const [photoCount, setPhotoCount] = useState<number | null>(null);
     const [audioCount, setAudioCount] = useState<number | null>(null);
+    const [translationCount, setTranslationCount] = useState<number | null>(null);
 
     useEffect(() => {
         // Use server-side `count` (total across all pages) as tab badge — flatten of `results`
@@ -22,6 +25,9 @@ export default function MyContributionsPage() {
         audioService.listMine({page_size: 1})
             .then(data => setAudioCount(data.count))
             .catch(() => setAudioCount(0));
+        translationsService.listMine({page_size: 1})
+            .then(data => setTranslationCount(data.count))
+            .catch(() => setTranslationCount(0));
     }, []);
 
     return (
@@ -67,9 +73,27 @@ export default function MyContributionsPage() {
                             </span>
                         )}
                     </button>
+                    <button
+                        type="button"
+                        onClick={() => setTab('translations')}
+                        className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer ${
+                            tab === 'translations'
+                                ? 'border-amber-500 text-amber-700 dark:text-amber-400'
+                                : 'border-transparent text-gray-500 dark:text-stone-400 hover:text-gray-700 dark:hover:text-stone-200'
+                        }`}
+                    >
+                        ✍ {t('contributions.tabTranslations')}
+                        {translationCount !== null && (
+                            <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${tab === 'translations' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' : 'bg-gray-100 dark:bg-stone-800 text-gray-600 dark:text-stone-400'}`}>
+                                {translationCount}
+                            </span>
+                        )}
+                    </button>
                 </div>
 
-                {tab === 'photos' ? <MyPhotosTab/> : <MyAudiosTab/>}
+                {tab === 'photos' && <MyPhotosTab/>}
+                {tab === 'audios' && <MyAudiosTab/>}
+                {tab === 'translations' && <MyTranslationsTab/>}
             </div>
         </div>
     );

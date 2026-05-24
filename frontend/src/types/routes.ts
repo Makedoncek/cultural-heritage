@@ -31,6 +31,8 @@ export interface RouteListItem {
     stops_count: number;
     created_at: string;
     updated_at: string;
+    original_language: 'uk' | 'en' | 'pl' | 'de';
+    translation_missing: boolean;
 }
 
 export interface RouteDetail extends RouteListItem {
@@ -40,6 +42,7 @@ export interface RouteDetail extends RouteListItem {
     route_distance_m: number | null;
     route_duration_s: number | null;
     geometry_updated_at: string | null;
+    available_languages: ('uk' | 'en' | 'pl' | 'de')[];
 }
 
 export interface RouteWritePayload {

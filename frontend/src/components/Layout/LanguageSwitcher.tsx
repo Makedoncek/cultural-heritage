@@ -7,8 +7,13 @@ const LANGUAGES = [
     {code: 'en', label: 'EN'},
 ] as const;
 
+const LANGUAGE_TITLES: Record<string, string> = {
+    uk: 'Українська',
+    en: 'English',
+};
+
 export default function LanguageSwitcher() {
-    const {i18n, t} = useTranslation();
+    const {i18n} = useTranslation();
     const {isAuthenticated} = useAuth();
     const current = i18n.resolvedLanguage || 'uk';
 
@@ -27,7 +32,7 @@ export default function LanguageSwitcher() {
         <div
             className="inline-flex items-center bg-amber-50/80 dark:bg-stone-800 border border-amber-200 dark:border-stone-600 rounded-full p-0.5 shadow-sm"
             role="group"
-            aria-label={t('lang.ukFull') + ' / ' + t('lang.enFull')}
+            aria-label={Object.values(LANGUAGE_TITLES).join(' / ')}
         >
             {LANGUAGES.map(({code, label}) => {
                 const active = current === code;
@@ -37,7 +42,7 @@ export default function LanguageSwitcher() {
                         type="button"
                         onClick={() => select(code)}
                         aria-pressed={active}
-                        title={code === 'uk' ? t('lang.ukFull') : t('lang.enFull')}
+                        title={LANGUAGE_TITLES[code]}
                         className={`
                             px-3 py-1 rounded-full text-xs font-semibold tracking-wide
                             transition-all duration-200 cursor-pointer

@@ -15,8 +15,12 @@ import PhotoUploader, {type PendingPhoto} from '../components/Objects/PhotoUploa
 import ReportInaccuracyButton from '../components/Objects/ReportInaccuracyButton';
 import AddToRouteButton from '../components/Objects/AddToRouteButton';
 import AudioGuidesSection from '../components/Audio/AudioGuidesSection';
+import ContentLanguageSelector, {type ContentLanguage} from '../components/Translation/ContentLanguageSelector';
+import TranslationSubmitModal from '../components/Translation/TranslationSubmitModal';
 import type {CulturalObjectDetail} from '../types';
 import '../utils/leaflet-fix';
+
+const ALL_CONTENT_LANGUAGES: ContentLanguage[] = ['uk', 'en', 'pl', 'de'];
 
 const STATUS_COLORS: Record<string, string> = {
     pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
@@ -38,6 +42,8 @@ export default function ObjectDetailPage() {
     const [uploadingContrib, setUploadingContrib] = useState(false);
     const [contribProgress, setContribProgress] = useState({done: 0, total: 0});
     const [showContribUploader, setShowContribUploader] = useState(false);
+    const [showTranslationModal, setShowTranslationModal] = useState(false);
+    const [contentLang, setContentLang] = useState<ContentLanguage | null>(null);
 
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
 
@@ -45,7 +51,11 @@ export default function ObjectDetailPage() {
         if (!id) return;
         setLoading(true);
         objectsService.getById(Number(id))
-            .then(data => setObject(data))
+            .then(data => {
+                setObject(data);
+                const uiLang = (i18n.resolvedLanguage || 'uk') as ContentLanguage;
+                setContentLang(data.available_languages.includes(uiLang) ? uiLang : data.original_language);
+            })
             .catch(err => {
                 if (err.response?.status === 404) {
                     setNotFound(true);
@@ -55,6 +65,14 @@ export default function ObjectDetailPage() {
             })
             .finally(() => setLoading(false));
     }, [id, t]);
+
+    const handleSelectContentLang = (lang: ContentLanguage) => {
+        if (!id || lang === contentLang) return;
+        setContentLang(lang);
+        objectsService.getById(Number(id), lang)
+            .then(setObject)
+            .catch(() => toast.error(t('object.loadError')));
+    };
 
     const canEdit = user && object && (user.username === object.author || user.is_staff);
     const isAuthor = user && object && user.username === object.author;
@@ -146,6 +164,13 @@ export default function ObjectDetailPage() {
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-3xl mx-auto px-4 py-6">
 
+                <ContentLanguageSelector
+                    available={object.available_languages}
+                    selected={contentLang ?? object.original_language}
+                    onSelect={handleSelectContentLang}
+                    onSuggest={isAuthenticated ? () => setShowTranslationModal(true) : undefined}
+                />
+
                 <div className="mb-4">
                     <div className="flex flex-wrap items-center gap-3 mb-2">
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">{object.title}</h1>
@@ -193,9 +218,9 @@ export default function ObjectDetailPage() {
                                 <button
                                     onClick={handleDelete}
                                     disabled={deleting}
-                                    className="px-3 py-1.5 text-sm bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer disabled:opacity-50"
+                                    className="px-3 py-1.5 text-sm bg-stone-200 hover:bg-stone-300 dark:bg-stone-700 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 rounded-lg cursor-pointer disabled:opacity-50"
                                 >
-                                    {deleting ? t('object.deleting') : t('object.delete')}
+                                    {deleting ? t('object.deleting') : `📦 ${t('object.delete')}`}
                                 </button>
                             </>
                         )}
@@ -390,6 +415,16 @@ export default function ObjectDetailPage() {
                     )}
                 </div>
             </div>
+
+            <TranslationSubmitModal
+                open={showTranslationModal}
+                onClose={() => setShowTranslationModal(false)}
+                targetOptions={ALL_CONTENT_LANGUAGES}
+                originalLanguage={object.original_language}
+                onSubmit={async payload => {
+                    await objectsService.submitTranslation(object.id, payload);
+                }}
+            />
         </div>
     );
 }

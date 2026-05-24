@@ -14,8 +14,13 @@ api.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-        // Send current UI language so Django's LocaleMiddleware can localize API responses.
-        config.headers['Accept-Language'] = i18n.resolvedLanguage || 'uk';
+        // Send current UI language so backend can return translated content (and Django LocaleMiddleware can localize errors).
+        const lang = i18n.resolvedLanguage || 'uk';
+        config.headers['Accept-Language'] = lang;
+        // Also add ?lang= for GET requests so backend resolver picks it up reliably.
+        if ((config.method === 'get' || config.method === undefined) && !(config.params && 'lang' in config.params)) {
+            config.params = {...(config.params || {}), lang};
+        }
         return config;
     },
     (error) => Promise.reject(error)

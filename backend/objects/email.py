@@ -199,6 +199,73 @@ INACCURACY_OUTCOME_LABELS = {
 }
 
 
+TRANSLATION_SUBJECTS = {
+    'uk': {
+        'approved': 'CultureMap — Вашу пропозицію перекладу затверджено',
+        'rejected': 'CultureMap — Вашу пропозицію перекладу відхилено',
+    },
+    'en': {
+        'approved': 'CultureMap — Your translation proposal was approved',
+        'rejected': 'CultureMap — Your translation proposal was declined',
+    },
+}
+
+TRANSLATION_OUTCOME_LABELS = {
+    'uk': {'approved': 'затверджено', 'rejected': 'відхилено'},
+    'en': {'approved': 'approved', 'rejected': 'declined'},
+}
+
+
+@shared_task(**EMAIL_RETRY_KWARGS)
+def send_translation_outcome_email(kind, translation_id):
+    """Notify the submitter when their translation/content proposal is approved or rejected.
+
+    `kind` is 'object' or 'route'.
+    """
+    from .models import CulturalObjectTranslation, RouteTranslation
+
+    if kind == 'route':
+        model, parent_attr, url_prefix = RouteTranslation, 'route', 'routes'
+    else:
+        model, parent_attr, url_prefix = CulturalObjectTranslation, 'cultural_object', 'objects'
+
+    try:
+        translation = (model.objects
+                       .select_related('submitted_by', parent_attr)
+                       .get(pk=translation_id))
+    except model.DoesNotExist:
+        return
+
+    submitter = translation.submitted_by
+    if translation.status not in ('approved', 'rejected') or not submitter or not submitter.email:
+        return
+
+    parent = getattr(translation, parent_attr)
+    lang = _user_language(submitter)
+    outcome = translation.status
+    subject = TRANSLATION_SUBJECTS.get(lang, TRANSLATION_SUBJECTS['uk'])[outcome]
+    outcome_label = TRANSLATION_OUTCOME_LABELS.get(lang, TRANSLATION_OUTCOME_LABELS['uk'])[outcome]
+    target_url = f"{settings.FRONTEND_URL}/{url_prefix}/{parent.pk}"
+
+    html_message = render_to_string(_template_for('translation_outcome', lang), {
+        'user': submitter,
+        'target_title': parent.title,
+        'target_url': target_url,
+        'language_code': translation.language,
+        'outcome': outcome,
+        'outcome_label': outcome_label,
+        'reviewer_note': translation.reviewer_note,
+    })
+
+    send_mail(
+        subject=subject,
+        message=strip_tags(html_message),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[submitter.email],
+        html_message=html_message,
+    )
+
+
 @shared_task(**EMAIL_RETRY_KWARGS)
 def send_inaccuracy_outcome_email(report_id):
     """Notify reporter when admin resolves or dismisses their report."""
