@@ -34,25 +34,4 @@ export const reportsService = {
         const {data} = await api.get<{count: number; next: string | null; previous: string | null; results: InaccuracyReport[]}>(url);
         return data;
     },
-
-    async adminList(status: 'pending' | 'resolved' | 'dismissed' = 'pending'): Promise<InaccuracyReport[]> {
-        const {data} = await api.get<InaccuracyReport[]>('/admin/reports/', {params: {status}});
-        return data;
-    },
-
-    async adminResolve(reportId: number, adminResponse: string): Promise<InaccuracyReport> {
-        const {data} = await api.post<InaccuracyReport>(
-            `/admin/reports/${reportId}/resolve/`,
-            {admin_response: adminResponse},
-        );
-        return data;
-    },
-
-    async adminDismiss(reportId: number, adminResponse: string): Promise<InaccuracyReport> {
-        const {data} = await api.post<InaccuracyReport>(
-            `/admin/reports/${reportId}/dismiss/`,
-            {admin_response: adminResponse},
-        );
-        return data;
-    },
 };

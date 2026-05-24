@@ -73,7 +73,6 @@ export default function ReportsOnMyObjectsTab({onCountChange}: Props) {
 }
 
 function ReportCard({report: r, dateLocale}: {report: InaccuracyReport; dateLocale: string}) {
-    const {t} = useTranslation();
     return (
         <div className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg px-4 py-3">
             <div className="flex flex-wrap items-center gap-2 mb-2">

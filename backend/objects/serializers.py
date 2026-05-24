@@ -6,10 +6,9 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from .models import (
-    Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, ObjectAudio,
+    Tag, CulturalObject, Favorite, ObjectPhoto, ObjectAudio,
     InaccuracyReport, Visit, PlannedVisit,
-    CulturalObjectTranslation, RouteTranslation, TagTranslation,
-    LANGUAGE_CHOICES, TranslationStatus,
+    CulturalObjectTranslation, RouteTranslation, LANGUAGE_CHOICES, TranslationStatus,
 )
 from .validators import validate_coordinates_within_ukraine
 

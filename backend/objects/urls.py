@@ -36,9 +36,6 @@ urlpatterns = [
     path('translations/<str:kind>/<int:pk>/', views.manage_my_translation, name='manage_my_translation'),
     path('translations/<str:kind>/<int:pk>/archive/', views.archive_my_translation, name='archive_my_translation'),
     path('translations/<str:kind>/<int:pk>/restore/', views.restore_my_translation, name='restore_my_translation'),
-    path('admin/reports/', views.admin_reports_list, name='admin_reports_list'),
-    path('admin/reports/<int:report_pk>/resolve/', views.admin_resolve_report, name='admin_resolve_report'),
-    path('admin/reports/<int:report_pk>/dismiss/', views.admin_dismiss_report, name='admin_dismiss_report'),
 
     # Visits
     path('objects/<int:object_pk>/visit/', views.toggle_visit, name='toggle_visit'),

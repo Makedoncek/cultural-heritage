@@ -7,7 +7,6 @@
   "translations": {
     "contentLanguage": "Content language",
     "suggest": "Suggest a translation or new content",
-    "suggestShort": "Translate",
     "modalTitleGeneric": "Suggest a translation or new content",
     "modalHint": "Your suggestion will be sent for moderation. Once approved it becomes visible to everyone. You can propose either a translation into another language or an improvement to the original text.",
     "ownContentNote": "You are not required to translate the existing content word-for-word — you may propose your own information about this place.",
@@ -43,7 +42,6 @@
     "report": "Report",
     "sent": "Report sent",
     "sentShort": "Sent",
-    "modalTitle": "Report a problem",
     "modalTitleByType": {
       "object": "Report a problem with this object",
       "route": "Report a problem with this route",
@@ -281,7 +279,6 @@
     "sending": "Uploading...",
     "uploadProgress": "Uploading photo... {{done}} / {{total}}",
     "sentForReview": "Photo sent for moderation",
-    "deletePhoto": "Delete this photo? This action cannot be undone.",
     "deleted": "Photo deleted",
     "deleteError": "Failed to delete photo",
     "captionUpdated": "Caption updated",
@@ -395,12 +392,6 @@
     "fileTooLarge": "file too large",
     "serverError": "server error, try again later",
     "unknown": "unknown error"
-  },
-  "lang": {
-    "uk": "UA",
-    "en": "EN",
-    "ukFull": "Українська",
-    "enFull": "English"
   },
   "routes": {
     "title": "Cultural Heritage Routes",

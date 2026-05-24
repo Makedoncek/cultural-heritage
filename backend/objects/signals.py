@@ -6,7 +6,6 @@ from django.contrib.auth.models import User
 from django.db.models.signals import pre_save, post_save, pre_delete
 from django.dispatch import receiver
 
-from . import cloudinary_service
 from .models import CulturalObject, ObjectPhoto, ObjectAudio, UserPreference
 
 logger = logging.getLogger(__name__)

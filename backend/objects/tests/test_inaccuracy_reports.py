@@ -1,9 +1,7 @@
 """Targeted tests for InaccuracyReport API."""
 from datetime import timedelta
-from unittest.mock import patch
 
 from django.contrib.auth.models import User
-from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
@@ -116,20 +114,6 @@ class InaccuracyReportFlowTests(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
-    @patch('objects.email.send_mail')
-    def test_admin_can_resolve_report_and_email_sent(self, mock_send_mail):
-        report = self._make_report(self.reporter, reason_type='wrong_name')
-        self.client.force_authenticate(self.admin)
-        url = reverse('objects:admin_resolve_report', kwargs={'report_pk': report.pk})
-        response = self.client.post(url, {'admin_response': 'Виправлено'}, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        report.refresh_from_db()
-        self.assertEqual(report.status, 'resolved')
-        self.assertEqual(report.admin_response, 'Виправлено')
-        self.assertEqual(report.resolved_by, self.admin)
-        mock_send_mail.assert_called_once()
-
     def test_object_author_sees_reports_on_own_objects(self):
         self._make_report(self.reporter, reason_type='wrong_name')
         self.client.force_authenticate(self.author)
@@ -148,9 +132,3 @@ class InaccuracyReportFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['count'], 1)
         self.assertEqual(response.data['results'][0]['reporter_username'], 'reporter')
-
-    def test_non_admin_cannot_access_admin_endpoints(self):
-        self.client.force_authenticate(self.reporter)
-        url = reverse('objects:admin_reports_list')
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

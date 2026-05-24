@@ -95,12 +95,6 @@ msgstr "Object photo"
 msgid "Фото об'єктів"
 msgstr "Object photos"
 
-msgid "Репорт про неточність"
-msgstr "Inaccuracy report"
-
-msgid "Репорти про неточності"
-msgstr "Inaccuracy reports"
-
 msgid "Візит"
 msgstr "Visit"
 

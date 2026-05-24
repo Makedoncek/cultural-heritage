@@ -11,7 +11,7 @@ from rest_framework import serializers as s
 from .filters import ObjectFilter
 
 logger = logging.getLogger(__name__)
-from .serializers import RegisterSerializer, TagSerializer, CustomTokenObtainPairSerializer
+from .serializers import RegisterSerializer, TagSerializer
 from .email import send_verification_email, send_password_reset_email, verify_email_token, verify_password_reset_token
 from .models import Tag
 from django.contrib.auth.models import User
@@ -37,7 +37,6 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from django.conf import settings
-from django.db.models import Q
 
 ErrorResponse = inline_serializer('ErrorResponse', fields={'detail': s.CharField()})
 
@@ -1270,31 +1269,6 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
         return Response({'detail': 'ok'})
 
 
-class InaccuracyReportViewSet(viewsets.GenericViewSet):
-    """Crowd-sourced reports about issues with cultural objects.
-
-    Endpoints:
-      POST   /api/objects/<object_pk>/report/      — create report (auth, 1/day per object)
-      DELETE /api/reports/<id>/                    — delete own pending report
-      GET    /api/users/me/reports/                — list reports created by me
-      GET    /api/users/me/objects/reports/        — list reports on objects I authored
-      GET    /api/admin/reports/                   — admin queue (with status filter)
-      POST   /api/admin/reports/<id>/resolve/      — admin: resolve
-      POST   /api/admin/reports/<id>/dismiss/      — admin: dismiss
-    """
-    serializer_class = None  # set per-action
-
-    def get_serializer_class(self):
-        from .serializers import InaccuracyReportSerializer
-        return InaccuracyReportSerializer
-
-    def get_permissions(self):
-        if self.action in ('admin_list', 'admin_resolve', 'admin_dismiss'):
-            from rest_framework.permissions import IsAdminUser
-            return [IsAdminUser()]
-        return [IsAuthenticated()]
-
-
 def _create_report(request, target_type, target_id):
     """Shared report-creation logic for any content type."""
     from .models import InaccuracyReport
@@ -1554,61 +1528,6 @@ def restore_my_translation(request, kind, pk):
     return Response({'id': translation.id, 'kind': kind, 'status': translation.status})
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def admin_reports_list(request):
-    from .models import InaccuracyReport
-    from .serializers import InaccuracyReportSerializer
-    if not request.user.is_staff:
-        return Response({'detail': _('Тільки для адміністратора.')}, status=status.HTTP_403_FORBIDDEN)
-    status_filter = request.query_params.get('status', 'pending')
-    qs = InaccuracyReport.objects.select_related('content_type', 'reporter').prefetch_related('target')
-    if status_filter in dict(InaccuracyReport.Status.choices):
-        qs = qs.filter(status=status_filter)
-    return Response(InaccuracyReportSerializer(qs, many=True).data)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def admin_resolve_report(request, report_pk):
-    return _admin_close_report(request, report_pk, resolved=True)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def admin_dismiss_report(request, report_pk):
-    return _admin_close_report(request, report_pk, resolved=False)
-
-
-def _admin_close_report(request, report_pk, resolved: bool):
-    from .models import InaccuracyReport
-    from .serializers import InaccuracyReportSerializer
-    from django.utils import timezone
-    if not request.user.is_staff:
-        return Response({'detail': _('Тільки для адміністратора.')}, status=status.HTTP_403_FORBIDDEN)
-    try:
-        report = InaccuracyReport.objects.get(pk=report_pk)
-    except InaccuracyReport.DoesNotExist:
-        return Response({'detail': _('Репорт не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
-    if report.status != InaccuracyReport.Status.PENDING:
-        return Response(
-            {'detail': _('Репорт уже опрацьовано.')},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-    report.status = (
-        InaccuracyReport.Status.RESOLVED if resolved else InaccuracyReport.Status.DISMISSED
-    )
-    report.admin_response = request.data.get('admin_response', '')[:500]
-    report.resolved_by = request.user
-    report.resolved_at = timezone.now()
-    report.save(update_fields=['status', 'admin_response', 'resolved_by', 'resolved_at'])
-
-    from .email import send_inaccuracy_outcome_email
-    send_inaccuracy_outcome_email.delay(report.id)
-
-    return Response(InaccuracyReportSerializer(report).data)
-
-
 # --- Visit & PlannedVisit endpoints ---
 
 @api_view(['POST'])
@@ -1710,7 +1629,7 @@ def public_visits(request, username):
 @permission_classes([IsAuthenticated])
 def my_visits_stats(request):
     """Aggregated counts for the cultural passport dashboard."""
-    from .models import Visit, Tag, Route, RouteStop
+    from .models import Visit, Tag, Route
     from django.db.models import Count
     base = Visit.objects.filter(user=request.user)
     total = base.count()
@@ -1840,11 +1759,11 @@ def _enrich_ors_error(message: str, stops: list) -> str:
 
     def stop_label(lng: float, lat: float) -> str:
         # Match coordinates to stops with 1e-3 tolerance (~100m) — handles ORS rounding.
-        for s in stops:
-            obj_lng = float(s.cultural_object.longitude)
-            obj_lat = float(s.cultural_object.latitude)
+        for stop in stops:
+            obj_lng = float(stop.cultural_object.longitude)
+            obj_lat = float(stop.cultural_object.latitude)
             if abs(obj_lng - lng) < 1e-3 and abs(obj_lat - lat) < 1e-3:
-                return f'«{s.cultural_object.title}»'
+                return f'«{stop.cultural_object.title}»'
         return ''
 
     # Pattern A: "coordinate 0: 33.7894950 51.5395490"

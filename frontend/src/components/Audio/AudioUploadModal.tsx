@@ -59,7 +59,7 @@ export default function AudioUploadModal({objectId, onClose, onUploaded}: Props)
         setFile(f);
     };
 
-    const handleRecordingComplete = (blob: Blob, _durationSec: number) => {
+    const handleRecordingComplete = (blob: Blob) => {
         const recorded = new File([blob], `recording-${Date.now()}.webm`, {type: blob.type});
         setFile(recorded);
         toast.success(t('audio.modal.recordingDone'));

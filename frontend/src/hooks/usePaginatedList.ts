@@ -31,7 +31,6 @@ export function usePaginatedList<T>({initialFetch, fetchByUrl, onError, deps = [
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<unknown>(null);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
