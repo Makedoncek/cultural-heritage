@@ -6,6 +6,7 @@ import type {AudioLanguage, ObjectAudio} from '../../types/audio';
 import AudioPlayer from './AudioPlayer';
 import AudioUploadModal from './AudioUploadModal';
 import AudioEditModal from './AudioEditModal';
+import ReportInaccuracyButton from '../Objects/ReportInaccuracyButton';
 import {useAuth} from '../../context/AuthContext';
 
 interface Props {
@@ -142,7 +143,7 @@ export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Pr
                                     <p className="text-xs text-gray-500 dark:text-stone-400">
                                         @{a.uploaded_by.username} · {a.language_label}
                                     </p>
-                                    {canDelete && (
+                                    {canDelete ? (
                                         <div className="flex gap-2">
                                             <button
                                                 type="button"
@@ -159,6 +160,8 @@ export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Pr
                                                 🗑 {t('audio.deleteLink')}
                                             </button>
                                         </div>
+                                    ) : (
+                                        <ReportInaccuracyButton targetType="audio" targetId={a.id} targetTitle={a.title} compact/>
                                     )}
                                 </div>
                             </div>

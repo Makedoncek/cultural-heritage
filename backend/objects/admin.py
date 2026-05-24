@@ -1,10 +1,12 @@
 from datetime import timedelta
 from adminsortable2.admin import SortableAdminBase, SortableTabularInline
+from django import forms
 from django.conf import settings
 from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
 from .models import (
     Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, ObjectAudio,
     InaccuracyReport, Visit, PlannedVisit, Route, RouteStop,
@@ -39,7 +41,7 @@ class ObjectPhotoInline(SortableTabularInline):
     class Media:
         css = {'all': ('admin/css/photo_inline_sortable.css',)}
 
-    @admin.display(description='Превью (клік для редагування)')
+    @admin.display(description=_('Превью (клік для редагування)'))
     def thumbnail_preview_inline(self, obj):
         if not obj.id:
             return '-'
@@ -170,7 +172,7 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
 
     def get_queryset(self, request):
         from django.db.models import Count, Q
-        qs = super().get_queryset(request)
+        qs = super().get_queryset(request).select_related('author').prefetch_related('tags')
         return qs.annotate(
             _pending_reports=Count(
                 'inaccuracy_reports',
@@ -178,7 +180,7 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
             ),
         )
 
-    @admin.display(description='⚠ Reports')
+    @admin.display(description='⚠ Reports', ordering='_pending_reports')
     def pending_reports_badge(self, obj):
         # `_pending_reports` annotation may be absent when SortableAdminBase
         # rebuilds the queryset (e.g. drag-to-reorder); fall back to a direct count.
@@ -192,14 +194,14 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
             count,
         )
 
-    @admin.display(description='Переглянути на карті')
+    @admin.display(description=_('Переглянути на карті'))
     def map_link(self, obj):
         if obj.latitude and obj.longitude:
             url = f'https://www.google.com/maps?q={obj.latitude},{obj.longitude}'
             return format_html('<a href="{}" target="_blank">🗺️ Відкрити в Google Maps</a>', url)
         return '-'
 
-    @admin.display(description='Карта')
+    @admin.display(description=_('Карта'))
     def map_preview(self, obj):
         if not obj.latitude or not obj.longitude:
             return '-'
@@ -225,7 +227,7 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
             f'</div>'
         )
 
-    @admin.display(description='Статус', ordering='status')
+    @admin.display(description=_('Статус'), ordering='status')
     def colored_status(self, obj):
         color = self.STATUS_COLORS.get(obj.status, '#6b7280')
         label = obj.get_status_display()
@@ -235,14 +237,11 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
             color, label,
         )
 
-    @admin.display(description='Автор', ordering='author__username')
+    @admin.display(description=_('Автор'), ordering='author__username')
     def author_link(self, obj):
         from django.urls import reverse
         url = reverse('admin:objects_culturalobject_changelist') + f'?author__id__exact={obj.author_id}'
         return format_html('<a href="{}">{}</a>', url, obj.author)
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related('author').prefetch_related('tags')
 
 
 @admin.register(Favorite)
@@ -312,25 +311,25 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
     ]
     actions = ['approve_photos', 'reject_photos']
 
-    @admin.display(description='Превью')
+    @admin.display(description=_('Превью'))
     def thumbnail_preview(self, obj):
         return format_html(
             '<img src="{}" style="height:60px;border-radius:4px;" />', obj.thumbnail_url,
         )
 
-    @admin.display(description='Зображення')
+    @admin.display(description=_('Зображення'))
     def large_preview(self, obj):
         return format_html(
             '<img src="{}" style="max-width:600px;border-radius:8px;" />', obj.image_url,
         )
 
-    @admin.display(description='Cultural object', ordering='cultural_object__title')
+    @admin.display(description=_('Культурний об\'єкт'), ordering='cultural_object__title')
     def cultural_object_link(self, obj):
         from django.urls import reverse
         url = reverse('admin:objects_culturalobject_change', args=[obj.cultural_object_id])
         return format_html('<a href="{}">{}</a>', url, obj.cultural_object)
 
-    @admin.display(description='Статус', ordering='status')
+    @admin.display(description=_('Статус'), ordering='status')
     def colored_status(self, obj):
         color = self.STATUS_COLORS.get(obj.status, '#6b7280')
         return format_html(
@@ -361,15 +360,14 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
 
 @admin.register(InaccuracyReport)
 class InaccuracyReportAdmin(admin.ModelAdmin):
-    list_display = ['id', 'cultural_object_title', 'reporter', 'reason_type', 'status', 'created_at', 'object_edit_link']
-    # Both id and the object title open the report — Django wraps these cells with the change-view link.
-    list_display_links = ['id', 'cultural_object_title']
-    list_filter = ['status', 'reason_type', 'created_at']
-    search_fields = ['cultural_object__title', 'reporter__username', 'note']
-    readonly_fields = ['reporter', 'cultural_object_link_field', 'reason_type', 'note', 'created_at', 'resolved_at', 'resolved_by']
+    list_display = ['id', 'target_display', 'reporter', 'reason_type', 'status', 'created_at', 'target_edit_link']
+    list_display_links = ['id', 'target_display']
+    list_filter = ['status', 'reason_type', 'content_type', 'created_at']
+    search_fields = ['reporter__username', 'note']
+    readonly_fields = ['reporter', 'target_link_field', 'content_owner', 'reason_type', 'note', 'created_at', 'resolved_at', 'resolved_by']
     fieldsets = (
         ('Report', {
-            'fields': ('cultural_object_link_field', 'reporter', 'reason_type', 'note', 'created_at'),
+            'fields': ('target_link_field', 'content_owner', 'reporter', 'reason_type', 'note', 'created_at'),
         }),
         ('Moderation', {
             'fields': ('status', 'admin_response', 'resolved_by', 'resolved_at'),
@@ -377,29 +375,42 @@ class InaccuracyReportAdmin(admin.ModelAdmin):
     )
     actions = ['resolve_reports', 'dismiss_reports']
 
-    @admin.display(description='Cultural object', ordering='cultural_object__title')
-    def cultural_object_title(self, obj):
-        # Plain text — Django wraps the cell with the change-view link via list_display_links.
-        return str(obj.cultural_object)
+    def _target_admin_url(self, obj):
+        from django.urls import reverse, NoReverseMatch
+        ct = obj.content_type
+        if not ct:
+            return None
+        try:
+            return reverse(f'admin:{ct.app_label}_{ct.model}_change', args=[obj.object_id])
+        except NoReverseMatch:
+            return None
 
-    @admin.display(description='Дія')
-    def object_edit_link(self, obj):
-        from django.urls import reverse
-        url = reverse('admin:objects_culturalobject_change', args=[obj.cultural_object_id])
-        # Django admin's built-in .button class adapts to the current theme palette.
+    @admin.display(description=_('Ціль'))
+    def target_display(self, obj):
+        from .report_targets import describe_target
+        d = describe_target(obj.target)
+        kind = d['target_type'] or (obj.content_type.model if obj.content_type else '?')
+        return f"[{kind}] {d['target_title']}"
+
+    @admin.display(description=_('Дія'))
+    def target_edit_link(self, obj):
+        url = self._target_admin_url(obj)
+        if not url:
+            return '—'
         return format_html(
-            '<a class="button" href="{}" style="white-space:nowrap;">Виправити об\'єкт</a>',
-            url,
+            '<a class="button" href="{}" style="white-space:nowrap;">Відкрити ціль</a>', url,
         )
 
-    @admin.display(description='Об\'єкт')
-    def cultural_object_link_field(self, obj):
-        from django.urls import reverse
-        url = reverse('admin:objects_culturalobject_change', args=[obj.cultural_object_id])
+    @admin.display(description=_('Ціль'))
+    def target_link_field(self, obj):
+        from .report_targets import describe_target
+        d = describe_target(obj.target)
+        url = self._target_admin_url(obj)
+        if not url:
+            return d['target_title']
         return format_html(
-            '{} &nbsp; <a class="button" href="{}" target="_blank" style="white-space:nowrap;">Виправити</a>',
-            obj.cultural_object,
-            url,
+            '[{}] {} &nbsp; <a class="button" href="{}" target="_blank" style="white-space:nowrap;">Відкрити</a>',
+            d['target_type'] or '?', d['target_title'], url,
         )
 
     def save_model(self, request, obj, form, change):
@@ -475,7 +486,7 @@ class RouteAdmin(SortableAdminBase, admin.ModelAdmin):
         ('Дати', {'fields': ('created_at', 'updated_at')}),
     )
 
-    @admin.display(description='Зупинок')
+    @admin.display(description=_('Зупинок'))
     def stops_count(self, obj):
         return obj.stops.count()
 
@@ -523,7 +534,7 @@ class ObjectAudioAdmin(admin.ModelAdmin):
         }),
     )
 
-    @admin.display(description='Послухати')
+    @admin.display(description=_('Послухати'))
     def audio_player(self, obj):
         if not obj.cloudinary_url:
             return '—'
@@ -535,7 +546,7 @@ class ObjectAudioAdmin(admin.ModelAdmin):
             f'⬇ Завантажити файл</a>'
         )
 
-    @admin.display(description='Запис')
+    @admin.display(description=_('Запис'))
     def audio_player_short(self, obj):
         if not obj.cloudinary_url:
             return '—'
@@ -564,6 +575,23 @@ class ObjectAudioAdmin(admin.ModelAdmin):
 # --- Translation moderation ---
 
 
+class _TranslationAdminForm(forms.ModelForm):
+    """Skips the partial unique-approved constraint check at form level.
+
+    The invariant (one approved translation per language) is maintained by
+    ModelAdmin.save_model, which deletes the previous approved translation before
+    saving. Without this, re-approving via the change page would be blocked by
+    ModelForm's constraint validation (which runs before save_model)."""
+
+    def _post_clean(self):
+        original = self.instance.validate_constraints
+        self.instance.validate_constraints = lambda *a, **k: None
+        try:
+            super()._post_clean()
+        finally:
+            self.instance.validate_constraints = original
+
+
 class _TranslationAdminMixin:
     """Shared moderation actions for CulturalObjectTranslation / RouteTranslation.
 
@@ -581,7 +609,7 @@ class _TranslationAdminMixin:
         'rejected': '#ef4444',
     }
 
-    @admin.display(description='Статус', ordering='status')
+    @admin.display(description=_('Статус'), ordering='status')
     def colored_status(self, obj):
         color = self.STATUS_COLORS.get(obj.status, '#6b7280')
         return format_html(
@@ -630,13 +658,13 @@ class _TranslationAdminMixin:
             type(obj).objects.filter(pk=obj.pk).values_list('status', flat=True).first()
             if change else None
         )
+        becomes_approved = obj.status == TranslationStatus.APPROVED and prev_status != TranslationStatus.APPROVED
+        becomes_rejected = obj.status == TranslationStatus.REJECTED and prev_status != TranslationStatus.REJECTED
         # Free the unique-approved slot before saving to avoid an integrity error.
-        if change and prev_status == TranslationStatus.PENDING and obj.status == TranslationStatus.APPROVED:
+        if becomes_approved:
             self._apply_approval(obj)
         super().save_model(request, obj, form, change)
-        if change and prev_status == TranslationStatus.PENDING and obj.status in (
-            TranslationStatus.APPROVED, TranslationStatus.REJECTED,
-        ):
+        if becomes_approved or becomes_rejected:
             self._notify(obj)
 
     def _get_parent(self, translation):
@@ -649,7 +677,8 @@ class _TranslationAdminMixin:
 @admin.register(CulturalObjectTranslation)
 class CulturalObjectTranslationAdmin(_TranslationAdminMixin, admin.ModelAdmin):
     email_kind = 'object'
-    list_display = ['id', 'cultural_object', 'language', 'colored_status', 'submitted_by', 'updated_at']
+    form = _TranslationAdminForm
+    list_display = ['id', 'cultural_object_link', 'language', 'colored_status', 'submitted_by', 'updated_at']
     list_filter = ['status', 'language', 'updated_at']
     search_fields = ['cultural_object__title', 'title', 'submitted_by__username']
     raw_id_fields = ['cultural_object', 'submitted_by']
@@ -661,6 +690,12 @@ class CulturalObjectTranslationAdmin(_TranslationAdminMixin, admin.ModelAdmin):
         ('Модерація', {'fields': ('status', 'reviewer_note')}),
         ('Дати', {'fields': ('created_at', 'updated_at'), 'classes': ('collapse',)}),
     )
+
+    @admin.display(description=_('Культурний об\'єкт'), ordering='cultural_object__title')
+    def cultural_object_link(self, obj):
+        from django.urls import reverse
+        url = reverse('admin:objects_culturalobject_change', args=[obj.cultural_object_id])
+        return format_html('<a href="{}">{}</a>', url, obj.cultural_object)
 
     def _get_parent(self, translation):
         return translation.cultural_object
@@ -675,7 +710,8 @@ class CulturalObjectTranslationAdmin(_TranslationAdminMixin, admin.ModelAdmin):
 @admin.register(RouteTranslation)
 class RouteTranslationAdmin(_TranslationAdminMixin, admin.ModelAdmin):
     email_kind = 'route'
-    list_display = ['id', 'route', 'language', 'colored_status', 'submitted_by', 'updated_at']
+    form = _TranslationAdminForm
+    list_display = ['id', 'route_link', 'language', 'colored_status', 'submitted_by', 'updated_at']
     list_filter = ['status', 'language', 'updated_at']
     search_fields = ['route__title', 'title', 'submitted_by__username']
     raw_id_fields = ['route', 'submitted_by']
@@ -687,6 +723,12 @@ class RouteTranslationAdmin(_TranslationAdminMixin, admin.ModelAdmin):
         ('Модерація', {'fields': ('status', 'reviewer_note')}),
         ('Дати', {'fields': ('created_at', 'updated_at'), 'classes': ('collapse',)}),
     )
+
+    @admin.display(description=_('Маршрут'), ordering='route__title')
+    def route_link(self, obj):
+        from django.urls import reverse
+        url = reverse('admin:objects_route_change', args=[obj.route_id])
+        return format_html('<a href="{}">{}</a>', url, obj.route)
 
     def _get_parent(self, translation):
         return translation.route

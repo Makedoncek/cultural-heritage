@@ -15,13 +15,17 @@ function countByStatus(audios: ObjectAudio[]) {
     return c;
 }
 
-export default function MyAudiosTab() {
+interface Props {
+    status?: string;
+}
+
+export default function MyAudiosTab({status}: Props) {
     const {t} = useTranslation();
     const {items, setItems, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<ObjectWithMyAudios>({
-        initialFetch: () => audioService.listMine(),
+        initialFetch: () => audioService.listMine(status ? {status} : undefined),
         fetchByUrl: (url) => audioService.listMineByUrl(url),
         onError: () => toast.error(t('common.loadMoreError')),
-        deps: [],
+        deps: [status],
     });
     const [editingAudio, setEditingAudio] = useState<ObjectAudio | null>(null);
 
@@ -31,8 +35,31 @@ export default function MyAudiosTab() {
         ));
     };
 
+    const handleArchive = async (objectId: number, audio: ObjectAudio) => {
+        if (!confirm(t('contributions.archiveConfirm'))) return;
+        try {
+            await audioService.archive(objectId, audio.id);
+            setItems(prev => prev.map(obj => obj.id !== objectId ? obj
+                : {...obj, my_audios: obj.my_audios.map(a => a.id === audio.id ? {...a, status: 'archived'} : a)}));
+            toast.success(t('contributions.archiveSuccess'));
+        } catch {
+            toast.error(t('contributions.archiveError'));
+        }
+    };
+
+    const handleRestore = async (objectId: number, audio: ObjectAudio) => {
+        try {
+            const updated = await audioService.restore(objectId, audio.id);
+            setItems(prev => prev.map(obj => obj.id !== objectId ? obj
+                : {...obj, my_audios: obj.my_audios.map(a => a.id === audio.id ? updated : a)}));
+            toast.success(t('contributions.restoreSuccess'));
+        } catch {
+            toast.error(t('contributions.restoreError'));
+        }
+    };
+
     const handleDelete = async (objectId: number, audio: ObjectAudio) => {
-        if (!confirm(t('audio.deleteConfirm'))) return;
+        if (!confirm(t('contributions.deletePermanentlyConfirm'))) return;
         try {
             await audioService.remove(objectId, audio.id);
             setItems(prev => prev
@@ -119,7 +146,10 @@ export default function MyAudiosTab() {
                                     <div key={a.id}>
                                         {a.status !== 'approved' && (
                                             <div className="mb-1">
-                                                <span className={`px-2 py-0.5 text-xs rounded ${a.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'}`}>
+                                                <span className={`px-2 py-0.5 text-xs rounded ${
+                                                    a.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300'
+                                                    : a.status === 'archived' ? 'bg-stone-200 text-stone-700 dark:bg-stone-700 dark:text-stone-200'
+                                                    : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'}`}>
                                                     {t(`audio.status.${a.status}`)}
                                                 </span>
                                                 {a.moderation_note && (
@@ -129,20 +159,41 @@ export default function MyAudiosTab() {
                                         )}
                                         <AudioPlayer audio={a} objectTitle={obj.title}/>
                                         <div className="flex gap-2 mt-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => setEditingAudio(a)}
-                                                className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white rounded-lg cursor-pointer"
-                                            >
-                                                ✏️ {t('audio.editLink')}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDelete(obj.id, a)}
-                                                className="px-3 py-1.5 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg cursor-pointer"
-                                            >
-                                                🗑 {t('audio.deleteLink')}
-                                            </button>
+                                            {a.status === 'archived' ? (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRestore(obj.id, a)}
+                                                        className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg cursor-pointer"
+                                                    >
+                                                        ↩ {t('contributions.restore')}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDelete(obj.id, a)}
+                                                        className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg cursor-pointer"
+                                                    >
+                                                        🗑 {t('contributions.deletePermanently')}
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setEditingAudio(a)}
+                                                        className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white rounded-lg cursor-pointer"
+                                                    >
+                                                        ✏️ {t('audio.editLink')}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleArchive(obj.id, a)}
+                                                        className="px-3 py-1.5 text-sm bg-stone-200 hover:bg-stone-300 dark:bg-stone-700 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 rounded-lg cursor-pointer"
+                                                    >
+                                                        📦 {t('contributions.archive')}
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

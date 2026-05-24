@@ -32,11 +32,21 @@ export const audioService = {
         await api.delete(`/objects/${objectId}/audios/${audioId}/`);
     },
 
+    async archive(objectId: number, audioId: number): Promise<ObjectAudio> {
+        const {data} = await api.post<ObjectAudio>(`/objects/${objectId}/audios/${audioId}/archive/`);
+        return data;
+    },
+
+    async restore(objectId: number, audioId: number): Promise<ObjectAudio> {
+        const {data} = await api.post<ObjectAudio>(`/objects/${objectId}/audios/${audioId}/restore/`);
+        return data;
+    },
+
     async incrementPlayCount(objectId: number, audioId: number): Promise<void> {
         await api.post(`/objects/${objectId}/audios/${audioId}/play/`);
     },
 
-    async listMine(params?: {page?: number; page_size?: number}) {
+    async listMine(params?: {page?: number; page_size?: number; status?: string}) {
         const {data} = await api.get<{count: number; next: string | null; previous: string | null; results: ObjectWithMyAudios[]}>(
             '/objects/with-my-audios/', {params},
         );

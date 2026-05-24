@@ -8,10 +8,14 @@ import {audioService} from '../services/audio.service';
 import {translationsService} from '../services/translations.service';
 
 type Tab = 'photos' | 'audios' | 'translations';
+type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected' | 'archived';
+
+const STATUS_FILTERS: StatusFilter[] = ['all', 'pending', 'approved', 'rejected', 'archived'];
 
 export default function MyContributionsPage() {
     const {t} = useTranslation();
     const [tab, setTab] = useState<Tab>('photos');
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [photoCount, setPhotoCount] = useState<number | null>(null);
     const [audioCount, setAudioCount] = useState<number | null>(null);
     const [translationCount, setTranslationCount] = useState<number | null>(null);
@@ -91,9 +95,29 @@ export default function MyContributionsPage() {
                     </button>
                 </div>
 
-                {tab === 'photos' && <MyPhotosTab/>}
-                {tab === 'audios' && <MyAudiosTab/>}
-                {tab === 'translations' && <MyTranslationsTab/>}
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {STATUS_FILTERS.map(s => (
+                        <button
+                            key={s}
+                            type="button"
+                            onClick={() => setStatusFilter(s)}
+                            className={`px-3 py-1 text-sm rounded-full border cursor-pointer transition-colors ${
+                                statusFilter === s
+                                    ? 'bg-amber-100 dark:bg-amber-900/40 border-amber-400 dark:border-amber-600 text-amber-800 dark:text-amber-300'
+                                    : 'border-gray-200 dark:border-stone-700 text-gray-600 dark:text-stone-300 hover:border-gray-400'
+                            }`}
+                        >
+                            {t(`contributions.statusFilter.${s}`)}
+                        </button>
+                    ))}
+                </div>
+
+                {(() => {
+                    const status = statusFilter === 'all' ? undefined : statusFilter;
+                    if (tab === 'photos') return <MyPhotosTab status={status}/>;
+                    if (tab === 'audios') return <MyAudiosTab status={status}/>;
+                    return <MyTranslationsTab status={status}/>;
+                })()}
             </div>
         </div>
     );

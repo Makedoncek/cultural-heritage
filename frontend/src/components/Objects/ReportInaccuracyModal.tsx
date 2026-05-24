@@ -3,27 +3,20 @@ import {useTranslation} from 'react-i18next';
 import toast from 'react-hot-toast';
 import {AxiosError} from 'axios';
 import {reportsService} from '../../services/reports.service';
-import type {ReportReasonType} from '../../types/reports';
+import {REASONS_BY_TARGET, type ReportReasonType, type ReportTargetType} from '../../types/reports';
 
 interface Props {
-    objectId: number;
-    objectTitle: string;
+    targetType: ReportTargetType;
+    targetId: number;
+    targetTitle: string;
     onClose: () => void;
     onSubmitted: () => void;
 }
 
-const REASONS: {value: ReportReasonType; label: string}[] = [
-    {value: 'wrong_coords', label: 'Невірні координати'},
-    {value: 'wrong_name', label: 'Неточна назва'},
-    {value: 'wrong_description', label: 'Помилки в описі'},
-    {value: 'wrong_tags', label: 'Невірні теги'},
-    {value: 'duplicate', label: 'Дублікат іншого об\'єкта'},
-    {value: 'other', label: 'Інше'},
-];
-
-export default function ReportInaccuracyModal({objectId, objectTitle, onClose, onSubmitted}: Props) {
+export default function ReportInaccuracyModal({targetType, targetId, targetTitle, onClose, onSubmitted}: Props) {
     const {t} = useTranslation();
-    const [reason, setReason] = useState<ReportReasonType>('wrong_coords');
+    const reasons = REASONS_BY_TARGET[targetType];
+    const [reason, setReason] = useState<ReportReasonType>(reasons[0]);
     const [note, setNote] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
@@ -35,14 +28,14 @@ export default function ReportInaccuracyModal({objectId, objectTitle, onClose, o
         if (noteTooShort) return;
         setSubmitting(true);
         try {
-            await reportsService.create(objectId, {reason_type: reason, note: note.trim()});
-            toast.success('Репорт надіслано на модерацію');
+            await reportsService.create({target_type: targetType, target_id: targetId, reason_type: reason, note: note.trim()});
+            toast.success(t('reports.submitted'));
             onSubmitted();
             onClose();
         } catch (err) {
             const axErr = err as AxiosError<{detail?: string}>;
             const msg = axErr.response?.data?.detail
-                ?? (axErr.response?.status === 429 ? 'Ви вже надсилали репорт нещодавно.' : 'Не вдалося надіслати репорт');
+                ?? (axErr.response?.status === 429 ? t('reports.throttled') : t('reports.submitError'));
             toast.error(msg);
         } finally {
             setSubmitting(false);
@@ -53,42 +46,41 @@ export default function ReportInaccuracyModal({objectId, objectTitle, onClose, o
         <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center px-4">
             <div className="bg-white dark:bg-stone-900 border border-gray-200 dark:border-stone-700 rounded-2xl shadow-xl max-w-md w-full p-6">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-stone-100 mb-1">
-                    Повідомити про неточність
+                    {t(`reports.modalTitleByType.${targetType}`)}
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-stone-400 mb-4 truncate">
-                    Об'єкт: <strong className="text-gray-700 dark:text-stone-200">{objectTitle}</strong>
+                <p className="text-sm text-gray-500 dark:text-stone-400 mb-2 truncate">
+                    {t(`reports.targetType.${targetType}`)}: <strong className="text-gray-700 dark:text-stone-200">{targetTitle}</strong>
+                </p>
+                <p className="text-sm text-gray-500 dark:text-stone-400 mb-4">
+                    {t(`reports.hintByType.${targetType}`)}
                 </p>
 
                 <label className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-1">
-                    Тип проблеми *
+                    {t('reports.reasonLabel')} *
                 </label>
                 <select
                     value={reason}
                     onChange={(e) => setReason(e.target.value as ReportReasonType)}
                     className="w-full bg-white dark:bg-stone-800 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-stone-100 rounded-lg px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-amber-400"
                 >
-                    {REASONS.map(r => (
-                        <option key={r.value} value={r.value}>{r.label}</option>
+                    {reasons.map(r => (
+                        <option key={r} value={r}>{t(`reports.reason.${r}`)}</option>
                     ))}
                 </select>
 
                 <label className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-1">
-                    Деталі {isDuplicate && <span className="text-red-500">*</span>}
+                    {t('reports.detailsLabel')} {isDuplicate && <span className="text-red-500">*</span>}
                 </label>
                 <textarea
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    maxLength={500}
+                    maxLength={2000}
                     rows={4}
-                    placeholder={
-                        isDuplicate
-                            ? 'Вкажіть посилання або назву оригінального об\'єкта'
-                            : 'Опційно: опишіть проблему детальніше'
-                    }
+                    placeholder={isDuplicate ? t('reports.duplicatePlaceholder') : t('reports.notePlaceholder')}
                     className="w-full bg-white dark:bg-stone-800 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-stone-100 placeholder-gray-400 dark:placeholder-stone-500 rounded-lg px-3 py-2 mb-1 focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
                 />
                 <p className="text-xs text-gray-500 dark:text-stone-400 mb-4 text-right">
-                    {note.length} / 500
+                    {note.length} / 2000
                 </p>
 
                 <div className="flex gap-2 justify-end">
@@ -105,9 +97,8 @@ export default function ReportInaccuracyModal({objectId, objectTitle, onClose, o
                         onClick={handleSubmit}
                         disabled={submitting || noteTooShort}
                         className="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-900 rounded-lg cursor-pointer disabled:opacity-50"
-                        title={noteTooShort ? 'Для дублікатів — додайте посилання у деталях' : undefined}
                     >
-                        {submitting ? 'Надсилання...' : 'Надіслати'}
+                        {submitting ? t('reports.submitting') : t('reports.submit')}
                     </button>
                 </div>
             </div>

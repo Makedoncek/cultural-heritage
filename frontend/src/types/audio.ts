@@ -1,5 +1,5 @@
 export type AudioLanguage = 'uk' | 'en' | 'pl' | 'de';
-export type AudioStatus = 'pending' | 'approved' | 'rejected';
+export type AudioStatus = 'pending' | 'approved' | 'rejected' | 'archived';
 
 export interface AudioUploadedBy {
     id: number;

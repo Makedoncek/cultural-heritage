@@ -1,4 +1,4 @@
-export type TranslationStatus = 'pending' | 'approved' | 'rejected';
+export type TranslationStatus = 'pending' | 'approved' | 'rejected' | 'archived';
 export type TranslationKind = 'object' | 'route';
 
 export interface MyTranslation {

@@ -14,6 +14,7 @@ const STATUS_OVERLAY_CLS: Record<string, string | null> = {
     approved: null,
     pending: 'bg-yellow-500/90',
     rejected: 'bg-red-600/90',
+    archived: 'bg-stone-600/90',
 };
 
 function countByStatus(photos: ObjectPhoto[]) {
@@ -39,7 +40,7 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
     const dirty = caption !== original;
 
     const handleDelete = async () => {
-        if (!confirm(t('photo.deletePhoto'))) return;
+        if (!confirm(t('contributions.deletePermanentlyConfirm'))) return;
         setDeleting(true);
         try {
             await photosService.remove(objectId, photo.id);
@@ -47,6 +48,33 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
             toast.success(t('photo.deleted'));
         } catch {
             toast.error(t('photo.deleteError'));
+            setDeleting(false);
+        }
+    };
+
+    const handleArchive = async () => {
+        if (!confirm(t('contributions.archiveConfirm'))) return;
+        setDeleting(true);
+        try {
+            const updated = await photosService.archive(objectId, photo.id);
+            onUpdated(updated);
+            toast.success(t('contributions.archiveSuccess'));
+        } catch {
+            toast.error(t('contributions.archiveError'));
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const handleRestore = async () => {
+        setDeleting(true);
+        try {
+            const updated = await photosService.restore(objectId, photo.id);
+            onUpdated(updated);
+            toast.success(t('contributions.restoreSuccess'));
+        } catch {
+            toast.error(t('contributions.restoreError'));
+        } finally {
             setDeleting(false);
         }
     };
@@ -77,7 +105,9 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
     const overlayCls = STATUS_OVERLAY_CLS[photo.status];
     const overlayLabel = photo.status === 'pending' ? t('photo.underReview')
         : photo.status === 'rejected' ? t('photo.rejected')
+        : photo.status === 'archived' ? t('audio.status.archived')
         : null;
+    const isArchived = photo.status === 'archived';
 
     return (
         <div className={`w-40 shrink-0 ${deleting ? 'opacity-50' : ''}`}>
@@ -103,14 +133,35 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
                         </span>
                     )}
                 </button>
-                <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={deleting || saving}
-                    className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs cursor-pointer disabled:opacity-50"
-                    aria-label={t('myPhotos.deletePhotoTitle')}
-                    title={t('myPhotos.deletePhotoTitle')}
-                >✕</button>
+                {isArchived ? (
+                    <div className="absolute top-1 right-1 flex flex-col gap-1">
+                        <button
+                            type="button"
+                            onClick={handleRestore}
+                            disabled={deleting || saving}
+                            className="bg-green-600 hover:bg-green-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs cursor-pointer disabled:opacity-50"
+                            aria-label={t('contributions.restore')}
+                            title={t('contributions.restore')}
+                        >↩</button>
+                        <button
+                            type="button"
+                            onClick={handleDelete}
+                            disabled={deleting || saving}
+                            className="bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs cursor-pointer disabled:opacity-50"
+                            aria-label={t('contributions.deletePermanently')}
+                            title={t('contributions.deletePermanently')}
+                        >🗑</button>
+                    </div>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={handleArchive}
+                        disabled={deleting || saving}
+                        className="absolute top-1 right-1 bg-stone-700/90 hover:bg-stone-800 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs cursor-pointer disabled:opacity-50"
+                        aria-label={t('contributions.archive')}
+                        title={t('contributions.archive')}
+                    >📦</button>
+                )}
             </div>
             <input
                 type="text"
@@ -135,13 +186,17 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
     );
 }
 
-export default function MyPhotosTab() {
+interface Props {
+    status?: string;
+}
+
+export default function MyPhotosTab({status}: Props) {
     const {t} = useTranslation();
     const {items, setItems, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<CulturalObjectWithMyPhotos>({
-        initialFetch: () => objectsService.getWithMyPhotos(),
+        initialFetch: () => objectsService.getWithMyPhotos(status ? {status} : undefined),
         fetchByUrl: (url) => objectsService.getWithMyPhotosByUrl(url),
         onError: () => toast.error(t('common.loadMoreError')),
-        deps: [],
+        deps: [status],
     });
     const [lightbox, setLightbox] = useState<{photos: ObjectPhoto[]; idx: number} | null>(null);
 

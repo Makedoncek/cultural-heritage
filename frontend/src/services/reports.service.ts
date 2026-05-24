@@ -2,8 +2,8 @@ import api from './api';
 import type {CreateReportPayload, InaccuracyReport} from '../types/reports';
 
 export const reportsService = {
-    async create(objectId: number, payload: CreateReportPayload): Promise<InaccuracyReport> {
-        const {data} = await api.post<InaccuracyReport>(`/objects/${objectId}/report/`, payload);
+    async create(payload: CreateReportPayload): Promise<InaccuracyReport> {
+        const {data} = await api.post<InaccuracyReport>('/reports/create/', payload);
         return data;
     },
 

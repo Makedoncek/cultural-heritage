@@ -5,6 +5,7 @@ import {useTranslation} from 'react-i18next';
 import {reportsService} from '../../services/reports.service';
 import {usePaginatedList} from '../../hooks/usePaginatedList';
 import LoadMoreButton from '../common/LoadMoreButton';
+import TargetTypeChip from './TargetTypeChip';
 import type {InaccuracyReport, ReportStatus} from '../../types/reports';
 
 const STATUS_BADGE: Record<ReportStatus, string> = {
@@ -72,12 +73,18 @@ export default function ReportsOnMyObjectsTab({onCountChange}: Props) {
 }
 
 function ReportCard({report: r, dateLocale}: {report: InaccuracyReport; dateLocale: string}) {
+    const {t} = useTranslation();
     return (
         <div className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg px-4 py-3">
             <div className="flex flex-wrap items-center gap-2 mb-2">
-                <Link to={`/objects/${r.object_id}`} className="text-gray-900 dark:text-stone-100 font-medium hover:text-amber-700 dark:hover:text-amber-300">
-                    {r.object_title}
-                </Link>
+                <TargetTypeChip type={r.target_type}/>
+                {r.target_url ? (
+                    <Link to={r.target_url} className="text-gray-900 dark:text-stone-100 font-medium hover:text-amber-700 dark:hover:text-amber-300">
+                        {r.target_title}
+                    </Link>
+                ) : (
+                    <span className="text-gray-900 dark:text-stone-100 font-medium">{r.target_title}</span>
+                )}
                 <span className={`px-2 py-0.5 text-xs font-medium rounded ${STATUS_BADGE[r.status]}`}>{r.status_label}</span>
             </div>
             <p className="text-sm text-gray-700 dark:text-stone-200 mb-1">

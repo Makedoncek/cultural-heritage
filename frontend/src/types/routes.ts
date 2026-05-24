@@ -43,6 +43,7 @@ export interface RouteDetail extends RouteListItem {
     route_duration_s: number | null;
     geometry_updated_at: string | null;
     available_languages: ('uk' | 'en' | 'pl' | 'de')[];
+    current_translation_id: number | null;
 }
 
 export interface RouteWritePayload {

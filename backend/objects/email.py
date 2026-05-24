@@ -268,11 +268,12 @@ def send_translation_outcome_email(kind, translation_id):
 
 @shared_task(**EMAIL_RETRY_KWARGS)
 def send_inaccuracy_outcome_email(report_id):
-    """Notify reporter when admin resolves or dismisses their report."""
+    """Notify reporter when admin resolves or dismisses their report (any content type)."""
     from .models import InaccuracyReport
+    from .report_targets import describe_target
     try:
         report = (InaccuracyReport.objects
-                  .select_related('reporter', 'cultural_object')
+                  .select_related('reporter', 'content_type')
                   .get(pk=report_id))
     except InaccuracyReport.DoesNotExist:
         return
@@ -284,11 +285,13 @@ def send_inaccuracy_outcome_email(report_id):
     outcome = report.status
     subject = INACCURACY_SUBJECTS.get(lang, INACCURACY_SUBJECTS['uk'])[outcome]
     outcome_label = INACCURACY_OUTCOME_LABELS.get(lang, INACCURACY_OUTCOME_LABELS['uk'])[outcome]
-    object_url = f"{settings.FRONTEND_URL}/objects/{report.cultural_object.pk}"
+    described = describe_target(report.target)
+    target_url = described['target_url']
+    object_url = f"{settings.FRONTEND_URL}{target_url}" if target_url else settings.FRONTEND_URL
 
     html_message = render_to_string(_template_for('inaccuracy_resolved', lang), {
         'user': report.reporter,
-        'object_title': report.cultural_object.title,
+        'object_title': described['target_title'],
         'object_url': object_url,
         'reason_label': report.get_reason_type_display(),
         'outcome_label': outcome_label,

@@ -26,12 +26,16 @@ urlpatterns = [
     path('health/', views.health_check, name='health_check'),
     path('me/preference/', views.user_preference, name='user_preference'),
 
-    # Inaccuracy reports
+    # Reports (polymorphic — any content)
+    path('reports/create/', views.create_report, name='create_report'),
     path('objects/<int:object_pk>/report/', views.report_object, name='report_object'),
     path('reports/<int:report_pk>/', views.delete_own_report, name='delete_own_report'),
     path('users/me/reports/', views.my_reports, name='my_reports'),
     path('users/me/objects/reports/', views.reports_on_my_objects, name='reports_on_my_objects'),
     path('users/me/translations/', views.my_translations, name='my_translations'),
+    path('translations/<str:kind>/<int:pk>/', views.manage_my_translation, name='manage_my_translation'),
+    path('translations/<str:kind>/<int:pk>/archive/', views.archive_my_translation, name='archive_my_translation'),
+    path('translations/<str:kind>/<int:pk>/restore/', views.restore_my_translation, name='restore_my_translation'),
     path('admin/reports/', views.admin_reports_list, name='admin_reports_list'),
     path('admin/reports/<int:report_pk>/resolve/', views.admin_resolve_report, name='admin_resolve_report'),
     path('admin/reports/<int:report_pk>/dismiss/', views.admin_dismiss_report, name='admin_dismiss_report'),

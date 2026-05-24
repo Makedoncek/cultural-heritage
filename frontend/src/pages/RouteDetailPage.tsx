@@ -10,6 +10,7 @@ import {visitsService} from '../services/visits.service';
 import {useAuth} from '../context/AuthContext';
 import ContentLanguageSelector, {type ContentLanguage} from '../components/Translation/ContentLanguageSelector';
 import TranslationSubmitModal from '../components/Translation/TranslationSubmitModal';
+import ReportInaccuracyButton from '../components/Objects/ReportInaccuracyButton';
 import type {RouteDetail} from '../types/routes';
 import '../utils/leaflet-fix';
 
@@ -318,6 +319,16 @@ export default function RouteDetailPage() {
                     onSelect={handleSelectContentLang}
                     onSuggest={isAuthenticated ? () => setShowTranslationModal(true) : undefined}
                 />
+                {isAuthenticated && route.current_translation_id && (
+                    <div className="-mt-1 mb-3">
+                        <ReportInaccuracyButton
+                            targetType="route_translation"
+                            targetId={route.current_translation_id}
+                            targetTitle={route.title}
+                            compact
+                        />
+                    </div>
+                )}
 
                 <div className="flex items-start justify-between flex-wrap gap-2 mb-2">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">
@@ -422,6 +433,9 @@ export default function RouteDetailPage() {
                     >
                         {t('routes.detail.kmzBtn')}
                     </a>
+                    {isAuthenticated && !isOwner && (
+                        <ReportInaccuracyButton targetType="route" targetId={route.id} targetTitle={route.title}/>
+                    )}
                     {route.visibility === 'public' && route.status === 'approved' && (
                         <button
                             type="button"

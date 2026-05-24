@@ -170,6 +170,16 @@ export default function ObjectDetailPage() {
                     onSelect={handleSelectContentLang}
                     onSuggest={isAuthenticated ? () => setShowTranslationModal(true) : undefined}
                 />
+                {isAuthenticated && object.current_translation_id && (
+                    <div className="-mt-1 mb-3">
+                        <ReportInaccuracyButton
+                            targetType="object_translation"
+                            targetId={object.current_translation_id}
+                            targetTitle={object.title}
+                            compact
+                        />
+                    </div>
+                )}
 
                 <div className="mb-4">
                     <div className="flex flex-wrap items-center gap-3 mb-2">
@@ -211,7 +221,7 @@ export default function ObjectDetailPage() {
                             <>
                                 <button
                                     onClick={() => navigate(`/objects/${object.id}/edit`)}
-                                    className="px-3 py-1.5 text-sm bg-amber-500 text-white rounded hover:bg-amber-600 cursor-pointer"
+                                    className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white rounded-lg cursor-pointer"
                                 >
                                     {t('object.edit')}
                                 </button>
@@ -351,7 +361,7 @@ export default function ObjectDetailPage() {
                 )}
 
                 <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-stone-400 mb-2">
-                    <span>📍 {t('object.coordinates')} {latitude.toFixed(6)}, {longitude.toFixed(6)}</span>
+                    <span>{t('object.coordinates')} {latitude.toFixed(6)}, {longitude.toFixed(6)}</span>
                     <button
                         onClick={() => navigator.clipboard.writeText(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`)}
                         className="px-2 py-0.5 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 border border-amber-200 dark:border-stone-600 rounded hover:bg-amber-50 dark:hover:bg-stone-800 cursor-pointer"
@@ -410,7 +420,7 @@ export default function ObjectDetailPage() {
                     )}
                     {!isAuthor && (
                         <div className="mt-3">
-                            <ReportInaccuracyButton objectId={object.id} objectTitle={object.title}/>
+                            <ReportInaccuracyButton targetType="object" targetId={object.id} targetTitle={object.title}/>
                         </div>
                     )}
                 </div>

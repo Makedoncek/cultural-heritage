@@ -5,6 +5,8 @@ import {useTranslation} from 'react-i18next';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import type {ObjectPhoto} from '../../types';
+import {useAuth} from '../../context/AuthContext';
+import ReportInaccuracyButton from './ReportInaccuracyButton';
 
 interface Props {
     photos: ObjectPhoto[];
@@ -14,6 +16,7 @@ interface Props {
 
 export default function Lightbox({photos, initialIndex, onClose}: Props) {
     const {t, i18n} = useTranslation();
+    const {user} = useAuth();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
 
     useEffect(() => {
@@ -57,6 +60,16 @@ export default function Lightbox({photos, initialIndex, onClose}: Props) {
                                     date: new Date(p.created_at).toLocaleDateString(dateLocale),
                                 })}
                             </p>
+                            {user && user.username !== p.uploaded_by.username && (
+                                <div className="mt-3">
+                                    <ReportInaccuracyButton
+                                        targetType="photo"
+                                        targetId={p.id}
+                                        targetTitle={p.caption || `#${p.id}`}
+                                        compact
+                                    />
+                                </div>
+                            )}
                         </div>
                     </SwiperSlide>
                 ))}

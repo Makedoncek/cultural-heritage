@@ -55,7 +55,7 @@ export const objectsService = {
     getPopular: () =>
         api.get<CulturalObject[]>('/objects/popular/').then(res => res.data),
 
-    getWithMyPhotos: (params?: {page?: number; page_size?: number}) =>
+    getWithMyPhotos: (params?: {page?: number; page_size?: number; status?: string}) =>
         api.get<PaginatedResponse<CulturalObjectWithMyPhotos>>(
             '/objects/with-my-photos/',
             {params},

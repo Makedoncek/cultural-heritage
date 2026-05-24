@@ -8,6 +8,8 @@ Core models:
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.text import slugify
@@ -143,6 +145,9 @@ class CulturalObject(models.Model):
         related_name='cultural_objects',
         help_text="Categories for this object (select 1-5 tags)"
     )
+
+    # Virtual reverse relation to polymorphic reports (no DB column).
+    inaccuracy_reports = GenericRelation('InaccuracyReport')
 
     # Indexed for frequent filtering by status
     status = models.CharField(
@@ -316,6 +321,7 @@ class ObjectPhoto(models.Model):
         PENDING = 'pending', 'Pending Review'
         APPROVED = 'approved', 'Approved'
         REJECTED = 'rejected', 'Rejected'
+        ARCHIVED = 'archived', 'Archived'
 
     cultural_object = models.ForeignKey(
         CulturalObject,
@@ -370,6 +376,7 @@ class ObjectAudio(models.Model):
         PENDING = 'pending', 'На модерації'
         APPROVED = 'approved', 'Опубліковано'
         REJECTED = 'rejected', 'Відхилено'
+        ARCHIVED = 'archived', 'В архіві'
 
     cultural_object = models.ForeignKey(
         CulturalObject,
@@ -454,14 +461,20 @@ class UserPreference(models.Model):
 
 
 class InaccuracyReport(models.Model):
-    """User-submitted report of an issue with a cultural object (wrong data, duplicate, etc.)."""
+    """User-submitted report flagging an issue with any content — cultural object, route,
+    photo or audio. The target is a GenericForeignKey; `content_owner` is a denormalized
+    snapshot of the target's author/uploader for fast 'reports on my content' queries."""
 
     class ReasonType(models.TextChoices):
         WRONG_COORDS = 'wrong_coords', 'Невірні координати'
         WRONG_NAME = 'wrong_name', 'Неточна назва'
         WRONG_DESCRIPTION = 'wrong_description', 'Помилки в описі'
         WRONG_TAGS = 'wrong_tags', 'Невірні теги'
-        DUPLICATE = 'duplicate', 'Дублікат іншого об\'єкта'
+        DUPLICATE = 'duplicate', 'Дублікат'
+        SPAM = 'spam', 'Спам'
+        OFFENSIVE = 'offensive', 'Образливий вміст'
+        COPYRIGHT = 'copyright', 'Порушення авторських прав'
+        BROKEN_MEDIA = 'broken_media', 'Пошкоджене медіа'
         OTHER = 'other', 'Інше'
 
     class Status(models.TextChoices):
@@ -469,44 +482,53 @@ class InaccuracyReport(models.Model):
         RESOLVED = 'resolved', 'Вирішено'
         DISMISSED = 'dismissed', 'Відхилено'
 
-    cultural_object = models.ForeignKey(
-        CulturalObject,
-        related_name='inaccuracy_reports',
-        on_delete=models.CASCADE,
+    # Polymorphic target (cultural object, route, photo or audio).
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    target = GenericForeignKey('content_type', 'object_id')
+    content_owner = models.ForeignKey(
+        User, null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='reports_on_my_content',
+        verbose_name=_('Власник контенту'),
     )
     reporter = models.ForeignKey(
         User,
         related_name='reports_made',
         on_delete=models.CASCADE,
+        verbose_name=_('Репортер'),
     )
-    reason_type = models.CharField(max_length=20, choices=ReasonType.choices)
-    note = models.TextField(max_length=500, blank=True)
+    reason_type = models.CharField(max_length=20, choices=ReasonType.choices, verbose_name=_('Причина'))
+    note = models.TextField(max_length=2000, blank=True, verbose_name=_('Деталі'))
     status = models.CharField(
         max_length=10,
         choices=Status.choices,
         default=Status.PENDING,
+        verbose_name=_('Статус'),
     )
-    admin_response = models.TextField(blank=True)
+    admin_response = models.TextField(blank=True, verbose_name=_('Відповідь адміністратора'))
     resolved_by = models.ForeignKey(
         User,
         null=True, blank=True,
         on_delete=models.SET_NULL,
         related_name='reports_resolved',
+        verbose_name=_('Опрацював'),
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    resolved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Створено'))
+    resolved_at = models.DateTimeField(null=True, blank=True, verbose_name=_('Опрацьовано'))
 
     class Meta:
         indexes = [
             models.Index(fields=['status', 'created_at']),
-            models.Index(fields=['cultural_object', 'status']),
+            models.Index(fields=['content_type', 'object_id', 'status']),
+            models.Index(fields=['content_owner', 'status']),
         ]
         ordering = ['-created_at']
-        verbose_name = _('Репорт про неточність')
-        verbose_name_plural = _('Репорти про неточності')
+        verbose_name = _('Репорт')
+        verbose_name_plural = _('Репорти')
 
     def __str__(self):
-        return f'Report #{self.pk} on "{self.cultural_object.title}" by {self.reporter.username} ({self.status})'
+        return f'Report #{self.pk} [{self.content_type_id}:{self.object_id}] by {self.reporter_id} ({self.status})'
 
 
 class Visit(models.Model):
@@ -682,6 +704,7 @@ class TranslationStatus(models.TextChoices):
     PENDING = 'pending', 'На розгляді'
     APPROVED = 'approved', 'Затверджено'
     REJECTED = 'rejected', 'Відхилено'
+    ARCHIVED = 'archived', 'В архіві'
 
 
 class CulturalObjectTranslation(models.Model):
@@ -689,23 +712,26 @@ class CulturalObjectTranslation(models.Model):
 
     cultural_object = models.ForeignKey(
         CulturalObject, related_name='translations', on_delete=models.CASCADE,
+        verbose_name=_('Культурний об\'єкт'),
     )
-    language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES)
-    title = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
+    language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES, verbose_name=_('Мова'))
+    title = models.CharField(max_length=200, verbose_name=_('Назва'))
+    description = models.TextField(blank=True, verbose_name=_('Опис'))
     status = models.CharField(
         max_length=10,
         choices=TranslationStatus.choices,
         default=TranslationStatus.PENDING,
         db_index=True,
+        verbose_name=_('Статус'),
     )
     submitted_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='submitted_object_translations',
+        verbose_name=_('Запропонував'),
     )
-    reviewer_note = models.TextField(blank=True, help_text='Нотатка адміна для рецензії/репортів.')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    reviewer_note = models.TextField(blank=True, help_text='Нотатка адміна для рецензії/репортів.', verbose_name=_('Нотатка рецензента'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Створено'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Оновлено'))
 
     class Meta:
         verbose_name = _('Переклад об\'єкта')
@@ -731,23 +757,25 @@ class CulturalObjectTranslation(models.Model):
 class RouteTranslation(models.Model):
     """Community-contributed translation of Route.title/description."""
 
-    route = models.ForeignKey(Route, related_name='translations', on_delete=models.CASCADE)
-    language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES)
-    title = models.CharField(max_length=200)
-    description = models.TextField(blank=True, max_length=2000)
+    route = models.ForeignKey(Route, related_name='translations', on_delete=models.CASCADE, verbose_name=_('Маршрут'))
+    language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES, verbose_name=_('Мова'))
+    title = models.CharField(max_length=200, verbose_name=_('Назва'))
+    description = models.TextField(blank=True, max_length=2000, verbose_name=_('Опис'))
     status = models.CharField(
         max_length=10,
         choices=TranslationStatus.choices,
         default=TranslationStatus.PENDING,
         db_index=True,
+        verbose_name=_('Статус'),
     )
     submitted_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='submitted_route_translations',
+        verbose_name=_('Запропонував'),
     )
-    reviewer_note = models.TextField(blank=True, help_text='Нотатка адміна для рецензії/репортів.')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    reviewer_note = models.TextField(blank=True, help_text='Нотатка адміна для рецензії/репортів.', verbose_name=_('Нотатка рецензента'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Створено'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Оновлено'))
 
     class Meta:
         verbose_name = _('Переклад маршруту')
@@ -773,11 +801,11 @@ class RouteTranslation(models.Model):
 class TagTranslation(models.Model):
     """Admin-curated translation of Tag.name. No moderation (admin-only)."""
 
-    tag = models.ForeignKey(Tag, related_name='translations', on_delete=models.CASCADE)
-    language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES)
-    name = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    tag = models.ForeignKey(Tag, related_name='translations', on_delete=models.CASCADE, verbose_name=_('Тег'))
+    language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES, verbose_name=_('Мова'))
+    name = models.CharField(max_length=100, verbose_name=_('Назва'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Створено'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Оновлено'))
 
     class Meta:
         verbose_name = _('Переклад тегу')

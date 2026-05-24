@@ -56,6 +56,12 @@ export const photosService = {
     remove: (objectId: number, photoId: number) =>
         api.delete(`/objects/${objectId}/photos/${photoId}/`).then(r => r.data),
 
+    archive: (objectId: number, photoId: number) =>
+        api.post<ObjectPhoto>(`/objects/${objectId}/photos/${photoId}/archive/`).then(r => r.data),
+
+    restore: (objectId: number, photoId: number) =>
+        api.post<ObjectPhoto>(`/objects/${objectId}/photos/${photoId}/restore/`).then(r => r.data),
+
     updateCaption: (objectId: number, photoId: number, caption: string) =>
         api.patch<ObjectPhoto>(
             `/objects/${objectId}/photos/${photoId}/`,

@@ -748,10 +748,13 @@ class ObjectViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='with-my-photos', permission_classes=[IsAuthenticated])
     def with_my_photos(self, request):
         from .pagination import SmallPagePagination
-        object_ids = (ObjectPhoto.objects
-                      .filter(uploaded_by=request.user)
-                      .values_list('cultural_object_id', flat=True)
-                      .distinct())
+        status_filter = request.query_params.get('status')
+        my_photos = ObjectPhoto.objects.filter(uploaded_by=request.user)
+        if status_filter in dict(ObjectPhoto.Status.choices):
+            my_photos = my_photos.filter(status=status_filter)
+        else:
+            status_filter = None
+        object_ids = my_photos.values_list('cultural_object_id', flat=True).distinct()
 
         objects = (CulturalObject.objects
                    .select_related('author')
@@ -762,17 +765,22 @@ class ObjectViewSet(viewsets.ModelViewSet):
 
         paginator = SmallPagePagination()
         page = paginator.paginate_queryset(objects, request, view=self)
-        serializer = ObjectWithMyPhotosSerializer(page, many=True, context={'request': request})
+        serializer = ObjectWithMyPhotosSerializer(
+            page, many=True, context={'request': request, 'photo_status': status_filter},
+        )
         return paginator.get_paginated_response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='with-my-audios', permission_classes=[IsAuthenticated])
     def with_my_audios(self, request):
         """Objects (any author) where the current user has uploaded at least one audio narrative."""
         from .pagination import SmallPagePagination
-        object_ids = (ObjectAudio.objects
-                      .filter(uploaded_by=request.user)
-                      .values_list('cultural_object_id', flat=True)
-                      .distinct())
+        status_filter = request.query_params.get('status')
+        my_audios_qs = ObjectAudio.objects.filter(uploaded_by=request.user)
+        if status_filter in dict(ObjectAudio.Status.choices):
+            my_audios_qs = my_audios_qs.filter(status=status_filter)
+        else:
+            status_filter = None
+        object_ids = my_audios_qs.values_list('cultural_object_id', flat=True).distinct()
         objects = (CulturalObject.objects
                    .select_related('author')
                    .prefetch_related('tags')
@@ -781,7 +789,10 @@ class ObjectViewSet(viewsets.ModelViewSet):
                    .order_by('-created_at'))
 
         def serialize(obj):
-            my_audios = list(obj.audios.filter(uploaded_by=request.user).order_by('-created_at'))
+            audios = obj.audios.filter(uploaded_by=request.user)
+            if status_filter:
+                audios = audios.filter(status=status_filter)
+            my_audios = list(audios.order_by('-created_at'))
             return {
                 'id': obj.id,
                 'title': obj.title,
@@ -1062,7 +1073,8 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
 
     def list(self, request, *args, **kwargs):
         cultural_object = self._get_object()
-        qs = ObjectPhoto.objects.filter(cultural_object=cultural_object)
+        # Archived photos are hidden from the public object view (managed in "My contributions").
+        qs = ObjectPhoto.objects.filter(cultural_object=cultural_object).exclude(status='archived')
 
         user = request.user
         if not user.is_authenticated:
@@ -1096,7 +1108,7 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
         user_count = ObjectPhoto.objects.filter(
             cultural_object=cultural_object,
             uploaded_by=request.user,
-        ).exclude(status='rejected').count()
+        ).exclude(status__in=['rejected', 'archived']).count()
         max_user = (
             settings.PHOTO_MAX_PER_AUTHOR if is_author
             else settings.PHOTO_MAX_PER_CONTRIBUTOR
@@ -1109,7 +1121,7 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
 
         total = ObjectPhoto.objects.filter(
             cultural_object=cultural_object,
-        ).exclude(status='rejected').count()
+        ).exclude(status__in=['rejected', 'archived']).count()
         if total >= settings.PHOTO_MAX_PER_OBJECT:
             return Response(
                 {'detail': f'Об\'єкт уже містить максимум {settings.PHOTO_MAX_PER_OBJECT} фото.', 'code': 'object_full'},
@@ -1209,6 +1221,32 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
 
         return Response(ObjectPhotoSerializer(photo).data)
 
+    @action(detail=True, methods=['post'], url_path='archive', permission_classes=[IsAuthenticated])
+    def archive(self, request, *args, **kwargs):
+        """Owner soft-removes their photo (any status → archived; hidden from public)."""
+        cultural_object = self._get_object()
+        photo = get_object_or_404(ObjectPhoto, pk=kwargs['pk'], cultural_object=cultural_object)
+        if photo.uploaded_by_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору або адміністратору.')}, status=403)
+        photo._skip_status_reset = True
+        photo.status = ObjectPhoto.Status.ARCHIVED
+        photo.save(update_fields=['status'])
+        return Response(ObjectPhotoSerializer(photo).data)
+
+    @action(detail=True, methods=['post'], url_path='restore', permission_classes=[IsAuthenticated])
+    def restore(self, request, *args, **kwargs):
+        """Owner restores an archived photo → back to moderation (pending)."""
+        cultural_object = self._get_object()
+        photo = get_object_or_404(ObjectPhoto, pk=kwargs['pk'], cultural_object=cultural_object)
+        if photo.uploaded_by_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору або адміністратору.')}, status=403)
+        if photo.status != ObjectPhoto.Status.ARCHIVED:
+            return Response({'detail': _('Відновити можна лише архівоване фото.')}, status=400)
+        photo._skip_status_reset = True
+        photo.status = ObjectPhoto.Status.PENDING
+        photo.save(update_fields=['status'])
+        return Response(ObjectPhotoSerializer(photo).data)
+
     @action(detail=False, methods=['post'], url_path='reorder')
     def reorder(self, request, *args, **kwargs):
         cultural_object = self._get_object()
@@ -1257,28 +1295,31 @@ class InaccuracyReportViewSet(viewsets.GenericViewSet):
         return [IsAuthenticated()]
 
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def report_object(request, object_pk):
+def _create_report(request, target_type, target_id):
+    """Shared report-creation logic for any content type."""
     from .models import InaccuracyReport
     from .serializers import InaccuracyReportSerializer
+    from .report_targets import resolve_target
     from datetime import timedelta
     from django.utils import timezone
+    from django.contrib.contenttypes.models import ContentType
 
-    try:
-        obj = CulturalObject.objects.get(pk=object_pk)
-    except CulturalObject.DoesNotExist:
-        return Response({'detail': _('Об\'єкт не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+    instance, cfg = resolve_target(target_type, target_id)
+    if instance is None:
+        return Response({'detail': _('Контент не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
 
-    # Throttle: 1 report per (user, object) per 24h
+    ct = ContentType.objects.get_for_model(cfg['model'])
+
+    # Throttle: 1 report per (user, target) per 24h
     recent = InaccuracyReport.objects.filter(
         reporter=request.user,
-        cultural_object=obj,
+        content_type=ct,
+        object_id=instance.pk,
         created_at__gte=timezone.now() - timedelta(days=1),
     ).exists()
     if recent:
         return Response(
-            {'detail': _('Ви вже надсилали репорт на цей об\'єкт нещодавно. Спробуйте через 24 години.')},
+            {'detail': _('Ви вже надсилали репорт на цей контент нещодавно. Спробуйте через 24 години.')},
             status=status.HTTP_429_TOO_MANY_REQUESTS,
         )
 
@@ -1287,15 +1328,31 @@ def report_object(request, object_pk):
         return Response({'reason_type': [_('Невірна причина.')]}, status=status.HTTP_400_BAD_REQUEST)
 
     report = InaccuracyReport.objects.create(
-        cultural_object=obj,
+        content_type=ct,
+        object_id=instance.pk,
+        content_owner_id=cfg['owner_id'](instance),
         reporter=request.user,
         reason_type=reason_type,
-        note=request.data.get('note', '')[:500],
+        note=request.data.get('note', '')[:2000],
     )
     return Response(
         InaccuracyReportSerializer(report).data,
         status=status.HTTP_201_CREATED,
     )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_report(request):
+    """Generic report endpoint: body {target_type, target_id, reason_type, note}."""
+    return _create_report(request, request.data.get('target_type'), request.data.get('target_id'))
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def report_object(request, object_pk):
+    """Backward-compatible object-report endpoint."""
+    return _create_report(request, 'object', object_pk)
 
 
 @api_view(['DELETE'])
@@ -1323,7 +1380,10 @@ def my_reports(request):
     from .models import InaccuracyReport
     from .serializers import InaccuracyReportSerializer
     from .pagination import SmallPagePagination
-    qs = InaccuracyReport.objects.filter(reporter=request.user).select_related('cultural_object')
+    qs = (InaccuracyReport.objects
+          .filter(reporter=request.user)
+          .select_related('content_type', 'reporter')
+          .prefetch_related('target'))
     paginator = SmallPagePagination()
     page = paginator.paginate_queryset(qs, request)
     return paginator.get_paginated_response(InaccuracyReportSerializer(page, many=True).data)
@@ -1332,12 +1392,14 @@ def my_reports(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def reports_on_my_objects(request):
+    """Reports on any content owned by the current user (objects, routes, photos, audio)."""
     from .models import InaccuracyReport
     from .serializers import InaccuracyReportSerializer
     from .pagination import SmallPagePagination
     qs = (InaccuracyReport.objects
-          .filter(cultural_object__author=request.user)
-          .select_related('cultural_object', 'reporter'))
+          .filter(content_owner=request.user)
+          .select_related('content_type', 'reporter')
+          .prefetch_related('target'))
     paginator = SmallPagePagination()
     page = paginator.paginate_queryset(qs, request)
     return paginator.get_paginated_response(InaccuracyReportSerializer(page, many=True).data)
@@ -1365,12 +1427,21 @@ def my_translations(request):
             'updated_at': tr.updated_at,
         }
 
+    from .models import TranslationStatus
+    status_filter = request.query_params.get('status')
+    if status_filter not in dict(TranslationStatus.choices):
+        status_filter = None
+
+    obj_qs = CulturalObjectTranslation.objects.filter(submitted_by=request.user).select_related('cultural_object')
+    route_qs = RouteTranslation.objects.filter(submitted_by=request.user).select_related('route')
+    if status_filter:
+        obj_qs = obj_qs.filter(status=status_filter)
+        route_qs = route_qs.filter(status=status_filter)
+
     rows = []
-    for tr in (CulturalObjectTranslation.objects
-               .filter(submitted_by=request.user).select_related('cultural_object')):
+    for tr in obj_qs:
         rows.append((tr.created_at, payload(tr, 'object', tr.cultural_object, 'objects')))
-    for tr in (RouteTranslation.objects
-               .filter(submitted_by=request.user).select_related('route')):
+    for tr in route_qs:
         rows.append((tr.created_at, payload(tr, 'route', tr.route, 'routes')))
 
     rows.sort(key=lambda r: r[0], reverse=True)
@@ -1381,6 +1452,108 @@ def my_translations(request):
     return paginator.get_paginated_response(page)
 
 
+def _translation_model_for(kind):
+    from .models import CulturalObjectTranslation, RouteTranslation
+    return {'object': CulturalObjectTranslation, 'route': RouteTranslation}.get(kind)
+
+
+def _translation_parent(translation, kind):
+    return translation.cultural_object if kind == 'object' else translation.route
+
+
+def _translation_has_replacement(translation, kind):
+    """A description must remain visible after hiding an approved translation:
+    either the parent's canonical description is non-empty, or another approved translation exists."""
+    parent = _translation_parent(translation, kind)
+    if (parent.description or '').strip():
+        return True
+    model = type(translation)
+    filter_kw = {'cultural_object': parent} if kind == 'object' else {'route': parent}
+    return model.objects.filter(status='approved', **filter_kw).exclude(pk=translation.pk).exists()
+
+
+def _get_own_translation(request, kind, pk):
+    """Return (translation, error_response). error_response is None on success."""
+    model = _translation_model_for(kind)
+    if model is None:
+        return None, Response({'detail': _('Невідомий тип перекладу.')}, status=status.HTTP_404_NOT_FOUND)
+    try:
+        translation = model.objects.get(pk=pk)
+    except model.DoesNotExist:
+        return None, Response({'detail': _('Переклад не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+    if translation.submitted_by_id != request.user.id:
+        return None, Response({'detail': _('Дозволено лише автору пропозиції.')}, status=status.HTTP_403_FORBIDDEN)
+    return translation, None
+
+
+@api_view(['PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def manage_my_translation(request, kind, pk):
+    """PATCH = edit own proposal → back to moderation (pending). DELETE = permanent (archived only)."""
+    from .models import TranslationStatus
+    translation, err = _get_own_translation(request, kind, pk)
+    if err:
+        return err
+
+    if request.method == 'DELETE':
+        if translation.status != TranslationStatus.ARCHIVED:
+            return Response(
+                {'detail': _('Спершу архівуйте переклад, потім його можна видалити назавжди.')},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        translation.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # PATCH — edit content, re-submit for moderation.
+    if translation.status == TranslationStatus.APPROVED and not _translation_has_replacement(translation, kind):
+        return Response(
+            {'detail': _('Не можна редагувати: це єдиний опис і не лишиться заміни. Спершу додайте інший переклад.')},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    title = request.data.get('title')
+    if title is not None:
+        translation.title = title[:200]
+    if 'description' in request.data:
+        translation.description = request.data.get('description') or ''
+    translation.status = TranslationStatus.PENDING
+    translation.save(update_fields=['title', 'description', 'status', 'updated_at'])
+    return Response({'id': translation.id, 'kind': kind, 'status': translation.status})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def archive_my_translation(request, kind, pk):
+    """Owner soft-removes their proposal (any status → archived; hidden from public)."""
+    from .models import TranslationStatus
+    translation, err = _get_own_translation(request, kind, pk)
+    if err:
+        return err
+    if translation.status == TranslationStatus.APPROVED and not _translation_has_replacement(translation, kind):
+        return Response(
+            {'detail': _('Не можна архівувати: це єдиний опис і не лишиться заміни. Спершу додайте інший переклад.')},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    translation.status = TranslationStatus.ARCHIVED
+    translation.save(update_fields=['status', 'updated_at'])
+    return Response({'id': translation.id, 'kind': kind, 'status': translation.status})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def restore_my_translation(request, kind, pk):
+    """Owner restores an archived proposal → back to moderation (pending)."""
+    from .models import TranslationStatus
+    translation, err = _get_own_translation(request, kind, pk)
+    if err:
+        return err
+    if translation.status != TranslationStatus.ARCHIVED:
+        return Response({'detail': _('Відновити можна лише архівований переклад.')},
+                        status=status.HTTP_400_BAD_REQUEST)
+    translation.status = TranslationStatus.PENDING
+    translation.save(update_fields=['status', 'updated_at'])
+    return Response({'id': translation.id, 'kind': kind, 'status': translation.status})
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def admin_reports_list(request):
@@ -1389,7 +1562,7 @@ def admin_reports_list(request):
     if not request.user.is_staff:
         return Response({'detail': _('Тільки для адміністратора.')}, status=status.HTTP_403_FORBIDDEN)
     status_filter = request.query_params.get('status', 'pending')
-    qs = InaccuracyReport.objects.select_related('cultural_object', 'reporter')
+    qs = InaccuracyReport.objects.select_related('content_type', 'reporter').prefetch_related('target')
     if status_filter in dict(InaccuracyReport.Status.choices):
         qs = qs.filter(status=status_filter)
     return Response(InaccuracyReportSerializer(qs, many=True).data)
@@ -2261,12 +2434,15 @@ class ObjectAudioViewSet(viewsets.ViewSet):
     def list(self, request, obj_pk=None):
         cultural_object = self._get_object(obj_pk)
         user = request.user
-        qs = ObjectAudio.objects.filter(cultural_object=cultural_object).select_related('uploaded_by')
+        # Archived narratives are hidden from the public object view (managed in "My contributions").
+        qs = (ObjectAudio.objects.filter(cultural_object=cultural_object)
+              .exclude(status=ObjectAudio.Status.ARCHIVED)
+              .select_related('uploaded_by'))
         language = request.query_params.get('language')
         if language:
             qs = qs.filter(language=language)
         if user.is_authenticated and user.is_staff:
-            pass  # show everything
+            pass  # show everything (except archived, excluded above)
         elif user.is_authenticated:
             qs = qs.filter(Q(status=ObjectAudio.Status.APPROVED) | Q(uploaded_by=user))
         else:
@@ -2283,7 +2459,11 @@ class ObjectAudioViewSet(viewsets.ViewSet):
 
     def create(self, request, obj_pk=None):
         cultural_object = self._get_object(obj_pk)
-        if cultural_object.audios.count() >= MAX_AUDIOS_PER_OBJECT:
+        # Rejected/archived narratives don't count toward the limit (mirrors photo logic),
+        # so a rejection or archive frees the slot for a re-submission.
+        if cultural_object.audios.exclude(
+            status__in=[ObjectAudio.Status.REJECTED, ObjectAudio.Status.ARCHIVED]
+        ).count() >= MAX_AUDIOS_PER_OBJECT:
             return Response(
                 {'detail': _("Об'єкт може мати максимум 10 аудіо-наративів.")},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -2335,6 +2515,31 @@ class ObjectAudioViewSet(viewsets.ViewSet):
                             status=status.HTTP_403_FORBIDDEN)
         audio.delete()  # pre_delete-signal cleans up Cloudinary
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['post'])
+    def archive(self, request, obj_pk=None, pk=None):
+        """Owner soft-removes their narrative (any status → archived; hidden from public)."""
+        audio = self._get_audio(obj_pk, pk)
+        if audio.uploaded_by_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору або адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        audio.status = ObjectAudio.Status.ARCHIVED
+        audio.save(update_fields=['status', 'updated_at'])
+        return Response(ObjectAudioSerializer(audio).data)
+
+    @action(detail=True, methods=['post'])
+    def restore(self, request, obj_pk=None, pk=None):
+        """Owner restores an archived narrative → back to moderation (pending)."""
+        audio = self._get_audio(obj_pk, pk)
+        if audio.uploaded_by_id != request.user.id and not request.user.is_staff:
+            return Response({'detail': _('Дозволено лише автору або адміністратору.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        if audio.status != ObjectAudio.Status.ARCHIVED:
+            return Response({'detail': _('Відновити можна лише архівований запис.')},
+                            status=status.HTTP_400_BAD_REQUEST)
+        audio.status = ObjectAudio.Status.PENDING
+        audio.save(update_fields=['status', 'updated_at'])
+        return Response(ObjectAudioSerializer(audio).data)
 
     @action(detail=True, methods=['post'], permission_classes=[AllowAny])
     def play(self, request, obj_pk=None, pk=None):

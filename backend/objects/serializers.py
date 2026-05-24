@@ -27,20 +27,27 @@ def _resolve_lang(context):
     return 'uk'
 
 
+def _approved_translation(obj, lang):
+    """Return the approved translation instance for `lang`, or None (incl. for the original language)."""
+    if lang == obj.original_language:
+        return None
+    cache = getattr(obj, '_prefetched_objects_cache', {})
+    candidates = cache.get('translations')
+    if candidates is not None:
+        return next((t for t in candidates if t.language == lang and t.status == TranslationStatus.APPROVED), None)
+    return obj.translations.filter(language=lang, status=TranslationStatus.APPROVED).first()
+
+
 def _resolve_object_translation(obj, lang):
     """Return (title, description, translation_missing) for the given language.
 
     Falls back to original fields. Uses prefetched `translations` if available.
     """
-    if lang == obj.original_language:
-        return obj.title, obj.description, False
-    candidates = list(obj.translations.all()) if hasattr(obj, '_prefetched_objects_cache') and 'translations' in obj._prefetched_objects_cache else None
-    if candidates is None:
-        translation = obj.translations.filter(language=lang, status=TranslationStatus.APPROVED).first()
-    else:
-        translation = next((t for t in candidates if t.language == lang and t.status == TranslationStatus.APPROVED), None)
+    translation = _approved_translation(obj, lang)
     if translation is not None:
         return translation.title, translation.description, False
+    if lang == obj.original_language:
+        return obj.title, obj.description, False
     return obj.title, obj.description, True
 
 
@@ -241,6 +248,7 @@ class ObjectDetailSerializer(FavoriteMixin, serializers.ModelSerializer):
     description = serializers.SerializerMethodField()
     translation_missing = serializers.SerializerMethodField()
     available_languages = serializers.SerializerMethodField()
+    current_translation_id = serializers.SerializerMethodField()
 
     class Meta:
         model = CulturalObject
@@ -256,10 +264,15 @@ class ObjectDetailSerializer(FavoriteMixin, serializers.ModelSerializer):
             'photos', 'photo_count', 'cover_url',
             'is_visited', 'is_planned', 'visits_count',
             'original_language', 'translation_missing', 'available_languages',
+            'current_translation_id',
         ]
 
     def get_available_languages(self, obj):
         return _available_languages(obj)
+
+    def get_current_translation_id(self, obj):
+        translation = _approved_translation(obj, _resolve_lang(self.context))
+        return translation.id if translation else None
 
     def get_title(self, obj):
         title, _desc, _missing = _resolve_object_translation(obj, _resolve_lang(self.context))
@@ -296,7 +309,8 @@ class ObjectDetailSerializer(FavoriteMixin, serializers.ModelSerializer):
 
     def get_photos(self, obj):
         request = self.context.get('request')
-        qs = obj.photos.all()
+        # Archived photos are removed from public view everywhere; owner manages them in "My contributions".
+        qs = obj.photos.exclude(status='archived')
         if request and request.user.is_authenticated:
             if not request.user.is_staff:
                 qs = qs.filter(Q(status='approved') | Q(uploaded_by=request.user))
@@ -322,6 +336,9 @@ class ObjectWithMyPhotosSerializer(ObjectListSerializer):
             return []
         # prefetch_related у view ставить кеш на `photos`, тож фільтр у Python — без зайвого SQL
         photos = [p for p in obj.photos.all() if p.uploaded_by_id == request.user.id]
+        status_filter = self.context.get('photo_status')
+        if status_filter:
+            photos = [p for p in photos if p.status == status_filter]
         photos.sort(key=lambda p: p.created_at, reverse=True)
         return ObjectPhotoSerializer(photos, many=True, context=self.context).data
 
@@ -504,24 +521,40 @@ class AudioUploadSerializer(serializers.Serializer):
 
 class InaccuracyReportSerializer(serializers.ModelSerializer):
     reporter_username = serializers.CharField(source='reporter.username', read_only=True)
-    object_title = serializers.CharField(source='cultural_object.title', read_only=True)
-    object_id = serializers.IntegerField(source='cultural_object.id', read_only=True)
     reason_label = serializers.CharField(source='get_reason_type_display', read_only=True)
     status_label = serializers.CharField(source='get_status_display', read_only=True)
+    target_type = serializers.SerializerMethodField()
+    target_title = serializers.SerializerMethodField()
+    target_url = serializers.SerializerMethodField()
 
     class Meta:
         model = InaccuracyReport
         fields = [
-            'id', 'object_id', 'object_title',
+            'id', 'target_type', 'target_title', 'target_url',
             'reporter_username', 'reason_type', 'reason_label',
             'note', 'status', 'status_label', 'admin_response',
             'created_at', 'resolved_at',
         ]
         read_only_fields = [
-            'id', 'reporter_username', 'object_id', 'object_title',
+            'id', 'reporter_username', 'target_type', 'target_title', 'target_url',
             'reason_label', 'status', 'status_label', 'admin_response',
             'created_at', 'resolved_at',
         ]
+
+    def _described(self, obj):
+        if not hasattr(obj, '_described_cache'):
+            from .report_targets import describe_target
+            obj._described_cache = describe_target(obj.target)
+        return obj._described_cache
+
+    def get_target_type(self, obj):
+        return self._described(obj)['target_type']
+
+    def get_target_title(self, obj):
+        return self._described(obj)['target_title']
+
+    def get_target_url(self, obj):
+        return self._described(obj)['target_url']
 
 
 def _object_cover_thumb(cultural_object) -> str | None:
@@ -685,17 +718,22 @@ class RouteDetailSerializer(RouteListSerializer):
     stops = RouteStopSerializer(many=True, read_only=True)
     copied_from = serializers.PrimaryKeyRelatedField(read_only=True)
     available_languages = serializers.SerializerMethodField()
+    current_translation_id = serializers.SerializerMethodField()
 
     class Meta(RouteListSerializer.Meta):
         fields = list(RouteListSerializer.Meta.fields) + [
             'stops', 'copied_from',
             'route_geometry', 'route_distance_m', 'route_duration_s', 'geometry_updated_at',
-            'available_languages',
+            'available_languages', 'current_translation_id',
         ]
         read_only_fields = fields
 
     def get_available_languages(self, obj):
         return _available_languages(obj)
+
+    def get_current_translation_id(self, obj):
+        translation = _approved_translation(obj, _resolve_lang(self.context))
+        return translation.id if translation else None
 
 
 class RouteWriteSerializer(serializers.ModelSerializer):

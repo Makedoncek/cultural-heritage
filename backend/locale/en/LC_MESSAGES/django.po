@@ -112,3 +112,126 @@ msgstr "Planned visit"
 
 msgid "Заплановані відвідування"
 msgstr "Planned visits"
+
+# --- Model names added later ---
+msgid "Репорт"
+msgstr "Report"
+
+msgid "Репорти"
+msgstr "Reports"
+
+msgid "Аудіо-нарратив"
+msgstr "Audio narrative"
+
+msgid "Аудіо-наративи"
+msgstr "Audio narratives"
+
+msgid "Маршрут"
+msgstr "Route"
+
+msgid "Маршрути"
+msgstr "Routes"
+
+msgid "Зупинка маршруту"
+msgstr "Route stop"
+
+msgid "Зупинки маршруту"
+msgstr "Route stops"
+
+msgid "Переклад об'єкта"
+msgstr "Object translation"
+
+msgid "Переклади об'єктів"
+msgstr "Object translations"
+
+msgid "Переклад маршруту"
+msgstr "Route translation"
+
+msgid "Переклади маршрутів"
+msgstr "Route translations"
+
+msgid "Переклад тегу"
+msgstr "Tag translation"
+
+msgid "Переклади тегів"
+msgstr "Tag translations"
+
+# --- Field / column labels ---
+msgid "Мова"
+msgstr "Language"
+
+msgid "Назва"
+msgstr "Title"
+
+msgid "Опис"
+msgstr "Description"
+
+msgid "Статус"
+msgstr "Status"
+
+msgid "Запропонував"
+msgstr "Submitted by"
+
+msgid "Нотатка рецензента"
+msgstr "Reviewer note"
+
+msgid "Створено"
+msgstr "Created"
+
+msgid "Оновлено"
+msgstr "Updated"
+
+msgid "Власник контенту"
+msgstr "Content owner"
+
+msgid "Репортер"
+msgstr "Reporter"
+
+msgid "Причина"
+msgstr "Reason"
+
+msgid "Деталі"
+msgstr "Details"
+
+msgid "Відповідь адміністратора"
+msgstr "Administrator response"
+
+msgid "Опрацював"
+msgstr "Resolved by"
+
+msgid "Опрацьовано"
+msgstr "Resolved at"
+
+# --- Admin column / display labels ---
+msgid "Ціль"
+msgstr "Target"
+
+msgid "Дія"
+msgstr "Action"
+
+msgid "Автор"
+msgstr "Author"
+
+msgid "Зупинок"
+msgstr "Stops"
+
+msgid "Превью (клік для редагування)"
+msgstr "Preview (click to edit)"
+
+msgid "Переглянути на карті"
+msgstr "View on map"
+
+msgid "Карта"
+msgstr "Map"
+
+msgid "Превью"
+msgstr "Preview"
+
+msgid "Зображення"
+msgstr "Image"
+
+msgid "Послухати"
+msgstr "Listen"
+
+msgid "Запис"
+msgstr "Recording"

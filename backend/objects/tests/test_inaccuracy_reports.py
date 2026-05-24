@@ -31,6 +31,18 @@ class InaccuracyReportFlowTests(APITestCase):
     def _report_url(self):
         return reverse('objects:report_object', kwargs={'object_pk': self.obj.pk})
 
+    def _make_report(self, reporter, **kwargs):
+        """Create a report targeting self.obj via the polymorphic GFK."""
+        from django.contrib.contenttypes.models import ContentType
+        ct = ContentType.objects.get_for_model(CulturalObject)
+        return InaccuracyReport.objects.create(
+            content_type=ct,
+            object_id=self.obj.pk,
+            content_owner=self.author,
+            reporter=reporter,
+            **kwargs,
+        )
+
     def test_authenticated_user_can_create_report(self):
         self.client.force_authenticate(self.reporter)
         response = self.client.post(self._report_url(), {
@@ -51,11 +63,7 @@ class InaccuracyReportFlowTests(APITestCase):
 
     def test_user_cannot_report_same_object_twice_within_24h(self):
         self.client.force_authenticate(self.reporter)
-        InaccuracyReport.objects.create(
-            cultural_object=self.obj,
-            reporter=self.reporter,
-            reason_type='wrong_name',
-        )
+        self._make_report(self.reporter, reason_type='wrong_name')
         response = self.client.post(self._report_url(), {
             'reason_type': 'wrong_coords',
         }, format='json')
@@ -63,11 +71,7 @@ class InaccuracyReportFlowTests(APITestCase):
 
     def test_user_can_report_again_after_24h(self):
         self.client.force_authenticate(self.reporter)
-        old = InaccuracyReport.objects.create(
-            cultural_object=self.obj,
-            reporter=self.reporter,
-            reason_type='wrong_name',
-        )
+        old = self._make_report(self.reporter, reason_type='wrong_name')
         InaccuracyReport.objects.filter(pk=old.pk).update(
             created_at=timezone.now() - timedelta(days=2),
         )
@@ -85,22 +89,14 @@ class InaccuracyReportFlowTests(APITestCase):
 
     def test_user_can_delete_own_pending_report(self):
         self.client.force_authenticate(self.reporter)
-        report = InaccuracyReport.objects.create(
-            cultural_object=self.obj,
-            reporter=self.reporter,
-            reason_type='wrong_name',
-        )
+        report = self._make_report(self.reporter, reason_type='wrong_name')
         url = reverse('objects:delete_own_report', kwargs={'report_pk': report.pk})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(InaccuracyReport.objects.filter(pk=report.pk).exists())
 
     def test_user_cannot_delete_others_report(self):
-        report = InaccuracyReport.objects.create(
-            cultural_object=self.obj,
-            reporter=self.reporter,
-            reason_type='wrong_name',
-        )
+        report = self._make_report(self.reporter, reason_type='wrong_name')
         self.client.force_authenticate(self.other)
         url = reverse('objects:delete_own_report', kwargs={'report_pk': report.pk})
         response = self.client.delete(url)
@@ -109,9 +105,8 @@ class InaccuracyReportFlowTests(APITestCase):
 
     def test_user_cannot_delete_resolved_report(self):
         self.client.force_authenticate(self.reporter)
-        report = InaccuracyReport.objects.create(
-            cultural_object=self.obj,
-            reporter=self.reporter,
+        report = self._make_report(
+            self.reporter,
             reason_type='wrong_name',
             status='resolved',
             resolved_by=self.admin,
@@ -124,11 +119,7 @@ class InaccuracyReportFlowTests(APITestCase):
     @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
     @patch('objects.email.send_mail')
     def test_admin_can_resolve_report_and_email_sent(self, mock_send_mail):
-        report = InaccuracyReport.objects.create(
-            cultural_object=self.obj,
-            reporter=self.reporter,
-            reason_type='wrong_name',
-        )
+        report = self._make_report(self.reporter, reason_type='wrong_name')
         self.client.force_authenticate(self.admin)
         url = reverse('objects:admin_resolve_report', kwargs={'report_pk': report.pk})
         response = self.client.post(url, {'admin_response': 'Виправлено'}, format='json')
@@ -140,11 +131,7 @@ class InaccuracyReportFlowTests(APITestCase):
         mock_send_mail.assert_called_once()
 
     def test_object_author_sees_reports_on_own_objects(self):
-        InaccuracyReport.objects.create(
-            cultural_object=self.obj,
-            reporter=self.reporter,
-            reason_type='wrong_name',
-        )
+        self._make_report(self.reporter, reason_type='wrong_name')
         self.client.force_authenticate(self.author)
         url = reverse('objects:reports_on_my_objects')
         response = self.client.get(url)
@@ -153,14 +140,8 @@ class InaccuracyReportFlowTests(APITestCase):
         self.assertEqual(response.data['results'][0]['reporter_username'], 'reporter')
 
     def test_my_reports_returns_only_own(self):
-        InaccuracyReport.objects.create(
-            cultural_object=self.obj, reporter=self.reporter,
-            reason_type='wrong_name',
-        )
-        InaccuracyReport.objects.create(
-            cultural_object=self.obj, reporter=self.other,
-            reason_type='wrong_coords',
-        )
+        self._make_report(self.reporter, reason_type='wrong_name')
+        self._make_report(self.other, reason_type='wrong_coords')
         self.client.force_authenticate(self.reporter)
         url = reverse('objects:my_reports')
         response = self.client.get(url)

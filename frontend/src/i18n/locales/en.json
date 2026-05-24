@@ -34,9 +34,61 @@
   },
   "reports": {
     "title": "Reports center",
-    "subtitle": "Inaccuracy reports — both yours and those on your objects.",
+    "subtitle": "Content problem reports — both yours and those on your content.",
     "tabMine": "My reports",
-    "tabOnMine": "On my objects"
+    "tabOnMine": "On my content",
+    "deleteReport": "Delete",
+    "button": "Report a problem",
+    "buttonTitle": "Report a problem with this content",
+    "report": "Report",
+    "sent": "Report sent",
+    "sentShort": "Sent",
+    "modalTitle": "Report a problem",
+    "modalTitleByType": {
+      "object": "Report a problem with this object",
+      "route": "Report a problem with this route",
+      "photo": "Report this photo",
+      "audio": "Report this audio",
+      "object_translation": "Report this translation",
+      "route_translation": "Report this translation"
+    },
+    "hintByType": {
+      "object": "About the object's own data: coordinates, original name/description, tags, duplicate, etc.",
+      "route": "About the route itself: name, description, duplicate, inappropriate content, etc.",
+      "photo": "About this photo: offensive content, copyright violation, a broken image, etc.",
+      "audio": "About this audio: offensive content, copyright violation, a corrupted recording, etc.",
+      "object_translation": "About this specific translation: incorrect translation, wrong language, spam, etc.",
+      "route_translation": "About this specific translation: incorrect translation, wrong language, spam, etc."
+    },
+    "reasonLabel": "Problem type",
+    "detailsLabel": "Details",
+    "notePlaceholder": "Optional: describe the problem in more detail",
+    "duplicatePlaceholder": "Provide a link or the name of the original",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "submitted": "Report submitted for moderation",
+    "throttled": "You already reported this content recently.",
+    "submitError": "Failed to submit the report",
+    "targetType": {
+      "object": "Object",
+      "route": "Route",
+      "photo": "Photo",
+      "audio": "Audio",
+      "object_translation": "Object translation",
+      "route_translation": "Route translation"
+    },
+    "reason": {
+      "wrong_coords": "Wrong coordinates",
+      "wrong_name": "Inaccurate name",
+      "wrong_description": "Errors in description",
+      "wrong_tags": "Wrong tags",
+      "duplicate": "Duplicate",
+      "spam": "Spam",
+      "offensive": "Offensive content",
+      "copyright": "Copyright violation",
+      "broken_media": "Broken media",
+      "other": "Other"
+    }
   },
   "nav": {
     "map": "Map",
@@ -517,10 +569,36 @@
     "kindObject": "Object",
     "kindRoute": "Route",
     "reviewerNote": "Administrator's note",
+    "editTranslation": "Edit",
+    "editTranslationSuccess": "Saved — sent back for moderation",
+    "editTranslationError": "Failed to save",
+    "saveAndResubmit": "Save & resubmit",
+    "archive": "Archive",
+    "restore": "Restore",
+    "restoreSuccess": "Restored — sent back for moderation",
+    "restoreError": "Failed to restore",
+    "archiveTranslationConfirm": "Archive this translation? It will be removed from public view.",
+    "archiveSuccess": "Archived",
+    "archiveError": "Failed to archive",
+    "deletePermanently": "Delete permanently",
+    "deleteTranslation": "Delete",
+    "deleteTranslationConfirm": "Delete this translation permanently?",
+    "deleteTranslationSuccess": "Deleted",
+    "deleteTranslationError": "Failed to delete",
+    "archiveConfirm": "Archive this contribution? It will be removed from public view.",
+    "deletePermanentlyConfirm": "Delete permanently? This cannot be undone.",
+    "statusFilter": {
+      "all": "All",
+      "pending": "Under review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "archived": "Archived"
+    },
     "translationStatus": {
       "pending": "Under review",
       "approved": "Approved",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "archived": "Archived"
     }
   },
   "audio": {
@@ -540,7 +618,8 @@
     "status": {
       "pending": "Under review",
       "approved": "Published",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "archived": "Archived"
     },
     "edit": {
       "title": "Edit audio",

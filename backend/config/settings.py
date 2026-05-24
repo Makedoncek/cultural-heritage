@@ -214,11 +214,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'uk'
 
+# UI locales for the admin / interface. Content translations (uk/en/pl/de) are a
+# separate concept driven by objects.models.LANGUAGE_CHOICES.
 LANGUAGES = [
     ('uk', 'Українська'),
     ('en', 'English'),
-    ('pl', 'Polski'),
-    ('de', 'Deutsch'),
 ]
 
 LOCALE_PATHS = [BASE_DIR / 'locale']

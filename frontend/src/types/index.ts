@@ -101,6 +101,7 @@ export interface CulturalObjectDetail {
     original_language: SupportedLanguage;
     translation_missing: boolean;
     available_languages: SupportedLanguage[];
+    current_translation_id: number | null;
 }
 
 export interface PhotoUploadedBy {
@@ -115,7 +116,7 @@ export interface ObjectPhoto {
     image_url: string;
     thumbnail_url: string;
     caption: string;
-    status: 'pending' | 'approved' | 'rejected';
+    status: 'pending' | 'approved' | 'rejected' | 'archived';
     order: number;
     is_author_photo: boolean;
     created_at: string;

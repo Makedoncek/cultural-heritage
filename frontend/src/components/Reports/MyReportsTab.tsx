@@ -5,6 +5,7 @@ import {useTranslation} from 'react-i18next';
 import {reportsService} from '../../services/reports.service';
 import {usePaginatedList} from '../../hooks/usePaginatedList';
 import LoadMoreButton from '../common/LoadMoreButton';
+import TargetTypeChip from './TargetTypeChip';
 import type {InaccuracyReport, ReportStatus} from '../../types/reports';
 
 const STATUS_BADGE: Record<ReportStatus, string> = {
@@ -55,9 +56,14 @@ export default function MyReportsTab({onCountChange}: Props) {
             {reports.map(r => (
                 <div key={r.id} className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg px-4 py-3">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <Link to={`/objects/${r.object_id}`} className="text-gray-900 dark:text-stone-100 font-medium hover:text-amber-700 dark:hover:text-amber-300">
-                            {r.object_title}
-                        </Link>
+                        <TargetTypeChip type={r.target_type}/>
+                        {r.target_url ? (
+                            <Link to={r.target_url} className="text-gray-900 dark:text-stone-100 font-medium hover:text-amber-700 dark:hover:text-amber-300">
+                                {r.target_title}
+                            </Link>
+                        ) : (
+                            <span className="text-gray-900 dark:text-stone-100 font-medium">{r.target_title}</span>
+                        )}
                         <span className={`px-2 py-0.5 text-xs font-medium rounded ${STATUS_BADGE[r.status]}`}>{r.status_label}</span>
                     </div>
                     <p className="text-sm text-gray-700 dark:text-stone-200 mb-1">
@@ -70,11 +76,14 @@ export default function MyReportsTab({onCountChange}: Props) {
                             <p className="text-gray-700 dark:text-stone-200">{r.admin_response}</p>
                         </div>
                     )}
-                    <div className="flex items-center justify-between mt-2 text-xs text-gray-500 dark:text-stone-400">
-                        <span>{new Date(r.created_at).toLocaleDateString(dateLocale)}</span>
+                    <div className="flex items-center justify-between mt-2 gap-2">
+                        <span className="text-xs text-gray-500 dark:text-stone-400">{new Date(r.created_at).toLocaleDateString(dateLocale)}</span>
                         {r.status === 'pending' && (
-                            <button onClick={() => handleDelete(r.id)} className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 cursor-pointer">
-                                Видалити
+                            <button
+                                onClick={() => handleDelete(r.id)}
+                                className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg cursor-pointer shrink-0"
+                            >
+                                🗑 {t('reports.deleteReport')}
                             </button>
                         )}
                     </div>

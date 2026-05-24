@@ -70,7 +70,7 @@ export default function AddToRouteButton({objectId}: Props) {
             <button
                 type="button"
                 onClick={openPicker}
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors cursor-pointer bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white"
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors cursor-pointer bg-teal-600 hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500 text-white"
             >
                 <span className="text-base">🗺</span>
                 {t('object.addToRoute')}
