@@ -143,6 +143,7 @@ export interface CulturalObjectWrite {
     wikipedia_url?: string;
     official_website?: string;
     google_maps_url?: string;
+    original_language?: SupportedLanguage;
 }
 
 export interface ObjectFormData {
@@ -157,6 +158,7 @@ export interface ObjectFormData {
     wikipedia_url: string;
     official_website: string;
     google_maps_url: string;
+    original_language: SupportedLanguage;
 }
 
 export interface AuthorProfile {

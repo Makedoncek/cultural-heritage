@@ -377,6 +377,7 @@ class ObjectWriteSerializer(serializers.ModelSerializer):
             'wikipedia_url',
             'official_website',
             'google_maps_url',
+            'original_language',
             'status',
         ]
         read_only_fields = ['id', 'status']
@@ -393,6 +394,11 @@ class ObjectWriteSerializer(serializers.ModelSerializer):
             )
 
         return value
+
+    def update(self, instance, validated_data):
+        # Original language is fixed at creation; ignore any attempt to change it on edit.
+        validated_data.pop('original_language', None)
+        return super().update(instance, validated_data)
 
     def validate(self, data):
         latitude = data.get('latitude')

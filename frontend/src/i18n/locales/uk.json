@@ -241,6 +241,8 @@
     "title": "Назва",
     "description": "Опис",
     "objectType": "Тип об'єкта",
+    "originalLanguage": "Мова оригіналу",
+    "originalLanguageHint": "Мова, якою написані назва та опис. Її не можна змінити після створення.",
     "permanent": "📍 Пам'ятка",
     "event": "🎉 Подія",
     "eventStart": "Дата початку",

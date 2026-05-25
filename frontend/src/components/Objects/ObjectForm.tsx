@@ -47,8 +47,12 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
             wikipedia_url: '',
             official_website: '',
             google_maps_url: '',
+            original_language: 'uk',
         },
     });
+
+    // Language of the content is chosen once at creation; on edit it's shown read-only.
+    const isEdit = !!initialData;
 
 
     const selectedTags = watch('tags');
@@ -113,6 +117,7 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
         if (data.wikipedia_url.trim()) writeData.wikipedia_url = data.wikipedia_url.trim();
         if (data.official_website.trim()) writeData.official_website = data.official_website.trim();
         if (data.google_maps_url.trim()) writeData.google_maps_url = data.google_maps_url.trim();
+        if (!isEdit) writeData.original_language = data.original_language;
 
         try {
             await onSubmit(writeData);
@@ -146,6 +151,24 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
                     {...register('title', {required: t('auth.required')})}
                 />
                 {errors.title && <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.title.message}</p>}
+            </div>
+
+            <div>
+                <label htmlFor="original_language" className="block text-sm font-medium text-gray-700 dark:text-stone-200 mb-1">
+                    {t('form.originalLanguage')}
+                </label>
+                <select
+                    id="original_language"
+                    disabled={isEdit}
+                    className={`${inputClass(false)} ${isEdit ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                    {...register('original_language')}
+                >
+                    <option value="uk">Українська</option>
+                    <option value="en">English</option>
+                    <option value="pl">Polski</option>
+                    <option value="de">Deutsch</option>
+                </select>
+                <p className="text-xs text-gray-500 dark:text-stone-400 mt-1">{t('form.originalLanguageHint')}</p>
             </div>
 
             <div>

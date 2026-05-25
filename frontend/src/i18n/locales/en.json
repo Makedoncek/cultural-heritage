@@ -241,6 +241,8 @@
     "title": "Title",
     "description": "Description",
     "objectType": "Object type",
+    "originalLanguage": "Original language",
+    "originalLanguageHint": "The language the title and description are written in. It can't be changed after creation.",
     "permanent": "📍 Monument",
     "event": "🎉 Event",
     "eventStart": "Start date",

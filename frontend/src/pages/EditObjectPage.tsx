@@ -30,6 +30,7 @@ function detailToFormData(obj: CulturalObjectDetail): ObjectFormData {
         wikipedia_url: obj.wikipedia_url || '',
         official_website: obj.official_website || '',
         google_maps_url: obj.google_maps_url || '',
+        original_language: obj.original_language,
     };
 }
 
