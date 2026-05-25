@@ -117,6 +117,7 @@ export interface ObjectPhoto {
     thumbnail_url: string;
     caption: string;
     status: 'pending' | 'approved' | 'rejected' | 'archived';
+    moderation_note: string;
     order: number;
     is_author_photo: boolean;
     created_at: string;

@@ -336,6 +336,10 @@ class ObjectPhoto(models.Model):
         default=Status.PENDING,
         db_index=True,
     )
+    moderation_note = models.TextField(
+        blank=True,
+        help_text='Причина відхилення (показується автору фото).',
+    )
     order = models.PositiveSmallIntegerField(default=0)
     is_author_photo = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

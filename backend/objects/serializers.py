@@ -448,6 +448,7 @@ class UploadedByNestedSerializer(serializers.Serializer):
 
 class ObjectPhotoSerializer(serializers.ModelSerializer):
     uploaded_by = UploadedByNestedSerializer(read_only=True)
+    moderation_note = serializers.CharField(read_only=True)
 
     class Meta:
         model = ObjectPhoto
@@ -459,6 +460,7 @@ class ObjectPhotoSerializer(serializers.ModelSerializer):
             'thumbnail_url',
             'caption',
             'status',
+            'moderation_note',
             'order',
             'is_author_photo',
             'created_at',

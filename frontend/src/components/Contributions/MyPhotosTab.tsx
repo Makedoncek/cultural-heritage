@@ -182,6 +182,11 @@ function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardPro
             {saving && (
                 <p className="text-[10px] text-gray-500 dark:text-stone-400 mt-0.5">{t('photo.captionSaving')}</p>
             )}
+            {photo.status === 'rejected' && photo.moderation_note && (
+                <p className="text-[10px] text-red-700 dark:text-red-300 mt-0.5 break-words">
+                    {t('photo.rejectionReason')}: {photo.moderation_note}
+                </p>
+            )}
         </div>
     );
 }

@@ -285,6 +285,17 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         # Admin edit не активує re-moderation при зміні caption.
         obj._skip_status_reset = True
+        # Відхилення/затвердження через форму тримаємо консистентним із масовими діями:
+        # ставимо moderated_at і плануємо/скасовуємо очищення Cloudinary.
+        if obj.status == ObjectPhoto.Status.REJECTED:
+            if obj.moderated_at is None:
+                obj.moderated_at = timezone.now()
+            if obj.rejected_cleanup_at is None:
+                obj.rejected_cleanup_at = timezone.now() + timedelta(days=settings.PHOTO_REJECTED_RETENTION_DAYS)
+        elif obj.status == ObjectPhoto.Status.APPROVED:
+            if obj.moderated_at is None:
+                obj.moderated_at = timezone.now()
+            obj.rejected_cleanup_at = None
         super().save_model(request, obj, form, change)
 
     STATUS_COLORS = {
@@ -310,6 +321,26 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
         'large_preview',
     ]
     actions = ['approve_photos', 'reject_photos']
+
+    fieldsets = (
+        ('Фото', {
+            'fields': ('large_preview', 'caption', 'order', 'is_author_photo'),
+        }),
+        ('Модерація', {
+            'fields': ('status', 'moderation_note', 'moderated_at', 'rejected_cleanup_at'),
+        }),
+        ('Об\'єкт і автор', {
+            'fields': ('cultural_object', 'uploaded_by'),
+        }),
+        ('Cloudinary', {
+            'fields': ('cloudinary_public_id', 'image_url', 'thumbnail_url'),
+            'classes': ('collapse',),
+        }),
+        ('Дати', {
+            'fields': ('created_at',),
+            'classes': ('collapse',),
+        }),
+    )
 
     @admin.display(description=_('Превью'))
     def thumbnail_preview(self, obj):

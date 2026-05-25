@@ -307,6 +307,7 @@
     "underReview": "Under review",
     "approved": "Approved",
     "rejected": "Rejected",
+    "rejectionReason": "Rejection reason",
     "byUploaderDate": "Uploaded by: {{user}} · {{date}}"
   },
   "myObjects": {

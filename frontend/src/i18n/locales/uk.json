@@ -307,6 +307,7 @@
     "underReview": "На модерації",
     "approved": "Затверджено",
     "rejected": "Відхилено",
+    "rejectionReason": "Причина відхилення",
     "byUploaderDate": "Завантажив: {{user}} · {{date}}"
   },
   "myObjects": {
