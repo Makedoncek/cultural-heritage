@@ -1,11 +1,12 @@
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {Link} from 'react-router';
 import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import {visitsService} from '../../services/visits.service';
 import {usePaginatedList} from '../../hooks/usePaginatedList';
 import LoadMoreButton from '../common/LoadMoreButton';
-import type {Visit} from '../../types/visits';
+import PassportMap from '../Passport/PassportMap';
+import type {Visit, VisitMapPoint} from '../../types/visits';
 
 interface Props {
     username: string;
@@ -22,14 +23,21 @@ export default function AuthorVisitsTab({username, onCountChange}: Props) {
         deps: [username],
     });
 
+    const [mapVisits, setMapVisits] = useState<VisitMapPoint[]>([]);
+
     useEffect(() => { onCountChange?.(totalCount); }, [totalCount, onCountChange]);
 
+    // The map shows ALL public visits, independent of the paginated list below.
+    useEffect(() => {
+        visitsService.listPublicMap(username).then(setMapVisits).catch(() => {});
+    }, [username]);
+
     if (loading) return <div className="flex justify-center py-8"><div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/></div>;
-    if (error && visits.length === 0) return <p className="text-red-600 text-center py-6">Не вдалося завантажити публічні візити.</p>;
+    if (error && visits.length === 0) return <p className="text-red-600 text-center py-6">{t('authorVisits.loadError')}</p>;
     if (visits.length === 0) {
         return (
             <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-stone-400">У користувача поки немає публічних візитів.</p>
+                <p className="text-gray-500 dark:text-stone-400">{t('authorVisits.empty')}</p>
             </div>
         );
     }
@@ -37,8 +45,11 @@ export default function AuthorVisitsTab({username, onCountChange}: Props) {
     return (
         <>
             <p className="text-sm text-gray-700 dark:text-stone-200 mb-3">
-                Відвідано публічно: <strong className="text-amber-700 dark:text-amber-400">{visits.length}</strong>
+                {t('authorVisits.publicCount')} <strong className="text-amber-700 dark:text-amber-400">{visits.length}</strong>
             </p>
+            {mapVisits.length > 0 && (
+                <PassportMap visits={mapVisits} planned={[]} subtitleKey="passport.mapSubtitleAuthor"/>
+            )}
             <div className="space-y-2">
                 {visits.map(v => (
                     <div key={v.id} className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg px-4 py-3">

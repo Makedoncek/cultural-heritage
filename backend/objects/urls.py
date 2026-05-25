@@ -44,6 +44,7 @@ urlpatterns = [
     path('users/me/visits/', views.my_visits, name='my_visits'),
     path('users/me/visits/stats/', views.my_visits_stats, name='my_visits_stats'),
     path('users/<str:username>/visits/', views.public_visits, name='public_visits'),
+    path('users/<str:username>/visits/map/', views.public_visits_map, name='public_visits_map'),
 
     # Planned visits
     path('objects/<int:object_pk>/plan-visit/', views.toggle_planned_visit, name='toggle_planned_visit'),

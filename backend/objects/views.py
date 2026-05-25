@@ -1626,6 +1626,20 @@ def public_visits(request, username):
 
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
+def public_visits_map(request, username):
+    """All public visits of a user as lightweight map points (unpaginated — the map shows everything)."""
+    from .models import Visit
+    from .serializers import VisitMapPointSerializer
+    try:
+        target = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({'detail': _('Користувача не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+    qs = Visit.objects.filter(user=target, is_public=True).select_related('cultural_object')
+    return Response(VisitMapPointSerializer(qs, many=True).data)
+
+
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def my_visits_stats(request):
     """Aggregated counts for the cultural passport dashboard."""

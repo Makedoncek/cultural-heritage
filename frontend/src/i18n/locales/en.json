@@ -367,6 +367,7 @@
   "passport": {
     "mapTitle": "Travel map",
     "mapSubtitle": "Green — places you've already been, blue — planned",
+    "mapSubtitleAuthor": "Green markers — places this user has visited.",
     "legendVisited": "Visited",
     "legendPlanned": "Planned",
     "mapEmpty": "No points on the map yet — add visits and plans.",
@@ -380,7 +381,49 @@
     "completedRoutesEmpty": "No completed routes yet. Visit every stop of a route to mark it as completed.",
     "completedRoutesStops": "{{count}} stops",
     "completedBy": "author: {{author}}",
-    "completedBadge": "Completed"
+    "completedBadge": "Completed",
+    "title": "Traveler's Passport",
+    "subtitle": "Your visited and planned cultural sites of Ukraine.",
+    "statVisited": "Visited",
+    "statVisitedOf": "of {{total}} ({{percent}}%)",
+    "statPlanned": "Planned",
+    "statRoutesCompleted": "Routes completed",
+    "byTag": "By tag",
+    "visitsTimeline": "Visit timeline",
+    "visitsEmpty": "No visited sites yet. Open a site on the map and tap \"I've been here\".",
+    "editVisitTitle": "Edit impression and date",
+    "tooltipMakePrivate": "Public — click to make private",
+    "tooltipMakePublic": "Private — click to make public",
+    "plansTitle": "Plans",
+    "plansEmpty": "No plans yet. Add sites to your plans via \"Plan to visit\".",
+    "plannedFor": "planned: {{date}}",
+    "markVisited": "Visited",
+    "loadError": "Failed to load passport.",
+    "nowPublic": "Now public",
+    "nowPrivate": "Now private",
+    "updateError": "Failed to update",
+    "movedToVisited": "Moved to visited",
+    "convertError": "Failed to convert",
+    "modal": {
+      "title": "Visit impression",
+      "dateLabel": "Date and time of visit",
+      "futureDateError": "Visit date cannot be in the future",
+      "impressionLabel": "Impression",
+      "impressionPlaceholder": "What stood out? Any tips for other visitors?",
+      "public": "Public",
+      "publicHint": "— visible in your public passport",
+      "private": "Private",
+      "privateHint": "— only for you",
+      "saving": "Saving...",
+      "save": "Save",
+      "saved": "Saved",
+      "saveError": "Failed to save"
+    }
+  },
+  "authorVisits": {
+    "loadError": "Failed to load public visits.",
+    "empty": "This user has no public visits yet.",
+    "publicCount": "Visited publicly:"
   },
   "errors": {
     "networkError": "no connection",
@@ -544,7 +587,7 @@
       "markVisited": "Mark as visited",
       "unvisit": "Remove visit mark",
       "markRouteCompleted": "Mark route as completed",
-      "markRouteCompletedConfirm": "Mark all stops as visited? This will add them to your cultural passport.",
+      "markRouteCompletedConfirm": "Mark all stops as visited? This will add them to your traveler's passport.",
       "routeCompleted": "Route completed!"
     }
   },

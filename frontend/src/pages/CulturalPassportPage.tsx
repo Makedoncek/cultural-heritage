@@ -46,7 +46,7 @@ export default function CulturalPassportPage() {
                 setCompletedNextUrl(cr.next);
                 setCompletedTotal(cr.count);
             })
-            .catch(() => setError('Не вдалося завантажити паспорт.'))
+            .catch(() => setError(t('passport.loadError')))
             .finally(() => setLoading(false));
     }, []);
 
@@ -84,9 +84,9 @@ export default function CulturalPassportPage() {
         try {
             const updated = await visitsService.update(v.id, {is_public: !v.is_public});
             setVisits(prev => prev.map(x => x.id === v.id ? updated : x));
-            toast.success(updated.is_public ? 'Тепер публічно' : 'Тепер приватно');
+            toast.success(updated.is_public ? t('passport.nowPublic') : t('passport.nowPrivate'));
         } catch {
-            toast.error('Не вдалося оновити');
+            toast.error(t('passport.updateError'));
         }
     };
 
@@ -95,9 +95,9 @@ export default function CulturalPassportPage() {
             const result = await plannedVisitsService.convertToVisit(p.id);
             setPlanned(prev => prev.filter(x => x.id !== p.id));
             setVisits(prev => [result.visit, ...prev]);
-            toast.success('Переміщено у відвідані');
+            toast.success(t('passport.movedToVisited'));
         } catch {
-            toast.error('Не вдалося конвертувати');
+            toast.error(t('passport.convertError'));
         }
     };
 
@@ -127,31 +127,31 @@ export default function CulturalPassportPage() {
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-3xl mx-auto px-4 py-6">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100 mb-2">
-                    🎒 Культурний паспорт
+                    🎒 {t('passport.title')}
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-stone-400 mb-6">
-                    Ваші відвідані та заплановані культурні об'єкти України.
+                    {t('passport.subtitle')}
                 </p>
 
                 {/* Counters */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
                     <div className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg p-4">
-                        <p className="text-xs text-gray-500 dark:text-stone-400 uppercase tracking-wide">📊 Відвідано</p>
+                        <p className="text-xs text-gray-500 dark:text-stone-400 uppercase tracking-wide">📊 {t('passport.statVisited')}</p>
                         <p className="text-3xl font-bold text-amber-700 dark:text-amber-400 mt-1">
                             {stats?.total_visits ?? 0}
                             <span className="text-base text-gray-500 dark:text-stone-400 font-normal ml-1">
-                                з {stats?.total_approved_objects ?? 0} ({percent}%)
+                                {t('passport.statVisitedOf', {total: stats?.total_approved_objects ?? 0, percent})}
                             </span>
                         </p>
                     </div>
                     <div className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg p-4">
-                        <p className="text-xs text-gray-500 dark:text-stone-400 uppercase tracking-wide">📌 У планах</p>
+                        <p className="text-xs text-gray-500 dark:text-stone-400 uppercase tracking-wide">📌 {t('passport.statPlanned')}</p>
                         <p className="text-3xl font-bold text-blue-700 dark:text-blue-400 mt-1">
                             {planned.length}
                         </p>
                     </div>
                     <div className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg p-4">
-                        <p className="text-xs text-gray-500 dark:text-stone-400 uppercase tracking-wide">🏆 Маршрутів пройдено</p>
+                        <p className="text-xs text-gray-500 dark:text-stone-400 uppercase tracking-wide">🏆 {t('passport.statRoutesCompleted')}</p>
                         <p className="text-3xl font-bold text-green-700 dark:text-green-400 mt-1">
                             {stats?.completed_routes ?? 0}
                         </p>
@@ -162,7 +162,7 @@ export default function CulturalPassportPage() {
                 {stats && stats.by_tag.length > 0 && (
                     <div className="mb-6 border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg p-4">
                         <h2 className="text-sm font-semibold text-gray-700 dark:text-stone-200 uppercase tracking-wide mb-2">
-                            За тегами
+                            {t('passport.byTag')}
                         </h2>
                         <div className="flex flex-wrap gap-2">
                             {stats.by_tag.map(tag => (
@@ -182,11 +182,11 @@ export default function CulturalPassportPage() {
 
                 {/* Visits list */}
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-stone-100 mb-3">
-                    📋 Хронологія візитів ({visits.length})
+                    📋 {t('passport.visitsTimeline')} ({visits.length})
                 </h2>
                 {visits.length === 0 ? (
                     <p className="text-gray-500 dark:text-stone-400 text-sm mb-6">
-                        Ще немає відвіданих об'єктів. Відкрийте об'єкт на карті і натисніть «Я тут був».
+                        {t('passport.visitsEmpty')}
                     </p>
                 ) : (
                     <div className="space-y-2 mb-6">
@@ -211,14 +211,14 @@ export default function CulturalPassportPage() {
                                     <button
                                         onClick={() => setEditingVisit(v)}
                                         className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white rounded-lg cursor-pointer"
-                                        title="Редагувати враження і дату"
+                                        title={t('passport.editVisitTitle')}
                                     >
                                         {t('object.edit')}
                                     </button>
                                     <button
                                         onClick={() => togglePublic(v)}
                                         className="text-lg cursor-pointer"
-                                        title={v.is_public ? 'Публічно — клік щоб зробити приватним' : 'Приватно — клік щоб зробити публічним'}
+                                        title={v.is_public ? t('passport.tooltipMakePrivate') : t('passport.tooltipMakePublic')}
                                     >
                                         {v.is_public ? '🌐' : '🔒'}
                                     </button>
@@ -237,11 +237,11 @@ export default function CulturalPassportPage() {
 
                 {/* Planned list */}
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-stone-100 mb-3">
-                    📌 Плани ({planned.length})
+                    📌 {t('passport.plansTitle')} ({planned.length})
                 </h2>
                 {planned.length === 0 ? (
                     <p className="text-gray-500 dark:text-stone-400 text-sm">
-                        Поки що жодного плану. Додавайте об'єкти у плани через «Планую відвідати».
+                        {t('passport.plansEmpty')}
                     </p>
                 ) : (
                     <div className="space-y-2">
@@ -257,7 +257,7 @@ export default function CulturalPassportPage() {
                                     </Link>
                                     {p.planned_date && (
                                         <p className="text-xs text-gray-500 dark:text-stone-400 mt-1">
-                                            план: {new Date(p.planned_date).toLocaleDateString(dateLocale)}
+                                            {t('passport.plannedFor', {date: new Date(p.planned_date).toLocaleDateString(dateLocale)})}
                                         </p>
                                     )}
                                 </div>
@@ -265,7 +265,7 @@ export default function CulturalPassportPage() {
                                     onClick={() => convertToVisit(p)}
                                     className="px-3 py-1.5 text-xs bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-700 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/60 cursor-pointer"
                                 >
-                                    ✓ Відвідано
+                                    ✓ {t('passport.markVisited')}
                                 </button>
                             </div>
                         ))}

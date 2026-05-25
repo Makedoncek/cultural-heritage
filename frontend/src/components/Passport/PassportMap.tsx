@@ -5,7 +5,7 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import {useTranslation} from 'react-i18next';
 import ThemedTileLayer from '../Map/ThemedTileLayer';
-import type {Visit, PlannedVisit} from '../../types/visits';
+import type {VisitMapPoint, PlannedVisit} from '../../types/visits';
 import '../../utils/leaflet-fix';
 
 type Kind = 'visited' | 'planned';
@@ -48,11 +48,13 @@ function FitToPoints({points}: {points: Point[]}) {
 }
 
 interface Props {
-    visits: Visit[];
+    visits: VisitMapPoint[];
     planned: PlannedVisit[];
+    titleKey?: string;
+    subtitleKey?: string;
 }
 
-export default function PassportMap({visits, planned}: Props) {
+export default function PassportMap({visits, planned, titleKey = 'passport.mapTitle', subtitleKey = 'passport.mapSubtitle'}: Props) {
     const {t, i18n} = useTranslation();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
     const [fullscreen, setFullscreen] = useState(false);
@@ -119,10 +121,10 @@ export default function PassportMap({visits, planned}: Props) {
     return (
         <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-stone-100 mb-1">
-                🗺 {t('passport.mapTitle')}
+                🗺 {t(titleKey)}
             </h2>
             <p className="text-xs text-gray-500 dark:text-stone-400 mb-3">
-                {t('passport.mapSubtitle')}
+                {t(subtitleKey)}
             </p>
 
             {points.length === 0 ? (
@@ -150,10 +152,12 @@ export default function PassportMap({visits, planned}: Props) {
                                 <span className="inline-block w-3 h-3 rounded-full bg-green-600 dark:bg-green-500"/>
                                 {t('passport.legendVisited')} ({visits.length})
                             </span>
-                            <span className="inline-flex items-center gap-1.5">
-                                <span className="inline-block w-3 h-3 rounded-full bg-blue-600 dark:bg-blue-500"/>
-                                {t('passport.legendPlanned')} ({planned.length})
-                            </span>
+                            {planned.length > 0 && (
+                                <span className="inline-flex items-center gap-1.5">
+                                    <span className="inline-block w-3 h-3 rounded-full bg-blue-600 dark:bg-blue-500"/>
+                                    {t('passport.legendPlanned')} ({planned.length})
+                                </span>
+                            )}
                         </div>
                     </div>
 
@@ -161,7 +165,7 @@ export default function PassportMap({visits, planned}: Props) {
                         <div className="fixed inset-0 z-[9999] bg-white dark:bg-stone-950 flex flex-col">
                             <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-stone-700">
                                 <span className="text-sm text-gray-700 dark:text-stone-200 font-medium truncate">
-                                    🗺 {t('passport.mapTitle')}
+                                    🗺 {t(titleKey)}
                                 </span>
                                 <button
                                     type="button"
@@ -182,10 +186,12 @@ export default function PassportMap({visits, planned}: Props) {
                                         <span className="inline-block w-3 h-3 rounded-full bg-green-600 dark:bg-green-500"/>
                                         {t('passport.legendVisited')} ({visits.length})
                                     </span>
-                                    <span className="inline-flex items-center gap-2">
-                                        <span className="inline-block w-3 h-3 rounded-full bg-blue-600 dark:bg-blue-500"/>
-                                        {t('passport.legendPlanned')} ({planned.length})
-                                    </span>
+                                    {planned.length > 0 && (
+                                        <span className="inline-flex items-center gap-2">
+                                            <span className="inline-block w-3 h-3 rounded-full bg-blue-600 dark:bg-blue-500"/>
+                                            {t('passport.legendPlanned')} ({planned.length})
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>

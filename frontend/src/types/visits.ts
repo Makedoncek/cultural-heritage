@@ -15,6 +15,15 @@ export interface Visit {
     updated_at: string;
 }
 
+export interface VisitMapPoint {
+    id: number;
+    object_id: number;
+    object_title: string;
+    object_latitude: string;
+    object_longitude: string;
+    visited_at: string;
+}
+
 export interface PlannedVisit {
     id: number;
     object_id: number;

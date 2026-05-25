@@ -539,7 +539,7 @@ class Visit(models.Model):
     )
     visited_at = models.DateTimeField(default=timezone.now)
     impression = models.TextField(
-        max_length=1000,
+        max_length=2000,
         blank=True,
         help_text='Враження від візиту',
     )

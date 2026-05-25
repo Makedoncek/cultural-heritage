@@ -1,5 +1,5 @@
 import api from './api';
-import type {Visit, VisitsStats, VisitUpdate, PlannedVisit, PlannedVisitUpdate} from '../types/visits';
+import type {Visit, VisitMapPoint, VisitsStats, VisitUpdate, PlannedVisit, PlannedVisitUpdate} from '../types/visits';
 
 export const visitsService = {
     async toggle(objectId: number): Promise<{is_visited: boolean; visit?: Visit}> {
@@ -38,6 +38,12 @@ export const visitsService = {
 
     async listPublicByUrl(url: string) {
         const {data} = await api.get<{count: number; next: string | null; previous: string | null; results: Visit[]}>(url);
+        return data;
+    },
+
+    // All public visits as lightweight points — the author-profile map shows everything, not just the loaded page.
+    async listPublicMap(username: string): Promise<VisitMapPoint[]> {
+        const {data} = await api.get<VisitMapPoint[]>(`/users/${encodeURIComponent(username)}/visits/map/`);
         return data;
     },
 
