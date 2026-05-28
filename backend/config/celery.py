@@ -10,6 +10,10 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
+    'archive-expired-events-daily': {
+        'task': 'objects.tasks.archive_expired_events',
+        'schedule': crontab(hour=2, minute=0),
+    },
     'cleanup-rejected-photos-daily': {
         'task': 'objects.tasks.cleanup_rejected_photos',
         'schedule': crontab(hour=3, minute=0),

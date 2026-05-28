@@ -6,7 +6,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 from . import cloudinary_service
-from .models import InaccuracyReport, ObjectPhoto
+from .models import CulturalObject, InaccuracyReport, ObjectPhoto
 
 INACCURACY_REPORT_RETENTION_DAYS = 30
 
@@ -75,3 +75,23 @@ def cleanup_processed_inaccuracy_reports():
     deleted_count, _ = expired.delete()
     logger.info(f'cleanup_processed_inaccuracy_reports: deleted {deleted_count} reports')
     return deleted_count
+
+
+@shared_task
+def archive_expired_events():
+    """Архівує затверджені події, дата завершення яких уже минула.
+
+    Періодична задача Celery beat; та сама логіка доступна як
+    management-команда `archive_expired_events` (з опцією --dry-run).
+    """
+    expired = CulturalObject.objects.filter(
+        object_type=CulturalObject.ObjectType.EVENT,
+        event_end_date__lt=timezone.now(),
+        status=CulturalObject.Status.APPROVED,
+    )
+    archived_count = 0
+    for obj in expired:
+        obj.archive()
+        archived_count += 1
+    logger.info(f'archive_expired_events: archived {archived_count} events')
+    return archived_count
