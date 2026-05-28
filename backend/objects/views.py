@@ -2011,7 +2011,6 @@ class RouteViewSet(viewsets.ModelViewSet):
             # Copy defaults to PRIVATE — user explicitly opts in to publish.
             visibility=Route.Visibility.PRIVATE,
             status=Route.Status.DRAFT,
-            cover_photo=original.cover_photo,
             estimated_duration_minutes=original.estimated_duration_minutes,
             copied_from=original,
         )
@@ -2348,8 +2347,8 @@ class ObjectAudioViewSet(viewsets.ViewSet):
       PATCH  /api/objects/<obj_pk>/audios/<pk>/        — edit metadata (title/narrator/language)
       DELETE /api/objects/<obj_pk>/audios/<pk>/        — author or admin
       POST   /api/objects/<obj_pk>/audios/<pk>/play/   — increment plays_count
-      POST   /api/objects/<obj_pk>/audios/<pk>/approve/ — admin only
-      POST   /api/objects/<obj_pk>/audios/<pk>/reject/ — admin only (with note)
+
+    Moderation (approve/reject) is performed exclusively via Django Admin.
     """
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
@@ -2485,27 +2484,3 @@ class ObjectAudioViewSet(viewsets.ViewSet):
             return Response({'detail': 'self-play not counted'})
         ObjectAudio.objects.filter(pk=audio.pk).update(plays_count=F('plays_count') + 1)
         return Response({'detail': 'ok'})
-
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def approve(self, request, obj_pk=None, pk=None):
-        if not request.user.is_staff:
-            return Response({'detail': _('Тільки адміністратор.')}, status=status.HTTP_403_FORBIDDEN)
-        audio = self._get_audio(obj_pk, pk)
-        audio.status = ObjectAudio.Status.APPROVED
-        audio.moderation_note = ''
-        from django.utils import timezone
-        audio.moderated_at = timezone.now()
-        audio.save(update_fields=['status', 'moderation_note', 'moderated_at'])
-        return Response(ObjectAudioSerializer(audio).data)
-
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def reject(self, request, obj_pk=None, pk=None):
-        if not request.user.is_staff:
-            return Response({'detail': _('Тільки адміністратор.')}, status=status.HTTP_403_FORBIDDEN)
-        audio = self._get_audio(obj_pk, pk)
-        audio.status = ObjectAudio.Status.REJECTED
-        audio.moderation_note = str(request.data.get('note', ''))[:500]
-        from django.utils import timezone
-        audio.moderated_at = timezone.now()
-        audio.save(update_fields=['status', 'moderation_note', 'moderated_at'])
-        return Response(ObjectAudioSerializer(audio).data)
