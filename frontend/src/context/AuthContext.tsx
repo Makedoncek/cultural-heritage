@@ -17,6 +17,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const parseJwtPayload = (token: string) => JSON.parse(atob(token.split('.')[1]));
 
+// Tokens ultimately come from the network, so validate their shape (three base64url
+// segments) before persisting — never write malformed/poisoned values to browser storage.
+const isJwtFormat = (value: unknown): value is string =>
+    typeof value === 'string' && /^[\w-]+\.[\w-]+\.[\w-]+$/.test(value);
+
 const userFromPayload = (payload: { user_id: number; username?: string, is_staff?: boolean }): User => ({
     id: payload.user_id,
     username: payload.username || 'Користувач',
@@ -83,8 +88,11 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
         if (refreshToken) {
             try {
                 const tokens = await authService.refresh(refreshToken);
+                if (!isJwtFormat(tokens.access)) {
+                    throw new Error('Malformed access token');
+                }
                 localStorage.setItem('access_token', tokens.access);
-                if (tokens.refresh) {
+                if (isJwtFormat(tokens.refresh)) {
                     localStorage.setItem('refresh_token', tokens.refresh);
                 }
                 const payload = parseJwtPayload(tokens.access);
@@ -102,8 +110,13 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
     const login = async (credentials: LoginData) => {
         const tokens = await authService.login(credentials);
 
+        if (!isJwtFormat(tokens.access)) {
+            throw new Error('Malformed access token');
+        }
         localStorage.setItem('access_token', tokens.access);
-        localStorage.setItem('refresh_token', tokens.refresh);
+        if (isJwtFormat(tokens.refresh)) {
+            localStorage.setItem('refresh_token', tokens.refresh);
+        }
 
         const payload = parseJwtPayload(tokens.access);
         setUser(userFromPayload(payload));
