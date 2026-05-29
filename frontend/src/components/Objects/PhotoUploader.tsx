@@ -92,7 +92,7 @@ export default function PhotoUploader({photos, onChange, maxCount, label}: Props
                 return null;
             }
             return {
-                id: `${Date.now()}-${Math.random()}`,
+                id: crypto.randomUUID(),
                 file: f,
                 previewUrl: url,
                 caption: '',

@@ -10,7 +10,7 @@ export function extractUploadError(err: unknown): string {
         // 429 throttle має дефолтний англійський меседж від DRF — підмінюємо локалізованим
         if (status === 429) {
             if (typeof detail === 'string') {
-                const match = detail.match(/(\d+)\s*seconds?/i);
+                const match = detail.match(/(\d{1,9})\s*seconds?/i);
                 if (match) {
                     const seconds = Number.parseInt(match[1], 10);
                     const minutes = Math.ceil(seconds / 60);
