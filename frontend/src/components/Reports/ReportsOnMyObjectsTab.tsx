@@ -18,7 +18,7 @@ interface Props {
     onCountChange?: (count: number) => void;
 }
 
-export default function ReportsOnMyObjectsTab({onCountChange}: Props) {
+export default function ReportsOnMyObjectsTab({onCountChange}: Readonly<Props>) {
     const {t, i18n} = useTranslation();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
     const {items: reports, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<InaccuracyReport>({
@@ -72,7 +72,7 @@ export default function ReportsOnMyObjectsTab({onCountChange}: Props) {
     );
 }
 
-function ReportCard({report: r, dateLocale}: {report: InaccuracyReport; dateLocale: string}) {
+function ReportCard({report: r, dateLocale}: Readonly<{report: InaccuracyReport; dateLocale: string}>) {
     return (
         <div className="border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg px-4 py-3">
             <div className="flex flex-wrap items-center gap-2 mb-2">

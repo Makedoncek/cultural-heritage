@@ -19,7 +19,7 @@ const ALLOWED_MIMES = new Set([
     'audio/ogg', 'audio/wav', 'audio/x-m4a', 'audio/x-wav',
 ]);
 
-export default function AudioUploadModal({objectId, onClose, onUploaded}: Props) {
+export default function AudioUploadModal({objectId, onClose, onUploaded}: Readonly<Props>) {
     const {t} = useTranslation();
     const [mode, setMode] = useState<'upload' | 'record'>('upload');
     const [file, setFile] = useState<File | null>(null);
@@ -135,7 +135,7 @@ export default function AudioUploadModal({objectId, onClose, onUploaded}: Props)
                     ) : (
                         <div className="py-4">
                             <AudioRecorder onComplete={handleRecordingComplete} maxDurationSec={180}/>
-                            {file && file.name.startsWith('recording-') && (
+                            {file?.name.startsWith('recording-') && (
                                 <p className="text-xs text-center text-gray-500 dark:text-stone-400 mt-2">
                                     {t('audio.modal.recordingFile', {kb: Math.round(file.size / 1024)})}
                                 </p>

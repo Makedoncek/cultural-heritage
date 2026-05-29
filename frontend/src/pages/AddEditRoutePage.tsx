@@ -13,7 +13,7 @@ import type {CulturalObject, Tag} from '../types';
 
 function SortableStopItem({
     stop, onRemove, onNoteSave, dragHint, archivedHint, notePlaceholder, saveLabel, savingLabel,
-}: {
+}: Readonly<{
     stop: RouteStop;
     onRemove: () => void;
     onNoteSave: (note: string) => Promise<void>;
@@ -22,7 +22,7 @@ function SortableStopItem({
     notePlaceholder: string;
     saveLabel: string;
     savingLabel: string;
-}) {
+}>) {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({id: stop.id});
     const [expanded, setExpanded] = useState(false);
     const [noteDraft, setNoteDraft] = useState(stop.note || '');
@@ -347,12 +347,12 @@ export default function AddEditRoutePage() {
                                 </span>
                             </button>
                         </div>
-                        {isEdit && route && route.visibility === 'public' && visibility === 'private' && (
+                        {isEdit && route?.visibility === 'public' && visibility === 'private' && (
                             <p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
                                 {t('routes.edit.warnToPrivate')}
                             </p>
                         )}
-                        {isEdit && route && route.visibility === 'private' && visibility === 'public' && (
+                        {isEdit && route?.visibility === 'private' && visibility === 'public' && (
                             <p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
                                 {t('routes.edit.warnToPublic')}
                             </p>

@@ -7,7 +7,7 @@ interface Props {
     alt?: string;
 }
 
-export default function CoverImage({coverUrl, tags, className = '', alt = ''}: Props) {
+export default function CoverImage({coverUrl, tags, className = '', alt = ''}: Readonly<Props>) {
     if (coverUrl) {
         return (
             <img

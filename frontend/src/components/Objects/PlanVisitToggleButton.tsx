@@ -9,7 +9,7 @@ interface Props {
     onChange?: (isPlanned: boolean) => void;
 }
 
-export default function PlanVisitToggleButton({objectId, initialPlanned, onChange}: Props) {
+export default function PlanVisitToggleButton({objectId, initialPlanned, onChange}: Readonly<Props>) {
     const {isAuthenticated} = useAuth();
     const [isPlanned, setIsPlanned] = useState(initialPlanned);
     const [loading, setLoading] = useState(false);

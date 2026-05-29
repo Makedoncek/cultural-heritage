@@ -11,7 +11,7 @@ interface Props {
     onCountChange?: (count: number) => void;
 }
 
-export default function FavoriteAuthorsTab({onCountChange}: Props) {
+export default function FavoriteAuthorsTab({onCountChange}: Readonly<Props>) {
     const {t} = useTranslation();
     const {items: authors, setItems: setAuthors, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<AuthorProfile>({
         initialFetch: () => usersService.getFavoriteAuthors(),

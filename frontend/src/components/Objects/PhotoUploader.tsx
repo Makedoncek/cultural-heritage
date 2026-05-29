@@ -24,12 +24,12 @@ interface Props {
 
 function SortableItem({
     photo, onCaption, onRemove, captionPlaceholder,
-}: {
+}: Readonly<{
     photo: PendingPhoto;
     onCaption: (c: string) => void;
     onRemove: () => void;
     captionPlaceholder: string;
-}) {
+}>) {
     const {attributes, listeners, setNodeRef, transform, transition} = useSortable({id: photo.id});
     const style = {transform: CSS.Transform.toString(transform), transition};
 
@@ -56,7 +56,7 @@ function SortableItem({
     );
 }
 
-export default function PhotoUploader({photos, onChange, maxCount, label}: Props) {
+export default function PhotoUploader({photos, onChange, maxCount, label}: Readonly<Props>) {
     const {t} = useTranslation();
     const [error, setError] = useState<string | null>(null);
 

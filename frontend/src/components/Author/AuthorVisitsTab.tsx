@@ -13,7 +13,7 @@ interface Props {
     onCountChange?: (count: number) => void;
 }
 
-export default function AuthorVisitsTab({username, onCountChange}: Props) {
+export default function AuthorVisitsTab({username, onCountChange}: Readonly<Props>) {
     const {t, i18n} = useTranslation();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
     const {items: visits, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<Visit>({

@@ -15,7 +15,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const readInitial = (): Theme => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'light' || stored === 'dark') return stored;
-    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 };
 
 const applyToDocument = (theme: Theme) => {
@@ -36,8 +36,8 @@ export const ThemeProvider = ({children}: {children: ReactNode}) => {
             const next = (e as CustomEvent<Theme>).detail;
             if (next === 'light' || next === 'dark') setThemeState(next);
         };
-        window.addEventListener('theme:apply', handler);
-        return () => window.removeEventListener('theme:apply', handler);
+        globalThis.addEventListener('theme:apply', handler);
+        return () => globalThis.removeEventListener('theme:apply', handler);
     }, []);
 
     const setTheme = (t: Theme) => setThemeState(t);

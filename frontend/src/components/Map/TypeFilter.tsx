@@ -5,7 +5,7 @@ interface TypeFilterProps {
     onChange: (value: string) => void;
 }
 
-export default function TypeFilter({value, onChange}: TypeFilterProps) {
+export default function TypeFilter({value, onChange}: Readonly<TypeFilterProps>) {
     const {t} = useTranslation();
     const options = [
         {value: 'all', label: t('home.filters.typeAll')},

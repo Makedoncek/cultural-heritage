@@ -19,7 +19,7 @@ interface Props {
     status?: string;
 }
 
-export default function MyAudiosTab({status}: Props) {
+export default function MyAudiosTab({status}: Readonly<Props>) {
     const {t} = useTranslation();
     const {items, setItems, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<ObjectWithMyAudios>({
         initialFetch: () => audioService.listMine(status ? {status} : undefined),

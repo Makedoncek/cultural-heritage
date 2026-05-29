@@ -6,7 +6,7 @@ interface Props {
     maxDurationSec?: number;
 }
 
-export default function AudioRecorder({onComplete, maxDurationSec = 180}: Props) {
+export default function AudioRecorder({onComplete, maxDurationSec = 180}: Readonly<Props>) {
     const {t} = useTranslation();
     const [recording, setRecording] = useState(false);
     const [elapsed, setElapsed] = useState(0);
@@ -42,7 +42,7 @@ export default function AudioRecorder({onComplete, maxDurationSec = 180}: Props)
             startedAtRef.current = Date.now();
             setRecording(true);
             setElapsed(0);
-            timerRef.current = window.setInterval(() => {
+            timerRef.current = globalThis.setInterval(() => {
                 const e = Math.round((Date.now() - startedAtRef.current) / 1000);
                 setElapsed(e);
                 if (e >= maxDurationSec) stop();

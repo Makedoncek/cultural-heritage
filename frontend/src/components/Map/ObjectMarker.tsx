@@ -72,7 +72,7 @@ interface ObjectMarkerProps {
     object: CulturalObject;
 }
 
-export default function ObjectMarker({object}: ObjectMarkerProps) {
+export default function ObjectMarker({object}: Readonly<ObjectMarkerProps>) {
     const navigate = useNavigate();
     const {t, i18n} = useTranslation();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';

@@ -45,7 +45,7 @@ const syncPreferencesFromServer = async (pushLocal: boolean) => {
             document.documentElement.lang = pref.language;
         }
         if (pref.theme) {
-            window.dispatchEvent(new CustomEvent('theme:apply', {detail: pref.theme}));
+            globalThis.dispatchEvent(new CustomEvent('theme:apply', {detail: pref.theme}));
         }
     } catch {
         // Best-effort sync — silent on failure (e.g. legacy user without preference row).
@@ -62,9 +62,9 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
         checkAuth();
 
         const handleForceLogout = () => clearAuth();
-        window.addEventListener('auth:logout', handleForceLogout);
+        globalThis.addEventListener('auth:logout', handleForceLogout);
 
-        return () => window.removeEventListener('auth:logout', handleForceLogout);
+        return () => globalThis.removeEventListener('auth:logout', handleForceLogout);
     }, []);
 
     const checkAuth = async () => {

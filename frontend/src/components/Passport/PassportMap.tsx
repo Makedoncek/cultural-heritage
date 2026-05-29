@@ -54,7 +54,7 @@ interface Props {
     subtitleKey?: string;
 }
 
-export default function PassportMap({visits, planned, titleKey = 'passport.mapTitle', subtitleKey = 'passport.mapSubtitle'}: Props) {
+export default function PassportMap({visits, planned, titleKey = 'passport.mapTitle', subtitleKey = 'passport.mapSubtitle'}: Readonly<Props>) {
     const {t, i18n} = useTranslation();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
     const [fullscreen, setFullscreen] = useState(false);
@@ -115,7 +115,7 @@ export default function PassportMap({visits, planned, titleKey = 'passport.mapTi
         </MarkerClusterGroup>
     );
 
-    const center: [number, number] = points.length > 0 ? [points[0].lat, points[0].lng] : [49.0, 32.0];
+    const center: [number, number] = points.length > 0 ? [points[0].lat, points[0].lng] : [49, 32];
     const zoom = points.length > 0 ? 7 : 6;
 
     return (

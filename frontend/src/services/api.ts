@@ -58,7 +58,7 @@ api.interceptors.response.use(
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('refresh_token');
 
-                window.dispatchEvent(new Event('auth:logout'))
+                globalThis.dispatchEvent(new Event('auth:logout'))
                 return Promise.reject(refreshError);
             }
         }

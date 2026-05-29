@@ -24,7 +24,7 @@ interface Props {
     onSuggest?: () => void;
 }
 
-export default function ContentLanguageSelector({available, selected, onSelect, onSuggest}: Props) {
+export default function ContentLanguageSelector({available, selected, onSelect, onSuggest}: Readonly<Props>) {
     const {t} = useTranslation();
 
     // Nothing meaningful to show unless there's a choice or a way to contribute.

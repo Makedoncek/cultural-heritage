@@ -13,7 +13,7 @@ interface Props {
     onSubmitted: () => void;
 }
 
-export default function ReportInaccuracyModal({targetType, targetId, targetTitle, onClose, onSubmitted}: Props) {
+export default function ReportInaccuracyModal({targetType, targetId, targetTitle, onClose, onSubmitted}: Readonly<Props>) {
     const {t} = useTranslation();
     const reasons = REASONS_BY_TARGET[targetType];
     const [reason, setReason] = useState<ReportReasonType>(reasons[0]);

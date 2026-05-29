@@ -5,7 +5,7 @@ interface EventStatusFilterProps {
     onChange: (value: string) => void;
 }
 
-export default function EventStatusFilter({value, onChange}: EventStatusFilterProps) {
+export default function EventStatusFilter({value, onChange}: Readonly<EventStatusFilterProps>) {
     const {t} = useTranslation();
     const options = [
         {value: 'all', label: t('home.filters.eventStatusAll')},

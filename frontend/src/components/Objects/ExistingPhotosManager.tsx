@@ -14,7 +14,7 @@ interface Props {
     onPhotosChange: (photos: ObjectPhoto[]) => void;
 }
 
-function SortablePhoto({photo, canDelete, onDelete, underReviewLabel}: {photo: ObjectPhoto; canDelete: boolean; onDelete: () => void; underReviewLabel: string}) {
+function SortablePhoto({photo, canDelete, onDelete, underReviewLabel}: Readonly<{photo: ObjectPhoto; canDelete: boolean; onDelete: () => void; underReviewLabel: string}>) {
     const {attributes, listeners, setNodeRef, transform, transition} = useSortable({id: photo.id});
     const style = {transform: CSS.Transform.toString(transform), transition};
 
@@ -45,7 +45,7 @@ function SortablePhoto({photo, canDelete, onDelete, underReviewLabel}: {photo: O
     );
 }
 
-export default function ExistingPhotosManager({objectId, photos, onPhotosChange}: Props) {
+export default function ExistingPhotosManager({objectId, photos, onPhotosChange}: Readonly<Props>) {
     const {t} = useTranslation();
     const {user} = useAuth();
     const [reordering, setReordering] = useState(false);
