@@ -14,7 +14,7 @@ interface Props {
     keyPrefix?: string;
 }
 
-export default function DuplicateWarningModal({nearby, onCancel, onProceed, keyPrefix = 'duplicateWarning'}: Props) {
+export default function DuplicateWarningModal({nearby, onCancel, onProceed, keyPrefix = 'duplicateWarning'}: Readonly<Props>) {
     const {t} = useTranslation();
     const k = (key: string) => t(`${keyPrefix}.${key}`);
     return (

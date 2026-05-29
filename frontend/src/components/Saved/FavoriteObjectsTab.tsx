@@ -12,7 +12,7 @@ interface Props {
     onCountChange?: (count: number) => void;
 }
 
-export default function FavoriteObjectsTab({onCountChange}: Props) {
+export default function FavoriteObjectsTab({onCountChange}: Readonly<Props>) {
     const {t, i18n} = useTranslation();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
     const {items: objects, setItems: setObjects, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<CulturalObject>({

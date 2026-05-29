@@ -440,10 +440,10 @@ export default function RouteDetailPage() {
                         <button
                             type="button"
                             onClick={async () => {
-                                const url = `${window.location.origin}/routes/${route.id}`;
+                                const url = `${globalThis.location.origin}/routes/${route.id}`;
                                 // Use native share only on touch-primary devices (phones/tablets) —
                                 // on desktop the OS share dialog feels foreign for a web app.
-                                const isTouchPrimary = window.matchMedia('(pointer: coarse)').matches;
+                                const isTouchPrimary = globalThis.matchMedia('(pointer: coarse)').matches;
                                 try {
                                     if (isTouchPrimary && navigator.share) {
                                         await navigator.share({title: route.title, url});

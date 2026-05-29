@@ -8,7 +8,7 @@ import type {CulturalObject} from '../../types';
 import type {LatLngBoundsExpression} from 'leaflet';
 
 const UKRAINE_BOUNDS: LatLngBoundsExpression = [
-    [44.2, 22.0],
+    [44.2, 22],
     [52.4, 40.3],
 ];
 
@@ -30,14 +30,14 @@ interface MapViewProps {
     flyTo?: FlyToTarget | null;
 }
 
-export default function MapView({objects, flyTo = null}: MapViewProps) {
+export default function MapView({objects, flyTo = null}: Readonly<MapViewProps>) {
     return (
         <MapContainer
-            center={[49.0, 32.0]}
+            center={[49, 32]}
             zoom={7}
             minZoom={6}
             maxBounds={UKRAINE_BOUNDS}
-            maxBoundsViscosity={1.0}
+            maxBoundsViscosity={1}
             scrollWheelZoom={true}
             className="absolute inset-0"
         >

@@ -21,7 +21,7 @@ const LANGUAGE_LABELS: Record<string, string> = {
     de: 'Deutsch',
 };
 
-export default function TranslationSubmitModal({open, onClose, targetOptions, originalLanguage, onSubmit}: Props) {
+export default function TranslationSubmitModal({open, onClose, targetOptions, originalLanguage, onSubmit}: Readonly<Props>) {
     const {t} = useTranslation();
     const [language, setLanguage] = useState<ContentLanguage>(targetOptions[0] ?? 'en');
     const [title, setTitle] = useState('');

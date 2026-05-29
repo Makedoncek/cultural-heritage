@@ -7,7 +7,7 @@ interface Props {
     photos: ObjectPhoto[];
 }
 
-export default function PhotoGallery({photos}: Props) {
+export default function PhotoGallery({photos}: Readonly<Props>) {
     const {t} = useTranslation();
     const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 

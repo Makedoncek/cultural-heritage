@@ -21,7 +21,7 @@ function nowLocalInputValue(): string {
     return toLocalInputValue(new Date().toISOString());
 }
 
-export default function VisitImpressionModal({visit, onClose, onUpdated}: Props) {
+export default function VisitImpressionModal({visit, onClose, onUpdated}: Readonly<Props>) {
     const {t} = useTranslation();
     const [impression, setImpression] = useState(visit.impression);
     const [visitedAt, setVisitedAt] = useState(toLocalInputValue(visit.visited_at));

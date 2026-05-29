@@ -31,7 +31,7 @@ interface PhotoCardProps {
     onDeleted: (photoId: number) => void;
 }
 
-function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: PhotoCardProps) {
+function PhotoCard({objectId, photo, onOpen, onUpdated, onDeleted}: Readonly<PhotoCardProps>) {
     const {t} = useTranslation();
     const [caption, setCaption] = useState(photo.caption);
     const [saving, setSaving] = useState(false);
@@ -195,7 +195,7 @@ interface Props {
     status?: string;
 }
 
-export default function MyPhotosTab({status}: Props) {
+export default function MyPhotosTab({status}: Readonly<Props>) {
     const {t} = useTranslation();
     const {items, setItems, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<CulturalObjectWithMyPhotos>({
         initialFetch: () => objectsService.getWithMyPhotos(status ? {status} : undefined),

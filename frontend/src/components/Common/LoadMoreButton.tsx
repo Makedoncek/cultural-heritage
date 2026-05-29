@@ -8,7 +8,7 @@ interface Props {
     onClick: () => void;
 }
 
-export default function LoadMoreButton({show, loading, shown, total, onClick}: Props) {
+export default function LoadMoreButton({show, loading, shown, total, onClick}: Readonly<Props>) {
     const {t} = useTranslation();
     if (!show) return null;
     return (

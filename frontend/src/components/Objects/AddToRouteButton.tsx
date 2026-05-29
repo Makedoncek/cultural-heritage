@@ -9,7 +9,7 @@ interface Props {
     objectId: number;
 }
 
-export default function AddToRouteButton({objectId}: Props) {
+export default function AddToRouteButton({objectId}: Readonly<Props>) {
     const {t} = useTranslation();
     const navigate = useNavigate();
     const [open, setOpen] = useState(false);

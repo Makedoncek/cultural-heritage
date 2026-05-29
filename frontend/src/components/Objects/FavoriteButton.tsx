@@ -9,7 +9,7 @@ interface FavoriteButtonProps {
     onToggle?: (isFavorited: boolean) => void;
 }
 
-export default function FavoriteButton({objectId, initialFavorited, initialCount, onToggle}: FavoriteButtonProps) {
+export default function FavoriteButton({objectId, initialFavorited, initialCount, onToggle}: Readonly<FavoriteButtonProps>) {
     const [isFavorited, setIsFavorited] = useState(initialFavorited);
     const [count, setCount] = useState(initialCount);
     const [loading, setLoading] = useState(false);

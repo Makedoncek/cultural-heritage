@@ -31,7 +31,7 @@ interface Props {
     status?: string;
 }
 
-export default function MyTranslationsTab({status}: Props) {
+export default function MyTranslationsTab({status}: Readonly<Props>) {
     const {t, i18n} = useTranslation();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
     const {items, setItems, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<MyTranslation>({

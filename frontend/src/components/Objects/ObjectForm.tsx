@@ -21,7 +21,7 @@ const inputClass = (hasError: boolean) =>
         hasError ? 'border-red-400' : 'border-gray-200 dark:border-stone-700'
     }`;
 
-export default function ObjectForm({initialData, onSubmit, submitLabel, submittingLabel, children}: ObjectFormProps) {
+export default function ObjectForm({initialData, onSubmit, submitLabel, submittingLabel, children}: Readonly<ObjectFormProps>) {
     const {t, i18n} = useTranslation();
     const [tags, setTags] = useState<Tag[]>([]);
     const [tagsLoading, setTagsLoading] = useState(true);

@@ -8,7 +8,7 @@ interface TagFilterProps {
     onClear: () => void;
 }
 
-export default function TagFilter({tags, selectedTags, onTagToggle, onClear}: TagFilterProps) {
+export default function TagFilter({tags, selectedTags, onTagToggle, onClear}: Readonly<TagFilterProps>) {
     const {t} = useTranslation();
     return (
         <div className="flex flex-col gap-1">

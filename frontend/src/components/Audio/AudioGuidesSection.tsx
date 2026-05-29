@@ -29,7 +29,7 @@ const LANG_LABEL: Record<AudioLanguage, string> = {
     de: 'DE',
 };
 
-export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Props) {
+export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Readonly<Props>) {
     const {t} = useTranslation();
     const {isAuthenticated, user} = useAuth();
     const [audios, setAudios] = useState<ObjectAudio[]>([]);
@@ -88,7 +88,7 @@ export default function AudioGuidesSection({objectId, objectTitle, coverUrl}: Pr
                         <button
                             key={l}
                             type="button"
-                            onClick={() => setFilter(l as AudioLanguage | 'all')}
+                            onClick={() => setFilter(l)}
                             className={`inline-flex items-center gap-2 px-3.5 py-1.5 text-sm font-medium rounded-full border cursor-pointer transition-colors ${
                                 filter === l
                                     ? 'bg-amber-100 dark:bg-amber-900/40 border-amber-400 dark:border-amber-600 text-amber-800 dark:text-amber-300'

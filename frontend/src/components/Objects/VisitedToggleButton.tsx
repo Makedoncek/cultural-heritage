@@ -10,7 +10,7 @@ interface Props {
     onChange?: (isVisited: boolean, visit?: Visit) => void;
 }
 
-export default function VisitedToggleButton({objectId, initialVisited, onChange}: Props) {
+export default function VisitedToggleButton({objectId, initialVisited, onChange}: Readonly<Props>) {
     const {isAuthenticated} = useAuth();
     const [isVisited, setIsVisited] = useState(initialVisited);
     const [loading, setLoading] = useState(false);

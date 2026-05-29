@@ -15,7 +15,7 @@ const ICON: Record<string, string> = {
     object_translation: '✍', route_translation: '✍',
 };
 
-export default function TargetTypeChip({type}: {type: ReportTargetType | null}) {
+export default function TargetTypeChip({type}: Readonly<{type: ReportTargetType | null}>) {
     const {t} = useTranslation();
     if (!type) return null;
     return (

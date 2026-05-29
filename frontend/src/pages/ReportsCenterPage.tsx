@@ -56,7 +56,7 @@ interface TabBtnProps {
     children: ReactNode;
 }
 
-function TabBtn({active, onClick, count, children}: TabBtnProps) {
+function TabBtn({active, onClick, count, children}: Readonly<TabBtnProps>) {
     return (
         <button
             type="button"

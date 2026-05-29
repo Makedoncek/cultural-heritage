@@ -5,7 +5,7 @@ import '../../utils/leaflet-fix';
 import type {LatLngBoundsExpression} from 'leaflet';
 
 const UKRAINE_BOUNDS: LatLngBoundsExpression = [
-    [44.2, 22.0],
+    [44.2, 22],
     [52.4, 40.3],
 ];
 
@@ -45,7 +45,7 @@ function FlyToValue({value, flyKey}: { value: Coordinates | null; flyKey: number
     return null;
 }
 
-function LocateMe({onLocate, large}: { onLocate: (coords: Coordinates) => void; large?: boolean }) {
+function LocateMe({onLocate, large}: Readonly<{ onLocate: (coords: Coordinates) => void; large?: boolean }>) {
     const map = useMap();
     const [locating, setLocating] = useState(false);
 
@@ -102,7 +102,7 @@ function InvalidateSize() {
     return null;
 }
 
-export default function LocationPicker({value, onChange, error}: LocationPickerProps) {
+export default function LocationPicker({value, onChange, error}: Readonly<LocationPickerProps>) {
     const [fullscreen, setFullscreen] = useState(false);
     const [flyKey, setFlyKey] = useState(0);
 
@@ -115,11 +115,11 @@ export default function LocationPicker({value, onChange, error}: LocationPickerP
         <div>
             <div className="relative h-64 rounded-lg overflow-hidden border border-gray-200 dark:border-stone-700">
                 <MapContainer
-                    center={value ? [value.latitude, value.longitude] : [49.0, 32.0]}
+                    center={value ? [value.latitude, value.longitude] : [49, 32]}
                     zoom={value ? 10 : 6}
                     minZoom={6}
                     maxBounds={UKRAINE_BOUNDS}
-                    maxBoundsViscosity={1.0}
+                    maxBoundsViscosity={1}
                     scrollWheelZoom={true}
                     className="h-full w-full"
                 >
@@ -167,11 +167,11 @@ export default function LocationPicker({value, onChange, error}: LocationPickerP
                     </div>
                     <div className="flex-1">
                         <MapContainer
-                            center={value ? [value.latitude, value.longitude] : [49.0, 32.0]}
+                            center={value ? [value.latitude, value.longitude] : [49, 32]}
                             zoom={value ? 12 : 6}
                             minZoom={6}
                             maxBounds={UKRAINE_BOUNDS}
-                            maxBoundsViscosity={1.0}
+                            maxBoundsViscosity={1}
                             scrollWheelZoom={true}
                             className="h-full w-full"
                         >

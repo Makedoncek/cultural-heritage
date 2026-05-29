@@ -12,7 +12,7 @@ interface Props {
 
 const LANGUAGE_VALUES: AudioLanguage[] = ['uk', 'en', 'pl', 'de'];
 
-export default function AudioEditModal({audio, onClose, onSaved}: Props) {
+export default function AudioEditModal({audio, onClose, onSaved}: Readonly<Props>) {
     const {t} = useTranslation();
     const [title, setTitle] = useState(audio.title);
     const [language, setLanguage] = useState<AudioLanguage>(audio.language);

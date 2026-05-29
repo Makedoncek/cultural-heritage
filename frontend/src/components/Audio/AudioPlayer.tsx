@@ -15,7 +15,7 @@ function fmt(s: number): string {
     return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
-export default function AudioPlayer({audio, objectTitle, coverUrl}: Props) {
+export default function AudioPlayer({audio, objectTitle, coverUrl}: Readonly<Props>) {
     const {t} = useTranslation();
     const audioRef = useRef<HTMLAudioElement>(null);
     const [playing, setPlaying] = useState(false);

@@ -14,7 +14,7 @@ interface Props {
     onClose: () => void;
 }
 
-export default function Lightbox({photos, initialIndex, onClose}: Props) {
+export default function Lightbox({photos, initialIndex, onClose}: Readonly<Props>) {
     const {t, i18n} = useTranslation();
     const {user} = useAuth();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
@@ -23,8 +23,8 @@ export default function Lightbox({photos, initialIndex, onClose}: Props) {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
         };
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
+        globalThis.addEventListener('keydown', onKey);
+        return () => globalThis.removeEventListener('keydown', onKey);
     }, [onClose]);
 
     return (

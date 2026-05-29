@@ -137,7 +137,7 @@ export default function AuthorProfilePage() {
 
                 {tab === 'objects'
                     ? <AuthorObjectsTab objects={objects} isAuthenticated={isAuthenticated}/>
-                    : <AuthorVisitsTab username={username!} onCountChange={onVisitsCount}/>}
+                    : <AuthorVisitsTab username={username} onCountChange={onVisitsCount}/>}
             </div>
         </div>
     );
@@ -150,7 +150,7 @@ interface TabBtnProps {
     children: ReactNode;
 }
 
-function TabBtn({active, onClick, count, children}: TabBtnProps) {
+function TabBtn({active, onClick, count, children}: Readonly<TabBtnProps>) {
     return (
         <button
             type="button"

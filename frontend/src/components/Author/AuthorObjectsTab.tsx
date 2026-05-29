@@ -13,7 +13,7 @@ interface Props {
     isAuthenticated: boolean;
 }
 
-export default function AuthorObjectsTab({objects, isAuthenticated}: Props) {
+export default function AuthorObjectsTab({objects, isAuthenticated}: Readonly<Props>) {
     const {t} = useTranslation();
     const {user} = useAuth();
 
@@ -25,7 +25,7 @@ export default function AuthorObjectsTab({objects, isAuthenticated}: Props) {
         <>
             <div className="h-80 rounded-lg overflow-hidden border border-gray-200 dark:border-stone-700 mb-6">
                 <MapContainer
-                    center={[49.0, 32.0]}
+                    center={[49, 32]}
                     zoom={6}
                     scrollWheelZoom={true}
                     className="h-full w-full"

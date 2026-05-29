@@ -12,7 +12,7 @@ interface Props {
     compact?: boolean;
 }
 
-export default function ReportInaccuracyButton({targetType, targetId, targetTitle, compact}: Props) {
+export default function ReportInaccuracyButton({targetType, targetId, targetTitle, compact}: Readonly<Props>) {
     const {t} = useTranslation();
     const {isAuthenticated} = useAuth();
     const [open, setOpen] = useState(false);
