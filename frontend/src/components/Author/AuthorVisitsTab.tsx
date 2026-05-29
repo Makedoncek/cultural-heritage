@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import {visitsService} from '../../services/visits.service';
 import {usePaginatedList} from '../../hooks/usePaginatedList';
-import LoadMoreButton from '../common/LoadMoreButton';
+import LoadMoreButton from '../Common/LoadMoreButton';
 import PassportMap from '../Passport/PassportMap';
 import type {Visit, VisitMapPoint} from '../../types/visits';
 

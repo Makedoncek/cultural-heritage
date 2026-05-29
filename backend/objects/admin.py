@@ -512,7 +512,7 @@ class RouteAdmin(SortableAdminBase, admin.ModelAdmin):
 
     fieldsets = (
         ('Основна інформація', {'fields': ('title', 'description', 'visibility', 'status')}),
-        ('Метадані', {'fields': ('author', 'tags', 'is_featured', 'cover_photo',
+        ('Метадані', {'fields': ('author', 'tags', 'is_featured',
                                   'estimated_duration_minutes', 'copied_from')}),
         ('Дати', {'fields': ('created_at', 'updated_at')}),
     )

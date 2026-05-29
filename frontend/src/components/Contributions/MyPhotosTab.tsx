@@ -5,7 +5,7 @@ import {useTranslation} from 'react-i18next';
 import {objectsService} from '../../services/objects.service';
 import {photosService} from '../../services/photos.service';
 import {usePaginatedList} from '../../hooks/usePaginatedList';
-import LoadMoreButton from '../common/LoadMoreButton';
+import LoadMoreButton from '../Common/LoadMoreButton';
 import Lightbox from '../Objects/Lightbox';
 import CoverImage from '../Objects/CoverImage';
 import type {CulturalObjectWithMyPhotos, ObjectPhoto} from '../../types';
@@ -18,7 +18,7 @@ const STATUS_OVERLAY_CLS: Record<string, string | null> = {
 };
 
 function countByStatus(photos: ObjectPhoto[]) {
-    const c = {approved: 0, pending: 0, rejected: 0};
+    const c = {approved: 0, pending: 0, rejected: 0, archived: 0};
     photos.forEach(p => { c[p.status]++; });
     return c;
 }

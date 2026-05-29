@@ -24,7 +24,6 @@ export interface RouteListItem {
     status: RouteStatus;
     visibility: RouteVisibility;
     is_featured: boolean;
-    cover_photo: string;
     estimated_duration_minutes: number | null;
     author_name: string;
     tags: Tag[];
@@ -51,7 +50,6 @@ export interface RouteWritePayload {
     description: string;
     visibility?: RouteVisibility;
     tags?: number[];
-    cover_photo?: string;
     estimated_duration_minutes?: number | null;
 }
 

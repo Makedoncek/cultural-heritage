@@ -7,7 +7,7 @@ import {routesService} from '../services/routes.service';
 import type {Visit, PlannedVisit, VisitsStats} from '../types/visits';
 import type {RouteListItem} from '../types/routes';
 import VisitImpressionModal from '../components/Objects/VisitImpressionModal';
-import LoadMoreButton from '../components/common/LoadMoreButton';
+import LoadMoreButton from '../components/Common/LoadMoreButton';
 import PassportMap from '../components/Passport/PassportMap';
 
 export default function CulturalPassportPage() {

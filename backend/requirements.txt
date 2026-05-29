@@ -33,6 +33,7 @@ celery[redis]>=5.4
 redis>=5.0
 cloudinary~=1.40
 django-cloudinary-storage~=0.3
+requests>=2.32
 Pillow>=11.0
 drf-nested-routers~=0.95
 django-admin-sortable2~=2.3

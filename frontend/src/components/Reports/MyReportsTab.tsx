@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import {reportsService} from '../../services/reports.service';
 import {usePaginatedList} from '../../hooks/usePaginatedList';
-import LoadMoreButton from '../common/LoadMoreButton';
+import LoadMoreButton from '../Common/LoadMoreButton';
 import TargetTypeChip from './TargetTypeChip';
 import type {InaccuracyReport, ReportStatus} from '../../types/reports';
 

@@ -632,7 +632,6 @@ class Route(models.Model):
     )
     tags = models.ManyToManyField(Tag, blank=True, related_name='routes')
     is_featured = models.BooleanField(default=False)
-    cover_photo = models.URLField(blank=True)
     estimated_duration_minutes = models.PositiveIntegerField(null=True, blank=True)
     original_language = models.CharField(
         max_length=5,

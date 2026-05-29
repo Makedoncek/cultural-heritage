@@ -120,7 +120,7 @@ export default function HomePage() {
                 <div className="flex flex-col items-center gap-4">
                     <p className="text-red-600">{error}</p>
                     <button
-                        onClick={() => fetchObjects(selectedTags, debouncedSearch, objectType, eventStatus)}
+                        onClick={() => fetchObjects(selectedTags, debouncedSearch, objectType, eventStatus, new AbortController().signal)}
                         className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 cursor-pointer"
                     >
                         {t('home.retry')}

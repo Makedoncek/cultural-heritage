@@ -35,7 +35,7 @@ export default function AddToRouteButton({objectId}: Props) {
         setLoading(true);
         try {
             const data = await routesService.listMine();
-            setRoutes(data.filter(r => r.status !== 'archived'));
+            setRoutes(data.results.filter(r => r.status !== 'archived'));
         } catch {
             toast.error(t('routes.toast.loadFailed'));
         } finally {

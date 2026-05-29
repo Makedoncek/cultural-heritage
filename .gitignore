@@ -37,3 +37,16 @@ yarn-error.log
 .yarn
 dist/
 build/
+
+# Coverage artifacts
+.coverage
+
+# Scratch screenshots / scratch images (repo root)
+/Flag_map_of_Ukraine.svg
+/svg-geo.svg
+/arrow-for-details.png
+/before.png
+/detail-page.png
+/mobile-filters.png
+/mobile-filters-2.png
+/mobile-filters-3.png

@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import {objectsService} from '../../services/objects.service';
 import {usePaginatedList} from '../../hooks/usePaginatedList';
-import LoadMoreButton from '../common/LoadMoreButton';
+import LoadMoreButton from '../Common/LoadMoreButton';
 import FavoriteButton from '../Objects/FavoriteButton';
 import type {CulturalObject} from '../../types';
 

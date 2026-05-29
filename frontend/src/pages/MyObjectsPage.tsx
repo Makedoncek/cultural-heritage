@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import {objectsService} from '../services/objects.service';
 import {usePaginatedList} from '../hooks/usePaginatedList';
-import LoadMoreButton from '../components/common/LoadMoreButton';
+import LoadMoreButton from '../components/Common/LoadMoreButton';
 import type {CulturalObject} from '../types';
 
 const STATUS_COLORS: Record<string, string> = {

@@ -180,17 +180,9 @@ export default function RoutesListPage() {
                                 to={`/routes/${r.id}`}
                                 className="block border border-gray-200 dark:border-stone-700 bg-white dark:bg-stone-900 rounded-lg overflow-hidden hover:border-amber-400 dark:hover:border-amber-500 transition-colors"
                             >
-                                {r.cover_photo ? (
-                                    <img
-                                        src={r.cover_photo}
-                                        alt={r.title}
-                                        className="w-full h-32 object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-full h-32 bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-stone-800 dark:to-stone-700 flex items-center justify-center text-4xl">
-                                        🗺
-                                    </div>
-                                )}
+                                <div className="w-full h-32 bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-stone-800 dark:to-stone-700 flex items-center justify-center text-4xl">
+                                    🗺
+                                </div>
                                 <div className="p-3">
                                     <div className="flex items-start justify-between gap-2 mb-1">
                                         <h2 className="text-base font-semibold text-gray-900 dark:text-stone-100 line-clamp-2">

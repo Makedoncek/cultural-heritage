@@ -4,13 +4,13 @@ import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
 import {audioService} from '../../services/audio.service';
 import {usePaginatedList} from '../../hooks/usePaginatedList';
-import LoadMoreButton from '../common/LoadMoreButton';
+import LoadMoreButton from '../Common/LoadMoreButton';
 import AudioPlayer from '../Audio/AudioPlayer';
 import AudioEditModal from '../Audio/AudioEditModal';
 import type {ObjectAudio, ObjectWithMyAudios} from '../../types/audio';
 
 function countByStatus(audios: ObjectAudio[]) {
-    const c = {approved: 0, pending: 0, rejected: 0};
+    const c = {approved: 0, pending: 0, rejected: 0, archived: 0};
     audios.forEach(a => { c[a.status]++; });
     return c;
 }

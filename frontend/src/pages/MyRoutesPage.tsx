@@ -4,7 +4,7 @@ import {useTranslation} from 'react-i18next';
 import toast from 'react-hot-toast';
 import {routesService} from '../services/routes.service';
 import {usePaginatedList} from '../hooks/usePaginatedList';
-import LoadMoreButton from '../components/common/LoadMoreButton';
+import LoadMoreButton from '../components/Common/LoadMoreButton';
 import type {RouteListItem, RouteStatus} from '../types/routes';
 
 const STATUS_BADGE: Record<RouteStatus, string> = {

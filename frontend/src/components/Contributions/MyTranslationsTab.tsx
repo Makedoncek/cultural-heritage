@@ -5,7 +5,7 @@ import {AxiosError} from 'axios';
 import {useTranslation} from 'react-i18next';
 import {translationsService} from '../../services/translations.service';
 import {usePaginatedList} from '../../hooks/usePaginatedList';
-import LoadMoreButton from '../common/LoadMoreButton';
+import LoadMoreButton from '../Common/LoadMoreButton';
 import type {MyTranslation, TranslationStatus} from '../../types/translations';
 
 const LANG_LABEL: Record<string, string> = {uk: 'UA', en: 'EN', pl: 'PL', de: 'DE'};
