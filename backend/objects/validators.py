@@ -45,7 +45,7 @@ def validate_image_format(file):
             img.verify()
             fmt = (img.format or '').upper()
         file.seek(0)
-    except (UnidentifiedImageError, Exception):
+    except Exception:
         raise ValidationError(_('Файл не є валідним зображенням.'))
 
     if fmt not in settings.PHOTO_ALLOWED_FORMATS:

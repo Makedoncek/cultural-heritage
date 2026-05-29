@@ -173,8 +173,7 @@ def _follower_subject_and_labels(lang: str, author_username: str, obj_title: str
     if lang == 'en':
         type_label = 'event' if is_event else 'object'
         type_short = 'event' if is_event else 'object'
-        subject = f'CultureMap — {author_username} published an {type_label} "{obj_title}"' if is_event \
-            else f'CultureMap — {author_username} published an {type_label} "{obj_title}"'
+        subject = f'CultureMap — {author_username} published an {type_label} "{obj_title}"'
         return subject, type_label, type_short
     type_label = 'подію' if is_event else 'об\'єкт'
     type_short = 'подія' if is_event else 'об\'єкт'

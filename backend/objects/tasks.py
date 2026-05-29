@@ -51,8 +51,8 @@ def cleanup_rejected_photos():
     for photo in expired:
         try:
             photo.delete()
-        except Exception as e:
-            logger.error(f'Failed to delete photo {photo.cloudinary_public_id}: {e}')
+        except Exception:
+            logger.exception('Failed to delete photo %s', photo.cloudinary_public_id)
             continue
         deleted_count += 1
     logger.info(f'cleanup_rejected_photos: deleted {deleted_count} photos')

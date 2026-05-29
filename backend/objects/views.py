@@ -594,7 +594,7 @@ class ObjectViewSet(viewsets.ModelViewSet):
         for field, value in validated_data.items():
             if field == 'tags':
                 current = set(instance.tags.values_list('id', flat=True))
-                new = set(t.pk for t in value)
+                new = {t.pk for t in value}
                 if current != new:
                     return True
             else:
