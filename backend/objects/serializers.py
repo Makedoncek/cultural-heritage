@@ -12,6 +12,9 @@ from .models import (
 )
 from .validators import validate_coordinates_within_ukraine
 
+LAT_SOURCE = 'cultural_object.latitude'
+LNG_SOURCE = 'cultural_object.longitude'
+
 
 SUPPORTED_LANGUAGES = {code for code, _label in LANGUAGE_CHOICES}
 
@@ -580,8 +583,8 @@ class VisitSerializer(serializers.ModelSerializer):
     object_title = serializers.SerializerMethodField()
     object_cover_url = serializers.SerializerMethodField()
     object_tags = serializers.SerializerMethodField()
-    object_latitude = serializers.DecimalField(source='cultural_object.latitude', max_digits=9, decimal_places=6, read_only=True)
-    object_longitude = serializers.DecimalField(source='cultural_object.longitude', max_digits=9, decimal_places=6, read_only=True)
+    object_latitude = serializers.DecimalField(source=LAT_SOURCE, max_digits=9, decimal_places=6, read_only=True)
+    object_longitude = serializers.DecimalField(source=LNG_SOURCE, max_digits=9, decimal_places=6, read_only=True)
 
     class Meta:
         model = Visit
@@ -609,8 +612,8 @@ class VisitMapPointSerializer(serializers.ModelSerializer):
     """Lightweight visit payload for map markers — coordinates only, no cover/tags (avoids N+1)."""
     object_id = serializers.IntegerField(source='cultural_object_id', read_only=True)
     object_title = serializers.CharField(source='cultural_object.title', read_only=True)
-    object_latitude = serializers.DecimalField(source='cultural_object.latitude', max_digits=9, decimal_places=6, read_only=True)
-    object_longitude = serializers.DecimalField(source='cultural_object.longitude', max_digits=9, decimal_places=6, read_only=True)
+    object_latitude = serializers.DecimalField(source=LAT_SOURCE, max_digits=9, decimal_places=6, read_only=True)
+    object_longitude = serializers.DecimalField(source=LNG_SOURCE, max_digits=9, decimal_places=6, read_only=True)
 
     class Meta:
         model = Visit
@@ -622,8 +625,8 @@ class PlannedVisitSerializer(serializers.ModelSerializer):
     object_title = serializers.SerializerMethodField()
     object_cover_url = serializers.SerializerMethodField()
     object_tags = serializers.SerializerMethodField()
-    object_latitude = serializers.DecimalField(source='cultural_object.latitude', max_digits=9, decimal_places=6, read_only=True)
-    object_longitude = serializers.DecimalField(source='cultural_object.longitude', max_digits=9, decimal_places=6, read_only=True)
+    object_latitude = serializers.DecimalField(source=LAT_SOURCE, max_digits=9, decimal_places=6, read_only=True)
+    object_longitude = serializers.DecimalField(source=LNG_SOURCE, max_digits=9, decimal_places=6, read_only=True)
 
     class Meta:
         model = PlannedVisit

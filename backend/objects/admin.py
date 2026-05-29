@@ -13,6 +13,13 @@ from .models import (
     CulturalObjectTranslation, RouteTranslation, TagTranslation, TranslationStatus,
 )
 
+MODERATION_SECTION = 'Модерація'
+LINK_HTML = '<a href="{}">{}</a>'
+STATUS_BADGE_HTML = (
+    '<span style="background:{};color:#fff;padding:3px 10px;'
+    'border-radius:12px;font-size:11px;font-weight:600;">{}</span>'
+)
+
 
 class TagTranslationInline(admin.TabularInline):
     model = TagTranslation
@@ -232,8 +239,7 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
         color = self.STATUS_COLORS.get(obj.status, '#6b7280')
         label = obj.get_status_display()
         return format_html(
-            '<span style="background:{};color:#fff;padding:3px 10px;'
-            'border-radius:12px;font-size:11px;font-weight:600;">{}</span>',
+            STATUS_BADGE_HTML,
             color, label,
         )
 
@@ -241,7 +247,7 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
     def author_link(self, obj):
         from django.urls import reverse
         url = reverse('admin:objects_culturalobject_changelist') + f'?author__id__exact={obj.author_id}'
-        return format_html('<a href="{}">{}</a>', url, obj.author)
+        return format_html(LINK_HTML, url, obj.author)
 
 
 @admin.register(Favorite)
@@ -326,7 +332,7 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
         ('Фото', {
             'fields': ('large_preview', 'caption', 'order', 'is_author_photo'),
         }),
-        ('Модерація', {
+        (MODERATION_SECTION, {
             'fields': ('status', 'moderation_note', 'moderated_at', 'rejected_cleanup_at'),
         }),
         ('Об\'єкт і автор', {
@@ -358,14 +364,13 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
     def cultural_object_link(self, obj):
         from django.urls import reverse
         url = reverse('admin:objects_culturalobject_change', args=[obj.cultural_object_id])
-        return format_html('<a href="{}">{}</a>', url, obj.cultural_object)
+        return format_html(LINK_HTML, url, obj.cultural_object)
 
     @admin.display(description=_('Статус'), ordering='status')
     def colored_status(self, obj):
         color = self.STATUS_COLORS.get(obj.status, '#6b7280')
         return format_html(
-            '<span style="background:{};color:#fff;padding:3px 10px;'
-            'border-radius:12px;font-size:11px;font-weight:600;">{}</span>',
+            STATUS_BADGE_HTML,
             color, obj.get_status_display(),
         )
 
@@ -549,7 +554,7 @@ class ObjectAudioAdmin(admin.ModelAdmin):
             'fields': ('audio_player', 'title', 'language', 'narrator_name',
                        'duration_seconds', 'plays_count'),
         }),
-        ('Модерація', {
+        (MODERATION_SECTION, {
             'fields': ('status', 'moderation_note', 'moderated_at'),
         }),
         ('Об\'єкт і автор', {
@@ -644,8 +649,7 @@ class _TranslationAdminMixin:
     def colored_status(self, obj):
         color = self.STATUS_COLORS.get(obj.status, '#6b7280')
         return format_html(
-            '<span style="background:{};color:#fff;padding:3px 10px;'
-            'border-radius:12px;font-size:11px;font-weight:600;">{}</span>',
+            STATUS_BADGE_HTML,
             color, obj.get_status_display(),
         )
 
@@ -718,7 +722,7 @@ class CulturalObjectTranslationAdmin(_TranslationAdminMixin, admin.ModelAdmin):
     fieldsets = (
         ('Джерело', {'fields': ('cultural_object', 'language', 'submitted_by')}),
         ('Переклад', {'fields': ('title', 'description')}),
-        ('Модерація', {'fields': ('status', 'reviewer_note')}),
+        (MODERATION_SECTION, {'fields': ('status', 'reviewer_note')}),
         ('Дати', {'fields': ('created_at', 'updated_at'), 'classes': ('collapse',)}),
     )
 
@@ -726,7 +730,7 @@ class CulturalObjectTranslationAdmin(_TranslationAdminMixin, admin.ModelAdmin):
     def cultural_object_link(self, obj):
         from django.urls import reverse
         url = reverse('admin:objects_culturalobject_change', args=[obj.cultural_object_id])
-        return format_html('<a href="{}">{}</a>', url, obj.cultural_object)
+        return format_html(LINK_HTML, url, obj.cultural_object)
 
     def _get_parent(self, translation):
         return translation.cultural_object
@@ -751,7 +755,7 @@ class RouteTranslationAdmin(_TranslationAdminMixin, admin.ModelAdmin):
     fieldsets = (
         ('Джерело', {'fields': ('route', 'language', 'submitted_by')}),
         ('Переклад', {'fields': ('title', 'description')}),
-        ('Модерація', {'fields': ('status', 'reviewer_note')}),
+        (MODERATION_SECTION, {'fields': ('status', 'reviewer_note')}),
         ('Дати', {'fields': ('created_at', 'updated_at'), 'classes': ('collapse',)}),
     )
 
@@ -759,7 +763,7 @@ class RouteTranslationAdmin(_TranslationAdminMixin, admin.ModelAdmin):
     def route_link(self, obj):
         from django.urls import reverse
         url = reverse('admin:objects_route_change', args=[obj.route_id])
-        return format_html('<a href="{}">{}</a>', url, obj.route)
+        return format_html(LINK_HTML, url, obj.route)
 
     def _get_parent(self, translation):
         return translation.route

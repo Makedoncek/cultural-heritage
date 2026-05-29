@@ -13,13 +13,13 @@ from django.contrib.auth.models import User
 
 # Параметри retry для всіх email-task-ів: експоненційний backoff
 # (1s → 2s → 4s → 8s → 16s, max 600s) з jitter — захист від SMTP flapping.
-EMAIL_RETRY_KWARGS = dict(
-    autoretry_for=(SMTPException, ConnectionError, OSError, TimeoutError),
-    retry_backoff=True,
-    retry_backoff_max=600,
-    retry_jitter=True,
-    max_retries=5,
-)
+EMAIL_RETRY_KWARGS = {
+    'autoretry_for': (SMTPException, ConnectionError, OSError, TimeoutError),
+    'retry_backoff': True,
+    'retry_backoff_max': 600,
+    'retry_jitter': True,
+    'max_retries': 5,
+}
 
 signer = TimestampSigner()
 
