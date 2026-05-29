@@ -19,8 +19,7 @@ const parseJwtPayload = (token: string) => JSON.parse(atob(token.split('.')[1]))
 
 // Tokens ultimately come from the network, so validate their shape (three base64url
 // segments) before persisting — never write malformed/poisoned values to browser storage.
-const isJwtFormat = (value: unknown): value is string =>
-    typeof value === 'string' && /^[\w-]+\.[\w-]+\.[\w-]+$/.test(value);
+const JWT_RE = /^[\w-]+\.[\w-]+\.[\w-]+$/;
 
 const userFromPayload = (payload: { user_id: number; username?: string, is_staff?: boolean }): User => ({
     id: payload.user_id,
@@ -88,11 +87,11 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
         if (refreshToken) {
             try {
                 const tokens = await authService.refresh(refreshToken);
-                if (!isJwtFormat(tokens.access)) {
+                if (typeof tokens.access !== 'string' || !JWT_RE.test(tokens.access)) {
                     throw new Error('Malformed access token');
                 }
                 localStorage.setItem('access_token', tokens.access);
-                if (isJwtFormat(tokens.refresh)) {
+                if (typeof tokens.refresh === 'string' && JWT_RE.test(tokens.refresh)) {
                     localStorage.setItem('refresh_token', tokens.refresh);
                 }
                 const payload = parseJwtPayload(tokens.access);
@@ -110,11 +109,11 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
     const login = async (credentials: LoginData) => {
         const tokens = await authService.login(credentials);
 
-        if (!isJwtFormat(tokens.access)) {
+        if (typeof tokens.access !== 'string' || !JWT_RE.test(tokens.access)) {
             throw new Error('Malformed access token');
         }
         localStorage.setItem('access_token', tokens.access);
-        if (isJwtFormat(tokens.refresh)) {
+        if (typeof tokens.refresh === 'string' && JWT_RE.test(tokens.refresh)) {
             localStorage.setItem('refresh_token', tokens.refresh);
         }
 
