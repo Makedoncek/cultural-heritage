@@ -17,18 +17,20 @@ export default function PhotoGallery({photos}: Props) {
 
     return (
         <div>
-            <div
+            <button
+                type="button"
                 onClick={() => setLightboxIdx(0)}
-                className="cursor-pointer w-full aspect-video bg-gray-100 dark:bg-stone-800 rounded overflow-hidden"
+                className="block cursor-pointer w-full aspect-video bg-gray-100 dark:bg-stone-800 rounded overflow-hidden"
             >
                 <img src={cover.image_url} alt={cover.caption || ''} className="w-full h-full object-cover"/>
-            </div>
+            </button>
 
             {photos.length > 1 && (
                 <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
                     {photos.map((p, i) => (
-                        <div
+                        <button
                             key={p.id}
+                            type="button"
                             onClick={() => setLightboxIdx(i)}
                             className={`relative w-24 h-20 flex-shrink-0 cursor-pointer rounded overflow-hidden border-2 ${
                                 i === 0 ? 'border-blue-500' : 'border-transparent'
@@ -40,7 +42,7 @@ export default function PhotoGallery({photos}: Props) {
                                     {t('photo.underReview')}
                                 </span>
                             )}
-                        </div>
+                        </button>
                     ))}
                 </div>
             )}

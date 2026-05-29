@@ -169,7 +169,7 @@ export default function AddEditRoutePage() {
             description: description.trim(),
             visibility,
             tags: selectedTags,
-            estimated_duration_minutes: durationHours ? Math.round(parseFloat(durationHours) * 60) : null,
+            estimated_duration_minutes: durationHours ? Math.round(Number.parseFloat(durationHours) * 60) : null,
         };
         try {
             if (isEdit && route) {

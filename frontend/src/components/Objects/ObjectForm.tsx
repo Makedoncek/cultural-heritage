@@ -102,8 +102,8 @@ export default function ObjectForm({initialData, onSubmit, submitLabel, submitti
         const writeData: CulturalObjectWrite = {
             title: data.title.trim(),
             description: data.description.trim(),
-            latitude: parseFloat(data.latitude.toFixed(6)),
-            longitude: parseFloat(data.longitude.toFixed(6)),
+            latitude: Number.parseFloat(data.latitude.toFixed(6)),
+            longitude: Number.parseFloat(data.longitude.toFixed(6)),
             tags: data.tags,
             object_type: data.object_type,
         };

@@ -300,7 +300,7 @@ export default function RouteDetailPage() {
         );
     }
 
-    const coords: [number, number][] = route.stops.map(s => [parseFloat(s.latitude), parseFloat(s.longitude)]);
+    const coords: [number, number][] = route.stops.map(s => [Number.parseFloat(s.latitude), Number.parseFloat(s.longitude)]);
     // ORS returns [lng, lat]; Leaflet expects [lat, lng] — swap.
     const realRoadCoords: [number, number][] | null = route.route_geometry
         ? route.route_geometry.map(([lng, lat]) => [lat, lng])
@@ -543,7 +543,7 @@ export default function RouteDetailPage() {
                             {route.stops.map(s => (
                                 <Marker
                                     key={s.id}
-                                    position={[parseFloat(s.latitude), parseFloat(s.longitude)]}
+                                    position={[Number.parseFloat(s.latitude), Number.parseFloat(s.longitude)]}
                                     icon={numberedIcon(s.order, s.is_unavailable ? '#6b7280' : '#d97706', s.is_visited && !s.is_unavailable)}
                                 >
                                     <Popup>
@@ -596,7 +596,7 @@ export default function RouteDetailPage() {
                                 {route.stops.map(s => (
                                     <Marker
                                         key={s.id}
-                                        position={[parseFloat(s.latitude), parseFloat(s.longitude)]}
+                                        position={[Number.parseFloat(s.latitude), Number.parseFloat(s.longitude)]}
                                         icon={numberedIcon(s.order, s.is_unavailable ? '#6b7280' : '#d97706', s.is_visited && !s.is_unavailable)}
                                     >
                                         <Popup>

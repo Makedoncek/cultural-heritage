@@ -90,7 +90,7 @@ export default function ObjectMarker({object}: ObjectMarkerProps) {
 
     return (
         <Marker
-            position={[parseFloat(object.latitude), parseFloat(object.longitude)]}
+            position={[Number.parseFloat(object.latitude), Number.parseFloat(object.longitude)]}
             icon={icon}
         >
             <Popup>

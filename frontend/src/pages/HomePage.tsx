@@ -189,12 +189,22 @@ export default function HomePage() {
                                 {objects.slice(0, 7).map(obj => (
                                     <div
                                         key={obj.id}
+                                        role="button"
+                                        tabIndex={0}
                                 className="flex items-center gap-2 px-3 py-2 hover:bg-amber-50 dark:hover:bg-stone-700 cursor-pointer text-sm border-b border-gray-100 dark:border-stone-700 last:border-b-0"
                                         onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => {
                                             setFlyTo({latitude: Number(obj.latitude), longitude: Number(obj.longitude)});
                                             setSearchFocused(false);
                                             setSidebarOpen(false);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                setFlyTo({latitude: Number(obj.latitude), longitude: Number(obj.longitude)});
+                                                setSearchFocused(false);
+                                                setSidebarOpen(false);
+                                            }
                                         }}
                                     >
                                         <span>{obj.tags[0]?.icon || '📍'}</span>

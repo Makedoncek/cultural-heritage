@@ -71,7 +71,9 @@ export default function AudioPlayer({audio, objectTitle, coverUrl}: Props) {
                 onPause={() => setPlaying(false)}
                 onTimeUpdate={(e) => setProgress(e.currentTarget.currentTime)}
                 onEnded={() => setPlaying(false)}
-            />
+            >
+                <track kind="captions"/>
+            </audio>
             <button
                 type="button"
                 onClick={togglePlay}

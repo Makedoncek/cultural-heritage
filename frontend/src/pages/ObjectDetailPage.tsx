@@ -157,8 +157,8 @@ export default function ObjectDetailPage() {
 
     if (!object) return null;
 
-    const latitude = parseFloat(object.latitude);
-    const longitude = parseFloat(object.longitude);
+    const latitude = Number.parseFloat(object.latitude);
+    const longitude = Number.parseFloat(object.longitude);
 
     return (
         <div className="flex-1 overflow-y-auto">

@@ -71,11 +71,14 @@ export default function TranslationSubmitModal({open, onClose, targetOptions, or
     };
 
     return (
-        <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
-            <div
-                className="bg-white dark:bg-stone-900 rounded-xl shadow-xl w-full max-w-lg p-5"
-                onClick={e => e.stopPropagation()}
-            >
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <button
+                type="button"
+                aria-label="Закрити"
+                onClick={onClose}
+                className="absolute inset-0 bg-black/50 cursor-default"
+            />
+            <div className="relative bg-white dark:bg-stone-900 rounded-xl shadow-xl w-full max-w-lg p-5">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-stone-100 mb-1">
                     ✍ {t('translations.modalTitleGeneric')}
                 </h3>

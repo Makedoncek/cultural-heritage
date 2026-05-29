@@ -18,11 +18,14 @@ export default function DuplicateWarningModal({nearby, onCancel, onProceed, keyP
     const {t} = useTranslation();
     const k = (key: string) => t(`${keyPrefix}.${key}`);
     return (
-        <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4 overflow-y-auto" onClick={onCancel}>
-            <div
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white dark:bg-stone-900 rounded-lg w-full max-w-md border border-gray-200 dark:border-stone-700"
-            >
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
+            <button
+                type="button"
+                aria-label="Закрити"
+                onClick={onCancel}
+                className="absolute inset-0 bg-black/60 cursor-default"
+            />
+            <div className="relative bg-white dark:bg-stone-900 rounded-lg w-full max-w-md border border-gray-200 dark:border-stone-700">
                 <div className="p-4 border-b border-gray-200 dark:border-stone-700">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-stone-100 flex items-center gap-2">
                         ⚠️ {k('title')}

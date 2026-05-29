@@ -12,7 +12,7 @@ export function extractUploadError(err: unknown): string {
             if (typeof detail === 'string') {
                 const match = detail.match(/(\d+)\s*seconds?/i);
                 if (match) {
-                    const seconds = parseInt(match[1], 10);
+                    const seconds = Number.parseInt(match[1], 10);
                     const minutes = Math.ceil(seconds / 60);
                     return i18n.t('errors.throttledWithMinutes', {minutes});
                 }

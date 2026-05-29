@@ -18,9 +18,12 @@ export default function FavoriteButton({objectId, initialFavorited, initialCount
         if (loading) return;
         setLoading(true);
 
+        const prevFavorited = isFavorited;
+        const prevCount = count;
+
         // Optimistic update
-        setIsFavorited(!isFavorited);
-        setCount(prev => isFavorited ? prev - 1 : prev + 1);
+        setIsFavorited(!prevFavorited);
+        setCount(prevFavorited ? prevCount - 1 : prevCount + 1);
 
         try {
             const result = await objectsService.toggleFavorite(objectId);
@@ -29,8 +32,8 @@ export default function FavoriteButton({objectId, initialFavorited, initialCount
             onToggle?.(result.is_favorited);
         } catch {
             // Revert on error
-            setIsFavorited(isFavorited);
-            setCount(count);
+            setIsFavorited(prevFavorited);
+            setCount(prevCount);
             toast.error('Не вдалося оновити обране');
         } finally {
             setLoading(false);

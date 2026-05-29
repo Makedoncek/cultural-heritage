@@ -74,8 +74,8 @@ export default function PassportMap({visits, planned, titleKey = 'passport.mapTi
                 id: v.id,
                 objectId: v.object_id,
                 title: v.object_title,
-                lat: parseFloat(v.object_latitude),
-                lng: parseFloat(v.object_longitude),
+                lat: Number.parseFloat(v.object_latitude),
+                lng: Number.parseFloat(v.object_longitude),
                 visitedAt: v.visited_at,
             })),
         ...planned
@@ -85,8 +85,8 @@ export default function PassportMap({visits, planned, titleKey = 'passport.mapTi
                 id: p.id,
                 objectId: p.object_id,
                 title: p.object_title,
-                lat: parseFloat(p.object_latitude),
-                lng: parseFloat(p.object_longitude),
+                lat: Number.parseFloat(p.object_latitude),
+                lng: Number.parseFloat(p.object_longitude),
                 plannedDate: p.planned_date,
             })),
     ];
