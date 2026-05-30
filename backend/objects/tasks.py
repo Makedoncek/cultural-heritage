@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 # Параметри retry для Cloudinary-delete: експоненційний backoff
 # (1s → 2s → 4s → 8s → 16s → 32s..., max 1 година) з jitter.
 # 7 спроб ≈ покриває ~2 години переривчастого Cloudinary-uptime.
-CLOUDINARY_DELETE_RETRY_KWARGS = dict(
-    autoretry_for=(Exception,),
-    retry_backoff=True,
-    retry_backoff_max=3600,
-    retry_jitter=True,
-    max_retries=7,
-)
+CLOUDINARY_DELETE_RETRY_KWARGS = {
+    'autoretry_for': (Exception,),
+    'retry_backoff': True,
+    'retry_backoff_max': 3600,
+    'retry_jitter': True,
+    'max_retries': 7,
+}
 
 
 @shared_task(**CLOUDINARY_DELETE_RETRY_KWARGS)

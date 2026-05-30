@@ -17,9 +17,13 @@ from django.utils.translation import gettext_lazy as _
 
 from .validators import validate_coordinates_within_ukraine
 
+UKRAINIAN_LABEL = 'Українська'
+REJECTED_LABEL = 'Відхилено'
+ARCHIVED_LABEL = 'В архіві'
+
 
 LANGUAGE_CHOICES = [
-    ('uk', 'Українська'),
+    ('uk', UKRAINIAN_LABEL),
     ('en', 'English'),
     ('pl', 'Polski'),
     ('de', 'Deutsch'),
@@ -364,7 +368,7 @@ class ObjectAudio(models.Model):
     """Аудіо-нарратив для культурного об'єкта (Audio Tours feature)."""
 
     class Language(models.TextChoices):
-        UK = 'uk', 'Українська'
+        UK = 'uk', UKRAINIAN_LABEL
         EN = 'en', 'English'
         PL = 'pl', 'Polski'
         DE = 'de', 'Deutsch'
@@ -372,8 +376,8 @@ class ObjectAudio(models.Model):
     class Status(models.TextChoices):
         PENDING = 'pending', 'На модерації'
         APPROVED = 'approved', 'Опубліковано'
-        REJECTED = 'rejected', 'Відхилено'
-        ARCHIVED = 'archived', 'В архіві'
+        REJECTED = 'rejected', REJECTED_LABEL
+        ARCHIVED = 'archived', ARCHIVED_LABEL
 
     cultural_object = models.ForeignKey(
         CulturalObject,
@@ -427,7 +431,7 @@ class UserPreference(models.Model):
     """Налаштування користувача — мова інтерфейсу, email-сповіщень і тема."""
 
     class Language(models.TextChoices):
-        UK = 'uk', 'Українська'
+        UK = 'uk', UKRAINIAN_LABEL
         EN = 'en', 'English'
         PL = 'pl', 'Polski'
         DE = 'de', 'Deutsch'
@@ -477,7 +481,7 @@ class InaccuracyReport(models.Model):
     class Status(models.TextChoices):
         PENDING = 'pending', 'На розгляді'
         RESOLVED = 'resolved', 'Вирішено'
-        DISMISSED = 'dismissed', 'Відхилено'
+        DISMISSED = 'dismissed', REJECTED_LABEL
 
     # Polymorphic target (cultural object, route, photo or audio).
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
@@ -606,7 +610,7 @@ class Route(models.Model):
         DRAFT = 'draft', 'Чернетка'
         PENDING = 'pending', 'На модерації'
         APPROVED = 'approved', 'Опубліковано'
-        ARCHIVED = 'archived', 'В архіві'
+        ARCHIVED = 'archived', ARCHIVED_LABEL
 
     class Visibility(models.TextChoices):
         PRIVATE = 'private', 'Особистий'
@@ -699,8 +703,8 @@ class RouteStop(models.Model):
 class TranslationStatus(models.TextChoices):
     PENDING = 'pending', 'На розгляді'
     APPROVED = 'approved', 'Затверджено'
-    REJECTED = 'rejected', 'Відхилено'
-    ARCHIVED = 'archived', 'В архіві'
+    REJECTED = 'rejected', REJECTED_LABEL
+    ARCHIVED = 'archived', ARCHIVED_LABEL
 
 
 class CulturalObjectTranslation(models.Model):
