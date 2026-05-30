@@ -99,8 +99,8 @@ def _cleanup_cloudinary_on_audio_delete(sender, instance, **kwargs):
     try:
         from . import cloudinary_audio_service
         cloudinary_audio_service.delete_audio(instance.cloudinary_public_id)
-    except Exception as e:
-        logger.error(f'Failed to delete Cloudinary audio {instance.cloudinary_public_id}: {e}')
+    except Exception:
+        logger.exception('Failed to delete Cloudinary audio %s', instance.cloudinary_public_id)
 
 
 @receiver(pre_delete, sender=ObjectPhoto)
