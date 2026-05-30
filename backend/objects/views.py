@@ -1104,28 +1104,9 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
         except ValidationError as e:
             return Response({'detail': e.message if hasattr(e, 'message') else str(e)}, status=400)
 
-        user_count = ObjectPhoto.objects.filter(
-            cultural_object=cultural_object,
-            uploaded_by=request.user,
-        ).exclude(status__in=['rejected', 'archived']).count()
-        max_user = (
-            settings.PHOTO_MAX_PER_AUTHOR if is_author
-            else settings.PHOTO_MAX_PER_CONTRIBUTOR
-        )
-        if user_count >= max_user:
-            return Response(
-                {'detail': f'Ліміт {max_user} фото на цей об\'єкт вичерпано.', 'code': 'user_limit_exceeded'},
-                status=400,
-            )
-
-        total = ObjectPhoto.objects.filter(
-            cultural_object=cultural_object,
-        ).exclude(status__in=['rejected', 'archived']).count()
-        if total >= settings.PHOTO_MAX_PER_OBJECT:
-            return Response(
-                {'detail': f'Об\'єкт уже містить максимум {settings.PHOTO_MAX_PER_OBJECT} фото.', 'code': 'object_full'},
-                status=400,
-            )
+        max_user, limit_error = self._check_photo_limits(cultural_object, request.user, is_author)
+        if limit_error:
+            return limit_error
 
         try:
             uploaded = cloudinary_service.upload_photo(image)
@@ -1137,8 +1118,42 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
                 status=500,
             )
 
-        # Atomic-блок з row-lock запобігає race condition при паралельних uploads:
-        # сесія блокує parent-об'єкт, перевіряє ліміти ще раз, створює фото.
+        photo, store_error = self._store_photo_locked(cultural_object, request, uploaded, is_author, max_user)
+        if store_error:
+            return store_error
+        return Response(ObjectPhotoSerializer(photo).data, status=201)
+
+    def _check_photo_limits(self, cultural_object, user, is_author):
+        """Pre-upload limit checks. Returns (max_user, error_response_or_None)."""
+        user_count = ObjectPhoto.objects.filter(
+            cultural_object=cultural_object,
+            uploaded_by=user,
+        ).exclude(status__in=['rejected', 'archived']).count()
+        max_user = (
+            settings.PHOTO_MAX_PER_AUTHOR if is_author
+            else settings.PHOTO_MAX_PER_CONTRIBUTOR
+        )
+        if user_count >= max_user:
+            return max_user, Response(
+                {'detail': f'Ліміт {max_user} фото на цей об\'єкт вичерпано.', 'code': 'user_limit_exceeded'},
+                status=400,
+            )
+        total = ObjectPhoto.objects.filter(
+            cultural_object=cultural_object,
+        ).exclude(status__in=['rejected', 'archived']).count()
+        if total >= settings.PHOTO_MAX_PER_OBJECT:
+            return max_user, Response(
+                {'detail': f'Об\'єкт уже містить максимум {settings.PHOTO_MAX_PER_OBJECT} фото.', 'code': 'object_full'},
+                status=400,
+            )
+        return max_user, None
+
+    def _store_photo_locked(self, cultural_object, request, uploaded, is_author, max_user):
+        """Atomic re-check (row-lock) + create. Returns (photo_or_None, error_response_or_None).
+
+        The row-lock on the parent prevents a race where parallel uploads bypass the
+        limits checked before the Cloudinary upload.
+        """
         from django.db import transaction
         try:
             with transaction.atomic():
@@ -1174,6 +1189,7 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
                     is_author_photo=is_author,
                     order=order,
                 )
+            return photo, None
         except _PhotoLimitExceeded as e:
             # rollback: видалити Cloudinary-файл (бо ObjectPhoto не створено,
             # тож pre_delete-signal не спрацює)
@@ -1182,16 +1198,14 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
             except Exception:
                 pass
             if e.code == 'user_limit_exceeded':
-                return Response(
+                return None, Response(
                     {'detail': f'Ліміт {e.limit} фото на цей об\'єкт вичерпано.', 'code': 'user_limit_exceeded'},
                     status=400,
                 )
-            return Response(
+            return None, Response(
                 {'detail': f'Об\'єкт уже містить максимум {e.limit} фото.', 'code': 'object_full'},
                 status=400,
             )
-
-        return Response(ObjectPhotoSerializer(photo).data, status=201)
 
     def destroy(self, request, *args, **kwargs):
         cultural_object = self._get_object()
@@ -1832,43 +1846,48 @@ class RouteViewSet(viewsets.ModelViewSet):
         qs = Route.objects.select_related('author').prefetch_related(
             'tags', 'stops__cultural_object', 'stops__cultural_object__translations', 'translations',
         )
-        user = self.request.user
-
         if self.action == 'list':
-            # Public catalog: only public routes that have been approved.
-            qs = qs.filter(visibility=Route.Visibility.PUBLIC, status=Route.Status.APPROVED)
-            params = self.request.query_params
-            if params.get('is_featured') == 'true':
-                qs = qs.filter(is_featured=True)
-            tag_ids = params.get('tags')
-            if tag_ids:
-                ids = [int(t) for t in tag_ids.split(',') if t.isdigit()]
-                if ids:
-                    qs = qs.filter(tags__id__in=ids).distinct()
-            search = (params.get('search') or '').strip()
-            if search:
-                qs = qs.filter(Q(title__icontains=search) | Q(description__icontains=search))
-            # Duration filter (minutes). Treats null estimated_duration_minutes as 0.
-            dmin = params.get('duration_min')
-            dmax = params.get('duration_max')
-            if dmin and dmin.isdigit():
-                qs = qs.filter(estimated_duration_minutes__gte=int(dmin))
-            if dmax and dmax.isdigit():
-                qs = qs.filter(estimated_duration_minutes__lte=int(dmax))
-            return qs
-
+            return self._filter_list_queryset(qs)
         if self.action == 'retrieve':
-            if user.is_authenticated:
-                if user.is_staff:
-                    return qs
-                # Author sees own routes (any visibility); others only public+approved.
-                return qs.filter(
-                    Q(author=user) |
-                    Q(visibility=Route.Visibility.PUBLIC, status=Route.Status.APPROVED)
-                )
-            return qs.filter(visibility=Route.Visibility.PUBLIC, status=Route.Status.APPROVED)
-
+            return self._filter_retrieve_queryset(qs)
         return qs
+
+    def _filter_list_queryset(self, qs):
+        # Public catalog: only public routes that have been approved.
+        from .models import Route
+        qs = qs.filter(visibility=Route.Visibility.PUBLIC, status=Route.Status.APPROVED)
+        params = self.request.query_params
+        if params.get('is_featured') == 'true':
+            qs = qs.filter(is_featured=True)
+        tag_ids = params.get('tags')
+        if tag_ids:
+            ids = [int(t) for t in tag_ids.split(',') if t.isdigit()]
+            if ids:
+                qs = qs.filter(tags__id__in=ids).distinct()
+        search = (params.get('search') or '').strip()
+        if search:
+            qs = qs.filter(Q(title__icontains=search) | Q(description__icontains=search))
+        # Duration filter (minutes). Treats null estimated_duration_minutes as 0.
+        dmin = params.get('duration_min')
+        dmax = params.get('duration_max')
+        if dmin and dmin.isdigit():
+            qs = qs.filter(estimated_duration_minutes__gte=int(dmin))
+        if dmax and dmax.isdigit():
+            qs = qs.filter(estimated_duration_minutes__lte=int(dmax))
+        return qs
+
+    def _filter_retrieve_queryset(self, qs):
+        from .models import Route
+        user = self.request.user
+        if not user.is_authenticated:
+            return qs.filter(visibility=Route.Visibility.PUBLIC, status=Route.Status.APPROVED)
+        if user.is_staff:
+            return qs
+        # Author sees own routes (any visibility); others only public+approved.
+        return qs.filter(
+            Q(author=user) |
+            Q(visibility=Route.Visibility.PUBLIC, status=Route.Status.APPROVED)
+        )
 
     def get_permissions(self):
         if self.action in ('create', 'update', 'partial_update', 'destroy',
