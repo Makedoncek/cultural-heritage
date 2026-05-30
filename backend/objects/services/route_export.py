@@ -14,7 +14,7 @@ import simplekml
 # Strip "Координати: 50.123456, 28.123456" / "Coordinates: ..." / "lat: 50.. lon: 28.." mentions
 # from the description — the coordinates are already shown separately by every GPS app.
 _COORD_PATTERNS = [
-    re.compile(r'(?:Координати|Coordinates|Coords|Координаты)\s*[:\-—]?\s*[-\d.,\s°]+', re.IGNORECASE),
+    re.compile(r'(?:Координати|Coordinates|Coords|Координаты)\s*[:\-—]?[-\d.,\s°]{1,60}', re.IGNORECASE),
     re.compile(r'\(?\s*\d{1,3}\.\d{3,}\s*,\s*\d{1,3}\.\d{3,}\s*\)?', re.IGNORECASE),
 ]
 
@@ -27,7 +27,7 @@ def _clean_description(text: str) -> str:
         text = pat.sub('', text)
     # Collapse the whitespace left behind by the stripped chunks.
     text = re.sub(r'\s{2,}', ' ', text)
-    text = re.sub(r'\s+([.,;])', r'\1', text)
+    text = re.sub(r'\s{1,200}([.,;])', r'\1', text)
     return text.strip(' .,;')
 
 
@@ -147,7 +147,7 @@ def _unescape_description_html(kml_text: str) -> str:
                    .replace('&#39;', "'")
                    .replace('&amp;', '&'))
         return f'<description><![CDATA[{decoded}]]></description>'
-    return re.sub(r'<description>([^<]*?(?:&lt;|&gt;)[^<]*?)</description>', replace, kml_text, flags=re.DOTALL)
+    return re.sub(r'<description>([^<]{0,2000}?(?:&lt;|&gt;)[^<]{0,2000}?)</description>', replace, kml_text, flags=re.DOTALL)
 
 
 def export_route_as_kml(route, base_url: str | None = None) -> str:

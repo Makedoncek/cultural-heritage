@@ -404,15 +404,7 @@ class ObjectWriteSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
     def validate(self, data):
-        latitude = data.get('latitude')
-        longitude = data.get('longitude')
-
-        if self.instance:
-            if latitude is None:
-                latitude = self.instance.latitude
-            if longitude is None:
-                longitude = self.instance.longitude
-
+        latitude, longitude = self._resolve_coordinates(data)
         if latitude is not None and longitude is not None:
             try:
                 validate_coordinates_within_ukraine(latitude, longitude)
@@ -420,28 +412,39 @@ class ObjectWriteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     'coordinates': e.message
                 })
+        self._validate_event_fields(data)
+        return data
 
+    def _resolve_coordinates(self, data):
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+        if self.instance:
+            if latitude is None:
+                latitude = self.instance.latitude
+            if longitude is None:
+                longitude = self.instance.longitude
+        return latitude, longitude
+
+    def _validate_event_fields(self, data):
         object_type = data.get('object_type', getattr(self.instance, 'object_type', 'permanent'))
-        if object_type == CulturalObject.ObjectType.EVENT:
-            start = data.get('event_start_date')
-            end = data.get('event_end_date')
-            if not start or not end:
-                raise serializers.ValidationError({
-                    'event_start_date': 'Для подій потрібно вказати дату початку та завершення.'
-                })
-            if end < start:
-                raise serializers.ValidationError({
-                    'event_end_date': 'Дата завершення не може бути раніше дати початку.'
-                })
-            if not self.instance and end < timezone.now():
-                raise serializers.ValidationError({
-                    'event_end_date': 'Подія вже завершилась.'
-                })
-        else:
+        if object_type != CulturalObject.ObjectType.EVENT:
             data['event_start_date'] = None
             data['event_end_date'] = None
-
-        return data
+            return
+        start = data.get('event_start_date')
+        end = data.get('event_end_date')
+        if not start or not end:
+            raise serializers.ValidationError({
+                'event_start_date': 'Для подій потрібно вказати дату початку та завершення.'
+            })
+        if end < start:
+            raise serializers.ValidationError({
+                'event_end_date': 'Дата завершення не може бути раніше дати початку.'
+            })
+        if not self.instance and end < timezone.now():
+            raise serializers.ValidationError({
+                'event_end_date': 'Подія вже завершилась.'
+            })
 
 
 class UploadedByNestedSerializer(serializers.Serializer):
