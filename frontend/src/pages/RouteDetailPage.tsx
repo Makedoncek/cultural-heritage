@@ -50,6 +50,18 @@ function FitToStops({coords}: {coords: [number, number][]}) {
     return null;
 }
 
+const downloadIcon = (
+    <svg
+        xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+        className="shrink-0"
+    >
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" x2="12" y1="15" y2="3"/>
+    </svg>
+);
+
 export default function RouteDetailPage() {
     const {id} = useParams<{id: string}>();
     const routeId = id ? Number(id) : null;
@@ -414,24 +426,24 @@ export default function RouteDetailPage() {
                     )}
                     <a
                         href={routesService.exportUrl(route.id, 'gpx')}
-                        className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-stone-800 text-gray-700 dark:text-stone-200 border border-gray-300 dark:border-stone-600 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-700"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-50 dark:bg-stone-800 text-gray-700 dark:text-stone-200 border border-gray-300 dark:border-stone-600 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-700"
                         title={t('routes.detail.gpxTitle')}
                     >
-                        {t('routes.detail.gpxBtn')}
+                        {downloadIcon}{t('routes.detail.gpxBtn')}
                     </a>
                     <a
                         href={routesService.exportUrl(route.id, 'kml')}
-                        className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-stone-800 text-gray-700 dark:text-stone-200 border border-gray-300 dark:border-stone-600 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-700"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-50 dark:bg-stone-800 text-gray-700 dark:text-stone-200 border border-gray-300 dark:border-stone-600 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-700"
                         title={t('routes.detail.kmlTitle')}
                     >
-                        {t('routes.detail.kmlBtn')}
+                        {downloadIcon}{t('routes.detail.kmlBtn')}
                     </a>
                     <a
                         href={routesService.exportUrl(route.id, 'kmz')}
-                        className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-stone-800 text-gray-700 dark:text-stone-200 border border-gray-300 dark:border-stone-600 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-700"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-50 dark:bg-stone-800 text-gray-700 dark:text-stone-200 border border-gray-300 dark:border-stone-600 rounded-lg hover:bg-gray-100 dark:hover:bg-stone-700"
                         title={t('routes.detail.kmzTitle')}
                     >
-                        {t('routes.detail.kmzBtn')}
+                        {downloadIcon}{t('routes.detail.kmzBtn')}
                     </a>
                     {isAuthenticated && !isOwner && (
                         <ReportInaccuracyButton targetType="route" targetId={route.id} targetTitle={route.title}/>

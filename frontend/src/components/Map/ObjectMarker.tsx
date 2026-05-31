@@ -101,8 +101,7 @@ export default function ObjectMarker({object}: Readonly<ObjectMarkerProps>) {
                         alt={object.title}
                         className="w-full h-24 rounded mb-2"
                     />
-                </div>
-                <h3 className="font-bold text-sm mb-1">{object.title}</h3>
+                    <h3 className="font-bold text-sm mb-1">{object.title}</h3>
                 {isPending && (
                     <span className="inline-block px-1.5 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs mb-2">
                         {t('object.moderationStatus.pending')}
@@ -128,12 +127,13 @@ export default function ObjectMarker({object}: Readonly<ObjectMarkerProps>) {
                         ))}
                     </div>
                 )}
-                <button
-                    onClick={() => navigate(`/objects/${object.id}`)}
-                    className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
-                >
-                    {t('home.details')}
-                </button>
+                    <button
+                        onClick={() => navigate(`/objects/${object.id}`)}
+                        className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                    >
+                        {t('home.details')}
+                    </button>
+                </div>
             </Popup>
         </Marker>
     );
