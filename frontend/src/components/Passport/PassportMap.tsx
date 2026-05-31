@@ -134,7 +134,7 @@ export default function PassportMap({visits, planned, titleKey = 'passport.mapTi
             ) : (
                 <>
                     <div className="relative h-80 rounded-lg overflow-hidden border border-gray-200 dark:border-stone-700">
-                        <MapContainer center={center} zoom={zoom} scrollWheelZoom className="h-full w-full">
+                        <MapContainer center={center} zoom={zoom} maxZoom={19} scrollWheelZoom className="h-full w-full">
                             <ThemedTileLayer/>
                             <FitToPoints points={points}/>
                             {renderMarkers()}
@@ -176,7 +176,7 @@ export default function PassportMap({visits, planned, titleKey = 'passport.mapTi
                                 </button>
                             </div>
                             <div className="flex-1 relative">
-                                <MapContainer center={center} zoom={zoom} scrollWheelZoom className="h-full w-full">
+                                <MapContainer center={center} zoom={zoom} maxZoom={19} scrollWheelZoom className="h-full w-full">
                                     <ThemedTileLayer/>
                                     <FitToPoints points={points}/>
                                     {renderMarkers(() => setFullscreen(false))}

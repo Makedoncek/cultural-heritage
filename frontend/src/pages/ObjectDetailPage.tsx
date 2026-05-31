@@ -375,6 +375,7 @@ export default function ObjectDetailPage() {
                     <MapContainer
                         center={[latitude, longitude]}
                         zoom={13}
+                        maxZoom={19}
                         scrollWheelZoom={true}
                         dragging={true}
                         zoomControl={true}

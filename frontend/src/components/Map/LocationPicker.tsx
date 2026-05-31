@@ -118,6 +118,7 @@ export default function LocationPicker({value, onChange, error}: Readonly<Locati
                     center={value ? [value.latitude, value.longitude] : [49, 32]}
                     zoom={value ? 10 : 6}
                     minZoom={6}
+                    maxZoom={19}
                     maxBounds={UKRAINE_BOUNDS}
                     maxBoundsViscosity={1}
                     scrollWheelZoom={true}
@@ -170,6 +171,7 @@ export default function LocationPicker({value, onChange, error}: Readonly<Locati
                             center={value ? [value.latitude, value.longitude] : [49, 32]}
                             zoom={value ? 12 : 6}
                             minZoom={6}
+                            maxZoom={19}
                             maxBounds={UKRAINE_BOUNDS}
                             maxBoundsViscosity={1}
                             scrollWheelZoom={true}

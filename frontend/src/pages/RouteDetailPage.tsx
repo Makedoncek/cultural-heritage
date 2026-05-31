@@ -544,7 +544,7 @@ export default function RouteDetailPage() {
                 {/* Map */}
                 {coords.length > 0 && (
                     <div className="relative h-80 rounded-lg overflow-hidden border border-gray-200 dark:border-stone-700 mb-4">
-                        <MapContainer center={coords[0]} zoom={10} scrollWheelZoom className="h-full w-full">
+                        <MapContainer center={coords[0]} zoom={10} maxZoom={19} scrollWheelZoom className="h-full w-full">
                             <ThemedTileLayer/>
                             <FitToStops coords={coords}/>
                             {realRoadCoords ? (
@@ -599,7 +599,7 @@ export default function RouteDetailPage() {
                             </button>
                         </div>
                         <div className="flex-1">
-                            <MapContainer center={coords[0]} zoom={10} scrollWheelZoom className="h-full w-full">
+                            <MapContainer center={coords[0]} zoom={10} maxZoom={19} scrollWheelZoom className="h-full w-full">
                                 <ThemedTileLayer/>
                                 <FitToStops coords={coords}/>
                                 {coords.length >= 2 && (

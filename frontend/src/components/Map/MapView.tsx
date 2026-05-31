@@ -36,6 +36,7 @@ export default function MapView({objects, flyTo = null}: Readonly<MapViewProps>)
             center={[49, 32]}
             zoom={7}
             minZoom={6}
+            maxZoom={19}
             maxBounds={UKRAINE_BOUNDS}
             maxBoundsViscosity={1}
             scrollWheelZoom={true}

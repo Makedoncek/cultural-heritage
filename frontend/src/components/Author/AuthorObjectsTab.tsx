@@ -27,6 +27,7 @@ export default function AuthorObjectsTab({objects, isAuthenticated}: Readonly<Pr
                 <MapContainer
                     center={[49, 32]}
                     zoom={6}
+                    maxZoom={19}
                     scrollWheelZoom={true}
                     className="h-full w-full"
                 >
