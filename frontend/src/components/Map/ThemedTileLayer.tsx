@@ -25,11 +25,18 @@ const DARK_ATTR = MAPTILER_KEY
 export default function ThemedTileLayer() {
     const {theme} = useTheme();
     const isDark = theme === 'dark';
+    // MapTiler serves 512px raster tiles; OSM and the CartoDB fallback serve 256px.
+    // Declaring tileSize/zoomOffset for MapTiler keeps the dark layer's scale and
+    // maximum zoom identical to the light layer instead of rendering one level closer.
+    const isMapTiler = isDark && !!MAPTILER_KEY;
     return (
         <TileLayer
             key={theme}
             attribution={isDark ? DARK_ATTR : LIGHT_ATTR}
             url={isDark ? DARK_URL : LIGHT_URL}
+            maxZoom={19}
+            tileSize={isMapTiler ? 512 : 256}
+            zoomOffset={isMapTiler ? -1 : 0}
         />
     );
 }
