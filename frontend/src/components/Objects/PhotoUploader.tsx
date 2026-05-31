@@ -74,7 +74,7 @@ export default function PhotoUploader({photos, onChange, maxCount, label}: Reado
         }
 
         const candidates = accepted.slice(0, allowed);
-        const checks = await Promise.all(candidates.map(async (f) => {
+        const checks = await Promise.all(candidates.map(async (f): Promise<PendingPhoto | null> => {
             if (f.size > MAX_SIZE_MB * 1024 * 1024) {
                 errors.push(t('photo.fileTooLarge', {name: f.name, size: MAX_SIZE_MB}));
                 return null;
