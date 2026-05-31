@@ -229,3 +229,23 @@ msgstr "Listen"
 
 msgid "Запис"
 msgstr "Recording"
+
+# objects/models.py — CulturalObject.Status
+msgid "На модерації"
+msgstr "Pending Review"
+
+msgid "Затверджено"
+msgstr "Approved"
+
+msgid "Архівовано"
+msgstr "Archived"
+
+# objects/models.py — ObjectPhoto.Status
+msgid "Опубліковано"
+msgstr "Published"
+
+msgid "Відхилено"
+msgstr "Rejected"
+
+msgid "В архіві"
+msgstr "Archived"

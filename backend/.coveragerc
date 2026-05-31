@@ -1,0 +1,17 @@
+[run]
+source = objects
+omit =
+    */migrations/*
+    */tests/*
+    manage.py
+    objects/management/commands/seed_data.py
+    objects/management/commands/seed_events.py
+    objects/management/commands/seed_routes.py
+    objects/management/commands/add_osavenko_objects.py
+    objects/management/commands/cloudinary_usage.py
+    objects/management/commands/compile_translations.py
+    objects/services/ors.py
+
+[report]
+show_missing = True
+precision = 0

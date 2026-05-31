@@ -102,9 +102,9 @@ class CulturalObject(models.Model):
         EVENT = 'event', 'Подія'
 
     class Status(models.TextChoices):
-        PENDING = 'pending', 'Pending Review'
-        APPROVED = 'approved', 'Approved'
-        ARCHIVED = 'archived', 'Archived'
+        PENDING = 'pending', _('На модерації')
+        APPROVED = 'approved', _('Затверджено')
+        ARCHIVED = 'archived', _('Архівовано')
 
     title = models.CharField(
         max_length=200,
@@ -315,10 +315,10 @@ class ObjectPhoto(models.Model):
     """Фото культурного об'єкта з модерацією і Cloudinary-зберіганням."""
 
     class Status(models.TextChoices):
-        PENDING = 'pending', 'Pending Review'
-        APPROVED = 'approved', 'Approved'
-        REJECTED = 'rejected', 'Rejected'
-        ARCHIVED = 'archived', 'Archived'
+        PENDING = 'pending', _('На модерації')
+        APPROVED = 'approved', _('Опубліковано')
+        REJECTED = 'rejected', _('Відхилено')
+        ARCHIVED = 'archived', _('В архіві')
 
     cultural_object = models.ForeignKey(
         CulturalObject,
