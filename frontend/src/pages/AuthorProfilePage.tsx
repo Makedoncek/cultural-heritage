@@ -137,7 +137,7 @@ export default function AuthorProfilePage() {
 
                 {tab === 'objects'
                     ? <AuthorObjectsTab objects={objects} isAuthenticated={isAuthenticated}/>
-                    : <AuthorVisitsTab username={username} onCountChange={onVisitsCount}/>}
+                    : <AuthorVisitsTab username={profile.username} onCountChange={onVisitsCount}/>}
             </div>
         </div>
     );
