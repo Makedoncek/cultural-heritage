@@ -54,13 +54,29 @@ export default function FavoriteObjectsTab({onCountChange}: Readonly<Props>) {
                 >
                     <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-gray-900 dark:text-stone-100 font-medium">{obj.title}</span>
+                            <Link
+                                to={`/objects/${obj.id}`}
+                                className="text-gray-900 dark:text-stone-100 font-medium hover:text-amber-600 dark:hover:text-amber-400 hover:underline"
+                            >
+                                {obj.title}
+                            </Link>
                             {obj.object_type === 'event' && (
                                 <span className="px-2 py-0.5 text-xs font-medium rounded bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300">
                                     {t('object.objectType.event')}
                                 </span>
                             )}
                         </div>
+                        {obj.author_name && (
+                            <Link
+                                to={`/authors/${obj.author_name}`}
+                                className="inline-flex items-center gap-1 mt-0.5 text-sm font-semibold text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 hover:underline truncate max-w-full"
+                            >
+                                <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4.4 0-8 2.7-8 6v1h16v-1c0-3.3-3.6-6-8-6z"/>
+                                </svg>
+                                <span className="truncate">@{obj.author_name}</span>
+                            </Link>
+                        )}
                         <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-stone-400 mt-1">
                             {obj.tags.length > 0 && (
                                 <span>{obj.tags.map(tg => tg.icon).join(' ')}</span>

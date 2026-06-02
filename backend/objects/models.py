@@ -420,8 +420,8 @@ class ObjectAudio(models.Model):
             models.Index(fields=['status', '-created_at']),
             models.Index(fields=['cultural_object', 'language', 'status']),
         ]
-        verbose_name = _("Аудіо-нарратив")
-        verbose_name_plural = _("Аудіо-наративи")
+        verbose_name = _("Аудіонаратив")
+        verbose_name_plural = _("Аудіонаративи")
 
     def __str__(self):
         return f'Audio {self.id} ({self.language}, {self.status}) for {self.cultural_object.title}'

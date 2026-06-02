@@ -116,7 +116,7 @@ export default function AddToRouteButton({objectId}: Readonly<Props>) {
                             onClick={handleCreateNew}
                             className="w-full text-left px-3 py-2 text-sm text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-stone-800 cursor-pointer"
                         >
-                            + {t('routes.createButton')}
+                            {t('routes.createButton')}
                         </button>
                     </div>
                 </div>

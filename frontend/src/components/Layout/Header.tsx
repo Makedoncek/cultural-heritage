@@ -7,10 +7,18 @@ import ThemeSwitcher from './ThemeSwitcher';
 
 const linkClass = ({isActive}: { isActive: boolean }) =>
     isActive
-        ? 'text-amber-700 dark:text-amber-400 font-semibold'
-        : 'text-gray-700 dark:text-stone-300 hover:text-amber-700 dark:hover:text-amber-400';
+        ? 'whitespace-nowrap text-amber-700 dark:text-amber-400 font-semibold'
+        : 'whitespace-nowrap text-gray-700 dark:text-stone-300 hover:text-amber-700 dark:hover:text-amber-400';
 
 const ADMIN_URL = (import.meta.env.VITE_API_URL as string || 'http://localhost:8000/api').replace(/\/api\/?$/, '/admin/');
+
+const AdminIcon = () => (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6l7-3z"/>
+        <path d="M9.5 12l1.8 1.8 3.2-3.6"/>
+    </svg>
+);
 
 export default function Header() {
     const {user, isAuthenticated, loading, logout} = useAuth();
@@ -20,7 +28,7 @@ export default function Header() {
     return (
         <header className="bg-white dark:bg-stone-900 border-b border-gray-200 dark:border-stone-700 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
-                <Link to="/" className="flex items-center gap-2">
+                <Link to="/" className="flex items-center gap-2 shrink-0 mr-6 lg:mr-10">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24"
                          fill="currentColor">
                         <path fillRule="evenodd"
@@ -32,7 +40,7 @@ export default function Header() {
 
                 {!loading && (
                     <>
-                        <nav className="hidden md:flex items-center gap-4">
+                        <nav className="hidden md:flex items-center gap-3 lg:gap-4">
                             {isAuthenticated ? (
                                 <>
                                     <NavLink to="/" end className={linkClass}>{t('nav.map')}</NavLink>
@@ -47,10 +55,11 @@ export default function Header() {
                                             href={ADMIN_URL}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-purple-700 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 font-medium"
+                                            className="inline-flex items-center gap-1.5 rounded-full border border-amber-400 dark:border-amber-500/50 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 text-amber-800 dark:text-amber-300 font-semibold hover:bg-amber-100 hover:border-amber-500 dark:hover:bg-amber-500/20 transition-colors"
                                             title="Django admin"
                                         >
-                                            🛠 {t('nav.admin')}
+                                            <AdminIcon/>
+                                            {t('nav.admin')}
                                         </a>
                                     )}
                                     <Link to={`/authors/${user?.username}`} className="text-amber-800 dark:text-amber-300 font-medium hover:text-amber-600 dark:hover:text-amber-200">{user?.username}</Link>
@@ -120,10 +129,11 @@ export default function Header() {
                                     href={ADMIN_URL}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-purple-700 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 font-medium"
+                                    className="inline-flex items-center gap-1.5 self-start rounded-full border border-amber-400 dark:border-amber-500/50 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 text-amber-800 dark:text-amber-300 font-semibold hover:bg-amber-100 hover:border-amber-500 dark:hover:bg-amber-500/20 transition-colors"
                                     onClick={() => setMenuOpen(false)}
                                 >
-                                    🛠 {t('nav.admin')}
+                                    <AdminIcon/>
+                                    {t('nav.admin')}
                                 </a>
                             )}
                             <div className="border-t border-gray-100 dark:border-stone-700 pt-3 flex items-center justify-between gap-2">

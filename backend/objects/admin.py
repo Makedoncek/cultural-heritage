@@ -6,19 +6,27 @@ from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 from .models import (
     Tag, CulturalObject, Favorite, FavoriteAuthor, ObjectPhoto, ObjectAudio,
     InaccuracyReport, Visit, PlannedVisit, Route, RouteStop,
     CulturalObjectTranslation, RouteTranslation, TagTranslation, TranslationStatus,
 )
 
-MODERATION_SECTION = 'Модерація'
+MODERATION_SECTION = _('Модерація')
 LINK_HTML = '<a href="{}">{}</a>'
 STATUS_BADGE_HTML = (
     '<span style="background:{};color:#fff;padding:3px 10px;'
     'border-radius:12px;font-size:11px;font-weight:600;">{}</span>'
 )
+TARGET_TYPE_LABELS = {
+    'object': _("об'єкт"),
+    'route': _('маршрут'),
+    'photo': _('фото'),
+    'audio': _('аудіо'),
+    'object_translation': _("переклад об'єкта"),
+    'route_translation': _('переклад маршруту'),
+}
 
 
 class TagTranslationInline(admin.TabularInline):
@@ -56,7 +64,7 @@ class ObjectPhotoInline(SortableTabularInline):
         url = reverse('admin:objects_objectphoto_change', args=[obj.id])
         return format_html(
             '<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">'
-            '<a href="{0}" title="Відкрити сторінку фото" '
+            '<a href="{0}" title="{2}" '
             'style="display:inline-block;border-radius:6px;overflow:hidden;'
             'transition:transform 0.15s, box-shadow 0.15s;border:2px solid transparent;" '
             'onmouseover="this.style.transform=\'scale(1.05)\';this.style.borderColor=\'#79aec8\';this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.3)\';" '
@@ -66,9 +74,9 @@ class ObjectPhotoInline(SortableTabularInline):
             '<a href="{0}" '
             'style="font-size:13px;padding:4px 10px;background:#417690;color:#fff;'
             'border-radius:4px;text-decoration:none;font-weight:500;">'
-            'Редагувати фото</a>'
+            '{3}</a>'
             '</div>',
-            url, obj.thumbnail_url,
+            url, obj.thumbnail_url, _('Відкрити сторінку фото'), _('Редагувати фото'),
         )
 
 
@@ -126,24 +134,24 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
     ]
 
     fieldsets = (
-        ('Основна інформація', {
+        (_('Основна інформація'), {
             'fields': ('title', 'description', 'status')
         }),
-        ('Подія', {
+        (_('Подія'), {
             'fields': ('object_type', 'event_start_date', 'event_end_date'),
             'classes': ('collapse',),
         }),
-        ('Геолокація', {
+        (_('Геолокація'), {
             'fields': ('latitude', 'longitude', 'map_link', 'map_preview')
         }),
-        ('Класифікація', {
+        (_('Класифікація'), {
             'fields': ('tags',)
         }),
-        ('Зовнішні посилання', {
+        (_('Зовнішні посилання'), {
             'fields': ('wikipedia_url', 'official_website', 'google_maps_url'),
             'classes': ('collapse',)
         }),
-        ('Метадані', {
+        (_('Метадані'), {
             'fields': ('author', 'created_at', 'updated_at', 'archived_at'),
             'classes': ('collapse',)
         }),
@@ -152,30 +160,30 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
     filter_horizontal = ['tags']
     actions = ['approve_objects', 'archive_objects', 'restore_objects']
 
-    @admin.action(description="Затвердити обрані")
+    @admin.action(description=_('Затвердити обрані'))
     def approve_objects(self, request, queryset):
         count = 0
         for obj in queryset.filter(status=CulturalObject.Status.PENDING).select_related('author'):
             obj.status = CulturalObject.Status.APPROVED
             obj.save(update_fields=['status'])
             count += 1
-        self.message_user(request, f'Затверджено {count} об\'єкт(ів)')
+        self.message_user(request, gettext("Затверджено %(count)d об'єкт(ів)") % {'count': count})
 
-    @admin.action(description="Архівувати обрані")
+    @admin.action(description=_('Архівувати обрані'))
     def archive_objects(self, request, queryset):
         count = 0
         for obj in queryset.exclude(status=CulturalObject.Status.ARCHIVED):
             obj.archive()
             count += 1
-        self.message_user(request, f"Архівовано {count} об'єкт(ів)")
+        self.message_user(request, gettext("Архівовано %(count)d об'єкт(ів)") % {'count': count})
 
-    @admin.action(description="Відновити archived")
+    @admin.action(description=_('Відновити з архіву'))
     def restore_objects(self, request, queryset):
         count = 0
         for obj in queryset.filter(status=CulturalObject.Status.ARCHIVED):
             obj.restore()
             count += 1
-        self.message_user(request, f"Відновлено {count} об'єкт(ів)")
+        self.message_user(request, gettext("Відновлено %(count)d об'єкт(ів)") % {'count': count})
 
     def get_queryset(self, request):
         from django.db.models import Count, Q
@@ -187,7 +195,7 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
             ),
         )
 
-    @admin.display(description='⚠ Reports', ordering='_pending_reports')
+    @admin.display(description=_('⚠ Репорти'), ordering='_pending_reports')
     def pending_reports_badge(self, obj):
         # `_pending_reports` annotation may be absent when SortableAdminBase
         # rebuilds the queryset (e.g. drag-to-reorder); fall back to a direct count.
@@ -205,7 +213,7 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
     def map_link(self, obj):
         if obj.latitude and obj.longitude:
             url = f'https://www.google.com/maps?q={obj.latitude},{obj.longitude}'
-            return format_html('<a href="{}" target="_blank">🗺️ Відкрити в Google Maps</a>', url)
+            return format_html('<a href="{}" target="_blank">{}</a>', url, _('🗺️ Відкрити в Google Maps'))
         return '-'
 
     @admin.display(description=_('Карта'))
@@ -226,7 +234,7 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
             f'" style="position:absolute;top:12px;right:8px;z-index:999;'
             f'background:#fff;border:2px solid rgba(0,0,0,0.2);border-radius:4px;'
             f'padding:4px 8px;cursor:pointer;font-size:16px;font-weight:bold;" '
-            f'title="На весь екран">'
+            f'title="{gettext("На весь екран")}">'
             f'<svg width="14" height="14" viewBox="0 0 14 14" fill="none" '
             f'stroke="black" stroke-width="2">'
             f'<path d="M1 5V1h4M9 1h4v4M13 9v4h-4M5 13H1V9"/>'
@@ -329,20 +337,20 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
     actions = ['approve_photos', 'reject_photos']
 
     fieldsets = (
-        ('Фото', {
+        (_('Фото'), {
             'fields': ('large_preview', 'caption', 'order', 'is_author_photo'),
         }),
         (MODERATION_SECTION, {
             'fields': ('status', 'moderation_note', 'moderated_at', 'rejected_cleanup_at'),
         }),
-        ('Об\'єкт і автор', {
+        (_("Об'єкт і автор"), {
             'fields': ('cultural_object', 'uploaded_by'),
         }),
         ('Cloudinary', {
             'fields': ('cloudinary_public_id', 'image_url', 'thumbnail_url'),
             'classes': ('collapse',),
         }),
-        ('Дати', {
+        (_('Дати'), {
             'fields': ('created_at',),
             'classes': ('collapse',),
         }),
@@ -374,16 +382,16 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
             color, obj.get_status_display(),
         )
 
-    @admin.action(description='Затвердити обрані фото')
+    @admin.action(description=_('Затвердити обрані фото'))
     def approve_photos(self, request, queryset):
         count = queryset.exclude(status=ObjectPhoto.Status.APPROVED).update(
             status=ObjectPhoto.Status.APPROVED,
             moderated_at=timezone.now(),
             rejected_cleanup_at=None,
         )
-        self.message_user(request, f'Затверджено {count} фото.')
+        self.message_user(request, gettext('Затверджено %(count)d фото.') % {'count': count})
 
-    @admin.action(description='Відхилити обрані фото')
+    @admin.action(description=_('Відхилити обрані фото'))
     def reject_photos(self, request, queryset):
         cleanup_at = timezone.now() + timedelta(days=settings.PHOTO_REJECTED_RETENTION_DAYS)
         count = queryset.exclude(status=ObjectPhoto.Status.REJECTED).update(
@@ -391,7 +399,7 @@ class ObjectPhotoAdmin(admin.ModelAdmin):
             moderated_at=timezone.now(),
             rejected_cleanup_at=cleanup_at,
         )
-        self.message_user(request, f'Відхилено {count} фото. Видалення з Cloudinary через {settings.PHOTO_REJECTED_RETENTION_DAYS} днів.')
+        self.message_user(request, gettext('Відхилено %(count)d фото. Видалення з Cloudinary через %(days)d днів.') % {'count': count, 'days': settings.PHOTO_REJECTED_RETENTION_DAYS})
 
 
 @admin.register(InaccuracyReport)
@@ -402,10 +410,10 @@ class InaccuracyReportAdmin(admin.ModelAdmin):
     search_fields = ['reporter__username', 'note']
     readonly_fields = ['reporter', 'target_link_field', 'content_owner', 'reason_type', 'note', 'created_at', 'resolved_at', 'resolved_by']
     fieldsets = (
-        ('Report', {
+        (_('Репорт'), {
             'fields': ('target_link_field', 'content_owner', 'reporter', 'reason_type', 'note', 'created_at'),
         }),
-        ('Moderation', {
+        (MODERATION_SECTION, {
             'fields': ('status', 'admin_response', 'resolved_by', 'resolved_at'),
         }),
     )
@@ -426,7 +434,7 @@ class InaccuracyReportAdmin(admin.ModelAdmin):
         from .report_targets import describe_target
         d = describe_target(obj.target)
         kind = d['target_type'] or (obj.content_type.model if obj.content_type else '?')
-        return f"[{kind}] {d['target_title']}"
+        return f"[{TARGET_TYPE_LABELS.get(kind, kind)}] {d['target_title']}"
 
     @admin.display(description=_('Дія'))
     def target_edit_link(self, obj):
@@ -434,7 +442,7 @@ class InaccuracyReportAdmin(admin.ModelAdmin):
         if not url:
             return '—'
         return format_html(
-            '<a class="button" href="{}" style="white-space:nowrap;">Відкрити ціль</a>', url,
+            '<a class="button" href="{}" style="white-space:nowrap;">{}</a>', url, _('Відкрити ціль'),
         )
 
     @admin.display(description=_('Ціль'))
@@ -444,9 +452,10 @@ class InaccuracyReportAdmin(admin.ModelAdmin):
         url = self._target_admin_url(obj)
         if not url:
             return d['target_title']
+        kind = d['target_type'] or '?'
         return format_html(
-            '[{}] {} &nbsp; <a class="button" href="{}" target="_blank" style="white-space:nowrap;">Відкрити</a>',
-            d['target_type'] or '?', d['target_title'], url,
+            '[{}] {} &nbsp; <a class="button" href="{}" target="_blank" style="white-space:nowrap;">{}</a>',
+            TARGET_TYPE_LABELS.get(kind, kind), d['target_title'], url, _('Відкрити'),
         )
 
     def save_model(self, request, obj, form, change):
@@ -465,7 +474,7 @@ class InaccuracyReportAdmin(admin.ModelAdmin):
         if change and prev_status == InaccuracyReport.Status.PENDING and obj.status != InaccuracyReport.Status.PENDING:
             send_inaccuracy_outcome_email.delay(obj.pk)
 
-    @admin.action(description='Вирішити репорт (resolved)')
+    @admin.action(description=_('Вирішити репорт'))
     def resolve_reports(self, request, queryset):
         from .email import send_inaccuracy_outcome_email
         pending = list(queryset.filter(status=InaccuracyReport.Status.PENDING).values_list('pk', flat=True))
@@ -476,9 +485,9 @@ class InaccuracyReportAdmin(admin.ModelAdmin):
         )
         for pk in pending:
             send_inaccuracy_outcome_email.delay(pk)
-        self.message_user(request, f'Вирішено {len(pending)} репортів.')
+        self.message_user(request, gettext('Вирішено %(count)d репортів.') % {'count': len(pending)})
 
-    @admin.action(description='Відхилити репорт (dismissed)')
+    @admin.action(description=_('Відхилити репорт'))
     def dismiss_reports(self, request, queryset):
         from .email import send_inaccuracy_outcome_email
         pending = list(queryset.filter(status=InaccuracyReport.Status.PENDING).values_list('pk', flat=True))
@@ -489,7 +498,7 @@ class InaccuracyReportAdmin(admin.ModelAdmin):
         )
         for pk in pending:
             send_inaccuracy_outcome_email.delay(pk)
-        self.message_user(request, f'Відхилено {len(pending)} репортів.')
+        self.message_user(request, gettext('Відхилено %(count)d репортів.') % {'count': len(pending)})
 
 
 class RouteStopInline(SortableTabularInline):
@@ -516,25 +525,25 @@ class RouteAdmin(SortableAdminBase, admin.ModelAdmin):
     actions = ['approve_routes', 'archive_routes']
 
     fieldsets = (
-        ('Основна інформація', {'fields': ('title', 'description', 'visibility', 'status')}),
-        ('Метадані', {'fields': ('author', 'tags', 'is_featured',
+        (_('Основна інформація'), {'fields': ('title', 'description', 'visibility', 'status')}),
+        (_('Метадані'), {'fields': ('author', 'tags', 'is_featured',
                                   'estimated_duration_minutes', 'copied_from')}),
-        ('Дати', {'fields': ('created_at', 'updated_at')}),
+        (_('Дати'), {'fields': ('created_at', 'updated_at')}),
     )
 
     @admin.display(description=_('Зупинок'))
     def stops_count(self, obj):
         return obj.stops.count()
 
-    @admin.action(description='Затвердити обрані маршрути')
+    @admin.action(description=_('Затвердити обрані маршрути'))
     def approve_routes(self, request, queryset):
         n = queryset.exclude(status=Route.Status.APPROVED).update(status=Route.Status.APPROVED)
-        self.message_user(request, f'Затверджено {n} маршрут(ів).')
+        self.message_user(request, gettext('Затверджено %(count)d маршрут(ів).') % {'count': n})
 
-    @admin.action(description='Архівувати обрані маршрути')
+    @admin.action(description=_('Архівувати обрані маршрути'))
     def archive_routes(self, request, queryset):
         n = queryset.exclude(status=Route.Status.ARCHIVED).update(status=Route.Status.ARCHIVED)
-        self.message_user(request, f'Архівовано {n} маршрут(ів).')
+        self.message_user(request, gettext('Архівовано %(count)d маршрут(ів).') % {'count': n})
 
 
 @admin.register(ObjectAudio)
@@ -550,21 +559,21 @@ class ObjectAudioAdmin(admin.ModelAdmin):
     actions = ['approve_audios', 'reject_audios']
 
     fieldsets = (
-        ('Аудіо', {
+        (_('Аудіо'), {
             'fields': ('audio_player', 'title', 'language', 'narrator_name',
                        'duration_seconds', 'plays_count'),
         }),
         (MODERATION_SECTION, {
             'fields': ('status', 'moderation_note', 'moderated_at'),
         }),
-        ('Об\'єкт і автор', {
+        (_("Об'єкт і автор"), {
             'fields': ('cultural_object', 'uploaded_by', 'copyright_confirmed'),
         }),
         ('Cloudinary', {
             'fields': ('cloudinary_public_id', 'cloudinary_url'),
             'classes': ('collapse',),
         }),
-        ('Дати', {
+        (_('Дати'), {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',),
         }),
@@ -579,7 +588,7 @@ class ObjectAudioAdmin(admin.ModelAdmin):
             f'style="display:block;width:480px;max-width:100%;height:40px;margin-top:6px;"></audio>'
             f'<a href="{obj.cloudinary_url}" target="_blank" '
             f'style="display:inline-block;margin-top:8px;font-size:15px;font-weight:500;">'
-            f'⬇ Завантажити файл</a>'
+            f'{gettext("⬇ Завантажити файл")}</a>'
         )
 
     @admin.display(description=_('Запис'))
@@ -591,21 +600,21 @@ class ObjectAudioAdmin(admin.ModelAdmin):
             f'<source src="{obj.cloudinary_url}" /></audio>'
         )
 
-    @admin.action(description='Затвердити обрані аудіо')
+    @admin.action(description=_('Затвердити обрані аудіо'))
     def approve_audios(self, request, queryset):
         from django.utils import timezone
         n = queryset.exclude(status=ObjectAudio.Status.APPROVED).update(
             status=ObjectAudio.Status.APPROVED, moderated_at=timezone.now(),
         )
-        self.message_user(request, f'Затверджено {n} аудіо.')
+        self.message_user(request, gettext('Затверджено %(count)d аудіо.') % {'count': n})
 
-    @admin.action(description='Відхилити обрані аудіо')
+    @admin.action(description=_('Відхилити обрані аудіо'))
     def reject_audios(self, request, queryset):
         from django.utils import timezone
         n = queryset.exclude(status=ObjectAudio.Status.REJECTED).update(
             status=ObjectAudio.Status.REJECTED, moderated_at=timezone.now(),
         )
-        self.message_user(request, f'Відхилено {n} аудіо.')
+        self.message_user(request, gettext('Відхилено %(count)d аудіо.') % {'count': n})
 
 
 # --- Translation moderation ---
@@ -667,7 +676,7 @@ class _TranslationAdminMixin:
         from .email import send_translation_outcome_email
         send_translation_outcome_email.delay(self.email_kind, translation.pk)
 
-    @admin.action(description='Затвердити обрані переклади')
+    @admin.action(description=_('Затвердити обрані переклади'))
     def approve_translations(self, request, queryset):
         n = 0
         for translation in queryset.filter(status=TranslationStatus.PENDING):
@@ -676,9 +685,9 @@ class _TranslationAdminMixin:
             translation.save(update_fields=['status', 'updated_at'])
             self._notify(translation)
             n += 1
-        self.message_user(request, f'Затверджено {n} переклад(ів).')
+        self.message_user(request, gettext('Затверджено %(count)d переклад(ів).') % {'count': n})
 
-    @admin.action(description='Відхилити обрані переклади')
+    @admin.action(description=_('Відхилити обрані переклади'))
     def reject_translations(self, request, queryset):
         n = 0
         for translation in queryset.filter(status=TranslationStatus.PENDING):
@@ -686,7 +695,7 @@ class _TranslationAdminMixin:
             translation.save(update_fields=['status', 'updated_at'])
             self._notify(translation)
             n += 1
-        self.message_user(request, f'Відхилено {n} переклад(ів). Додайте reviewer_note у конкретному перекладі, щоб пояснити причину.')
+        self.message_user(request, gettext('Відхилено %(count)d переклад(ів). Додайте нотатку рецензента у конкретному перекладі, щоб пояснити причину.') % {'count': n})
 
     def save_model(self, request, obj, form, change):
         prev_status = (
@@ -720,10 +729,10 @@ class CulturalObjectTranslationAdmin(_TranslationAdminMixin, admin.ModelAdmin):
     readonly_fields = ['submitted_by', 'created_at', 'updated_at']
     actions = ['approve_translations', 'reject_translations']
     fieldsets = (
-        ('Джерело', {'fields': ('cultural_object', 'language', 'submitted_by')}),
-        ('Переклад', {'fields': ('title', 'description')}),
+        (_('Джерело'), {'fields': ('cultural_object', 'language', 'submitted_by')}),
+        (_('Переклад'), {'fields': ('title', 'description')}),
         (MODERATION_SECTION, {'fields': ('status', 'reviewer_note')}),
-        ('Дати', {'fields': ('created_at', 'updated_at'), 'classes': ('collapse',)}),
+        (_('Дати'), {'fields': ('created_at', 'updated_at'), 'classes': ('collapse',)}),
     )
 
     @admin.display(description=_('Культурний об\'єкт'), ordering='cultural_object__title')
@@ -753,10 +762,10 @@ class RouteTranslationAdmin(_TranslationAdminMixin, admin.ModelAdmin):
     readonly_fields = ['submitted_by', 'created_at', 'updated_at']
     actions = ['approve_translations', 'reject_translations']
     fieldsets = (
-        ('Джерело', {'fields': ('route', 'language', 'submitted_by')}),
-        ('Переклад', {'fields': ('title', 'description')}),
+        (_('Джерело'), {'fields': ('route', 'language', 'submitted_by')}),
+        (_('Переклад'), {'fields': ('title', 'description')}),
         (MODERATION_SECTION, {'fields': ('status', 'reviewer_note')}),
-        ('Дати', {'fields': ('created_at', 'updated_at'), 'classes': ('collapse',)}),
+        (_('Дати'), {'fields': ('created_at', 'updated_at'), 'classes': ('collapse',)}),
     )
 
     @admin.display(description=_('Маршрут'), ordering='route__title')

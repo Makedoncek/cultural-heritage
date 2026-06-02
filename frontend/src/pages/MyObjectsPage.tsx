@@ -139,7 +139,7 @@ export default function MyObjectsPage() {
                                         >
                                             {obj.title}
                                         </Link>
-                                        <span className={`px-2.5 py-0.5 text-xs font-medium rounded ${STATUS_COLORS[obj.status]}`}>
+                                        <span className={`px-2.5 py-0.5 text-sm font-medium rounded ${STATUS_COLORS[obj.status]}`}>
                                             {t(`object.moderationStatus.${obj.status}`)}
                                         </span>
                                     </div>

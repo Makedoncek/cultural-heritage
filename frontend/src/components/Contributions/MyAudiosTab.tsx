@@ -146,14 +146,19 @@ export default function MyAudiosTab({status}: Readonly<Props>) {
                                     <div key={a.id}>
                                         {a.status !== 'approved' && (
                                             <div className="mb-1">
-                                                <span className={`px-2 py-0.5 text-xs rounded ${
+                                                <span className={`px-2 py-0.5 text-sm rounded ${
                                                     a.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300'
                                                     : a.status === 'archived' ? 'bg-stone-200 text-stone-700 dark:bg-stone-700 dark:text-stone-200'
                                                     : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'}`}>
                                                     {t(`audio.status.${a.status}`)}
                                                 </span>
                                                 {a.moderation_note && (
-                                                    <span className="ml-2 text-xs text-gray-500 dark:text-stone-400">{a.moderation_note}</span>
+                                                    <p className={`mt-1 px-2.5 py-1.5 text-sm rounded-md border ${
+                                                        a.status === 'rejected'
+                                                            ? 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800/60 dark:text-red-200'
+                                                            : 'bg-gray-50 border-gray-200 text-gray-700 dark:bg-stone-800 dark:border-stone-700 dark:text-stone-200'}`}>
+                                                        {a.moderation_note}
+                                                    </p>
                                                 )}
                                             </div>
                                         )}

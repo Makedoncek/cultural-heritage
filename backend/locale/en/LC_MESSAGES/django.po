@@ -114,10 +114,10 @@ msgstr "Report"
 msgid "Репорти"
 msgstr "Reports"
 
-msgid "Аудіо-нарратив"
+msgid "Аудіонаратив"
 msgstr "Audio narrative"
 
-msgid "Аудіо-наративи"
+msgid "Аудіонаративи"
 msgstr "Audio narratives"
 
 msgid "Маршрут"
@@ -249,3 +249,167 @@ msgstr "Rejected"
 
 msgid "В архіві"
 msgstr "Archived"
+
+# --- admin.py: section headers / fieldsets ---
+msgid "Модерація"
+msgstr "Moderation"
+
+msgid "Основна інформація"
+msgstr "General information"
+
+msgid "Подія"
+msgstr "Event"
+
+msgid "Геолокація"
+msgstr "Geolocation"
+
+msgid "Класифікація"
+msgstr "Classification"
+
+msgid "Зовнішні посилання"
+msgstr "External links"
+
+msgid "Метадані"
+msgstr "Metadata"
+
+msgid "Фото"
+msgstr "Photo"
+
+msgid "Об'єкт і автор"
+msgstr "Object and author"
+
+msgid "Дати"
+msgstr "Dates"
+
+msgid "Аудіо"
+msgstr "Audio"
+
+msgid "Джерело"
+msgstr "Source"
+
+msgid "Переклад"
+msgstr "Translation"
+
+# --- admin.py: actions ---
+msgid "Затвердити обрані"
+msgstr "Approve selected"
+
+msgid "Архівувати обрані"
+msgstr "Archive selected"
+
+msgid "Відновити з архіву"
+msgstr "Restore from archive"
+
+msgid "Затвердити обрані фото"
+msgstr "Approve selected photos"
+
+msgid "Відхилити обрані фото"
+msgstr "Reject selected photos"
+
+msgid "Вирішити репорт"
+msgstr "Resolve report"
+
+msgid "Відхилити репорт"
+msgstr "Dismiss report"
+
+msgid "Затвердити обрані маршрути"
+msgstr "Approve selected routes"
+
+msgid "Архівувати обрані маршрути"
+msgstr "Archive selected routes"
+
+msgid "Затвердити обрані аудіо"
+msgstr "Approve selected audio"
+
+msgid "Відхилити обрані аудіо"
+msgstr "Reject selected audio"
+
+msgid "Затвердити обрані переклади"
+msgstr "Approve selected translations"
+
+msgid "Відхилити обрані переклади"
+msgstr "Reject selected translations"
+
+# --- admin.py: report column + target-type tags ---
+msgid "⚠ Репорти"
+msgstr "⚠ Reports"
+
+msgid "об'єкт"
+msgstr "object"
+
+msgid "маршрут"
+msgstr "route"
+
+msgid "фото"
+msgstr "photo"
+
+msgid "аудіо"
+msgstr "audio"
+
+msgid "переклад об'єкта"
+msgstr "object translation"
+
+msgid "переклад маршруту"
+msgstr "route translation"
+
+# --- admin.py: action result messages ---
+msgid "Затверджено %(count)d об'єкт(ів)"
+msgstr "Approved %(count)d object(s)"
+
+msgid "Архівовано %(count)d об'єкт(ів)"
+msgstr "Archived %(count)d object(s)"
+
+msgid "Відновлено %(count)d об'єкт(ів)"
+msgstr "Restored %(count)d object(s)"
+
+msgid "Затверджено %(count)d фото."
+msgstr "Approved %(count)d photo(s)."
+
+msgid "Відхилено %(count)d фото. Видалення з Cloudinary через %(days)d днів."
+msgstr "Rejected %(count)d photo(s). Deletion from Cloudinary in %(days)d days."
+
+msgid "Вирішено %(count)d репортів."
+msgstr "Resolved %(count)d report(s)."
+
+msgid "Відхилено %(count)d репортів."
+msgstr "Dismissed %(count)d report(s)."
+
+msgid "Затверджено %(count)d маршрут(ів)."
+msgstr "Approved %(count)d route(s)."
+
+msgid "Архівовано %(count)d маршрут(ів)."
+msgstr "Archived %(count)d route(s)."
+
+msgid "Затверджено %(count)d аудіо."
+msgstr "Approved %(count)d audio."
+
+msgid "Відхилено %(count)d аудіо."
+msgstr "Rejected %(count)d audio."
+
+msgid "Затверджено %(count)d переклад(ів)."
+msgstr "Approved %(count)d translation(s)."
+
+msgid "Відхилено %(count)d переклад(ів). Додайте нотатку рецензента у конкретному перекладі, щоб пояснити причину."
+msgstr "Rejected %(count)d translation(s). Add a reviewer note to the specific translation to explain the reason."
+
+# --- admin.py: widget button / link texts ---
+msgid "Відкрити ціль"
+msgstr "Open target"
+
+msgid "Відкрити"
+msgstr "Open"
+
+msgid "Відкрити сторінку фото"
+msgstr "Open photo page"
+
+msgid "Редагувати фото"
+msgstr "Edit photo"
+
+msgid "🗺️ Відкрити в Google Maps"
+msgstr "🗺️ Open in Google Maps"
+
+msgid "На весь екран"
+msgstr "Fullscreen"
+
+msgid "⬇ Завантажити файл"
+msgstr "⬇ Download file"
