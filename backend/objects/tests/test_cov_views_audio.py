@@ -95,7 +95,7 @@ class AudioVisibilityTests(AudioTestBase):
 
 
 class AudioUploadTests(AudioTestBase):
-    @patch('objects.views.cloudinary_audio_service.upload_audio',
+    @patch('objects.views.audio.cloudinary_audio_service.upload_audio',
            return_value=CLOUDINARY_AUDIO_OK)
     def test_upload_success(self, mock_upload):
         self.client.force_authenticate(self.uploader)
@@ -110,7 +110,7 @@ class AudioUploadTests(AudioTestBase):
         self.assertTrue(audio.copyright_confirmed)
         mock_upload.assert_called_once()
 
-    @patch('objects.views.cloudinary_audio_service.upload_audio',
+    @patch('objects.views.audio.cloudinary_audio_service.upload_audio',
            return_value=CLOUDINARY_AUDIO_OK)
     def test_upload_limit_10_active(self, _mock):
         for i in range(10):
@@ -122,7 +122,7 @@ class AudioUploadTests(AudioTestBase):
         }, format='multipart')
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @patch('objects.views.cloudinary_audio_service.upload_audio',
+    @patch('objects.views.audio.cloudinary_audio_service.upload_audio',
            return_value=CLOUDINARY_AUDIO_OK)
     def test_rejected_and_archived_free_the_slot(self, _mock):
         for i in range(5):

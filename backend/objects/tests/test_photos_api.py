@@ -40,7 +40,7 @@ class ObjectPhotoUploadTests(APITestCase):
         )
         self.pending_obj.tags.add(self.tag)
 
-    @patch('objects.views.cloudinary_service.upload_photo', return_value=CLOUDINARY_OK)
+    @patch('objects.views.photos.cloudinary_service.upload_photo', return_value=CLOUDINARY_OK)
     def test_author_uploads_to_own_object_returns_201(self, _mock):
         self.client.force_authenticate(user=self.author)
         resp = self.client.post(
@@ -53,7 +53,7 @@ class ObjectPhotoUploadTests(APITestCase):
         self.assertEqual(resp.data['status'], 'pending')
         self.assertTrue(resp.data['is_author_photo'])
 
-    @patch('objects.views.cloudinary_service.upload_photo', return_value=CLOUDINARY_OK)
+    @patch('objects.views.photos.cloudinary_service.upload_photo', return_value=CLOUDINARY_OK)
     def test_contributor_uploads_to_approved_returns_201(self, _mock):
         self.client.force_authenticate(user=self.contributor)
         resp = self.client.post(
@@ -99,7 +99,7 @@ class ObjectPhotoUploadTests(APITestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @patch('objects.views.cloudinary_service.upload_photo', return_value=CLOUDINARY_OK)
+    @patch('objects.views.photos.cloudinary_service.upload_photo', return_value=CLOUDINARY_OK)
     def test_author_exceeds_5_photo_limit(self, _mock):
         self.client.force_authenticate(user=self.author)
         for i in range(5):
@@ -116,7 +116,7 @@ class ObjectPhotoUploadTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(resp.data.get('code'), 'user_limit_exceeded')
 
-    @patch('objects.views.cloudinary_service.upload_photo', return_value=CLOUDINARY_OK)
+    @patch('objects.views.photos.cloudinary_service.upload_photo', return_value=CLOUDINARY_OK)
     def test_contributor_exceeds_3_photo_limit(self, _mock):
         self.client.force_authenticate(user=self.contributor)
         for i in range(3):
@@ -133,7 +133,7 @@ class ObjectPhotoUploadTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(resp.data.get('code'), 'user_limit_exceeded')
 
-    @patch('objects.views.cloudinary_service.upload_photo', return_value=CLOUDINARY_OK)
+    @patch('objects.views.photos.cloudinary_service.upload_photo', return_value=CLOUDINARY_OK)
     def test_object_full_at_20(self, _mock):
         for i in range(5):
             ObjectPhoto.objects.create(

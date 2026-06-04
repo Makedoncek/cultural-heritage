@@ -8,7 +8,7 @@ from rest_framework.test import APITestCase
 
 from objects.models import CulturalObject, Route, RouteStop, Tag, Visit
 from objects.services.ors import ORSError
-from objects.views import _enrich_ors_error
+from objects.views.routes import _enrich_ors_error
 
 ORS_DIRECTIONS_OK = {'geometry': 'encoded_polyline', 'distance_m': 1234.5, 'duration_s': 890.0}
 
@@ -177,7 +177,7 @@ class RouteStopBranchTests(RouteTestBase):
         route = self._route()
         RouteStop.objects.create(route=route, cultural_object=self.objs[0], order=1)
         self.client.force_authenticate(self.author)
-        with patch('objects.views.MAX_STOPS_PER_ROUTE', 1):
+        with patch('objects.views.routes.MAX_STOPS_PER_ROUTE', 1):
             resp = self.client.post(
                 f'/api/routes/{route.pk}/stops/',
                 {'cultural_object': self.objs[1].pk}, format='json')

@@ -52,38 +52,53 @@ class PhotoUploadErrorTests(APITestCase):
         resp = self.client.post(self.url, {}, format='multipart')
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @patch('objects.views.cloudinary_service.upload_photo', side_effect=Exception('boom'))
+    @patch('objects.views.photos.cloudinary_service.upload_photo', side_effect=Exception('boom'))
     def test_cloudinary_failure_returns_500(self, _mock):
         resp = self.client.post(self.url, {'image': _file()}, format='multipart')
         self.assertEqual(resp.status_code, 500)
         self.assertEqual(ObjectPhoto.objects.count(), 0)
 
-    @patch('objects.views.cloudinary_service.delete_photo')
-    @patch('objects.views.cloudinary_service.upload_photo', return_value=CLOUDINARY_OK)
-    def test_locked_recheck_user_limit_rolls_back_upload(self, _up, mock_delete):
-        # Documents current behavior: the pre-check excludes archived photos but the
-        # row-locked re-check does not — archived photos still occupy limit slots there.
-        for i in range(settings.PHOTO_MAX_PER_AUTHOR):
-            _make_photo(self.obj, self.author, f'arch{i}', status='archived')
+    @patch('objects.views.photos.cloudinary_service.delete_photo')
+    @patch('objects.views.photos.cloudinary_service.upload_photo')
+    def test_locked_recheck_user_limit_rolls_back_upload(self, mock_upload, mock_delete):
+        # Simulate a race: parallel uploads land between the pre-check and the
+        # row-locked re-check (the mock creates them during the Cloudinary call).
+        def upload_during_race(_image):
+            for i in range(settings.PHOTO_MAX_PER_AUTHOR):
+                _make_photo(self.obj, self.author, f'race{i}')
+            return CLOUDINARY_OK
+
+        mock_upload.side_effect = upload_during_race
         resp = self.client.post(self.url, {'image': _file()}, format='multipart')
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(resp.data['code'], 'user_limit_exceeded')
         mock_delete.assert_called_once_with(CLOUDINARY_OK['public_id'])
 
-    @patch('objects.views.cloudinary_service.delete_photo', side_effect=Exception('cleanup fail'))
-    @patch('objects.views.cloudinary_service.upload_photo', return_value=CLOUDINARY_OK)
-    def test_locked_recheck_object_full(self, _up, _del):
-        # Object filled with other users' archived photos: pre-check passes,
+    @patch('objects.views.photos.cloudinary_service.delete_photo', side_effect=Exception('cleanup fail'))
+    @patch('objects.views.photos.cloudinary_service.upload_photo')
+    def test_locked_recheck_object_full(self, mock_upload, _del):
+        # Race fills the object with other users' photos: pre-check passed,
         # locked re-check raises object_full. Cleanup failure is swallowed.
-        others = [
-            User.objects.create_user(f'u{i}', f'u{i}@t.com', 'p')
-            for i in range(settings.PHOTO_MAX_PER_OBJECT)
-        ]
-        for i, u in enumerate(others):
-            _make_photo(self.obj, u, f'full{i}', status='archived')
+        def upload_during_race(_image):
+            for i in range(settings.PHOTO_MAX_PER_OBJECT):
+                u = User.objects.create_user(f'u{i}', f'u{i}@t.com', 'p')
+                _make_photo(self.obj, u, f'full{i}')
+            return CLOUDINARY_OK
+
+        mock_upload.side_effect = upload_during_race
         resp = self.client.post(self.url, {'image': _file()}, format='multipart')
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(resp.data['code'], 'object_full')
+
+    def test_archived_photos_do_not_occupy_limit_slots(self):
+        # Regression for the pre-refactor inconsistency: archived photos used to
+        # count toward the limit in the locked re-check but not in the pre-check.
+        for i in range(settings.PHOTO_MAX_PER_AUTHOR):
+            _make_photo(self.obj, self.author, f'arch{i}', status='archived')
+        with patch('objects.views.photos.cloudinary_service.upload_photo',
+                   return_value=CLOUDINARY_OK):
+            resp = self.client.post(self.url, {'image': _file()}, format='multipart')
+        self.assertEqual(resp.status_code, 201)
 
 
 class PhotoCaptionAndModerationTests(APITestCase):
