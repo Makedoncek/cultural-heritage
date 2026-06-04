@@ -19,14 +19,18 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticate
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Count, Exists, OuterRef, Subquery, F, Max
 from .models import CulturalObject, Favorite, FavoriteAuthor
-from .serializers import ObjectListSerializer, ObjectDetailSerializer, ObjectWriteSerializer, UserProfileSerializer, ObjectWithMyPhotosSerializer
+from .serializers import ObjectListSerializer, ObjectDetailSerializer, ObjectWriteSerializer, UserProfileSerializer, \
+    ObjectWithMyPhotosSerializer
 
 
 class _PhotoLimitExceeded(Exception):
     """Внутрішня помилка для скасування транзакції upload-у при перевищенні ліміту."""
+
     def __init__(self, code: str, limit: int):
         self.code = code
         self.limit = limit
+
+
 from .permissions import IsAuthorOrReadOnly, IsPhotoUploaderOrAdmin, IsObjectAuthor, IsPhotoCaptionEditor
 from .throttles import PhotoUploadThrottle
 from .validators import validate_image_size, validate_image_format
@@ -211,7 +215,8 @@ def resend_verification(request):
             send_verification_email.delay(user.id)
         except User.DoesNotExist:
             pass
-    return Response({'message': _('Якщо цю адресу електронної пошти зареєстровано, ми надіслали лист для підтвердження.')})
+    return Response(
+        {'message': _('Якщо цю адресу електронної пошти зареєстровано, ми надіслали лист для підтвердження.')})
 
 
 @extend_schema_view(
@@ -583,7 +588,8 @@ class ObjectViewSet(viewsets.ModelViewSet):
         instance = serializer.instance
         is_approved = instance.status == 'approved'
 
-        if not self.request.user.is_staff and is_approved and self._has_actual_changes(instance, serializer.validated_data):
+        if not self.request.user.is_staff and is_approved and self._has_actual_changes(instance,
+                                                                                       serializer.validated_data):
             serializer.save(status='pending')
         else:
             serializer.save()
@@ -853,8 +859,8 @@ class ObjectViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def popular(self, request):
         objects = (self.get_queryset()
-                   .filter(status='approved', favorites_count__gt=0)
-                   .order_by('-favorites_count', '-created_at')[:20])
+        .filter(status='approved', favorites_count__gt=0)
+        .order_by('-favorites_count', '-created_at')[:20])
 
         serializer = ObjectListSerializer(objects, many=True, context={'request': request})
         return Response(serializer.data)
@@ -1143,7 +1149,8 @@ class ObjectPhotoViewSet(viewsets.GenericViewSet):
         ).exclude(status__in=['rejected', 'archived']).count()
         if total >= settings.PHOTO_MAX_PER_OBJECT:
             return max_user, Response(
-                {'detail': f'Об\'єкт уже містить максимум {settings.PHOTO_MAX_PER_OBJECT} фото.', 'code': 'object_full'},
+                {'detail': f'Об\'єкт уже містить максимум {settings.PHOTO_MAX_PER_OBJECT} фото.',
+                 'code': 'object_full'},
                 status=400,
             )
         return max_user, None
@@ -1799,6 +1806,7 @@ def _enrich_ors_error(message: str, stops: list) -> str:
         idx, lng, lat = m.group(1), float(m.group(2)), float(m.group(3))
         title = stop_label(lng, lat)
         return f'coordinate {idx} {title} ({lng}, {lat})' if title else m.group(0)
+
     message = re.sub(r'coordinate (\d+):\s*([\d.\-]+)\s+([\d.\-]+)', fix_coord, message)
 
     # Pattern B: "points 3 (31.7680290 49.5359790) and 4 (30.2706490 51.3600520)"
@@ -1809,6 +1817,7 @@ def _enrich_ors_error(message: str, stops: list) -> str:
         sa = f'{a} {ta}' if ta else f'{a} ({a_lng}, {a_lat})'
         sb = f'{b} {tb}' if tb else f'{b} ({b_lng}, {b_lat})'
         return f'points {sa} and {sb}'
+
     message = re.sub(
         r'points (\d+) \(([\d.\-]+)\s+([\d.\-]+)\) and (\d+) \(([\d.\-]+)\s+([\d.\-]+)\)',
         fix_pair, message,
@@ -1819,6 +1828,7 @@ def _enrich_ors_error(message: str, stops: list) -> str:
         lng, lat = float(m.group(1)), float(m.group(2))
         title = stop_label(lng, lat)
         return f'location {title} [{lng}, {lat}]' if title else m.group(0)
+
     message = re.sub(r'location \[([\d.\-]+),([\d.\-]+)\]', fix_location, message)
 
     return message
@@ -1831,6 +1841,7 @@ class RouteViewSet(viewsets.ModelViewSet):
       - public list: only approved routes
       - draft/pending visible to author + admin
     """
+
     # Default lookup_field='pk' — routes are identified by numeric ID.
 
     def get_serializer_class(self):
@@ -2277,7 +2288,8 @@ class RouteViewSet(viewsets.ModelViewSet):
         # Use the requesting browser's origin so dev/staging deploys produce links
         # pointing back at the same host (e.g. http://localhost:5173) rather than the
         # hardcoded production FRONTEND_BASE_URL.
-        base_url = request.headers.get('Origin') or request.META.get('HTTP_REFERER', '').rstrip('/').split('/objects')[0].split('/routes')[0] or None
+        base_url = request.headers.get('Origin') or \
+                   request.META.get('HTTP_REFERER', '').rstrip('/').split('/objects')[0].split('/routes')[0] or None
         if fmt == 'gpx':
             content = export_route_as_gpx(route, base_url=base_url)
             content_type = 'application/gpx+xml'
@@ -2337,13 +2349,13 @@ def my_completed_routes(request):
     qs = (Route.objects.filter(stops__isnull=False)
           .select_related('author').prefetch_related('tags')
           .annotate(
-              total_stops=Count('stops', distinct=True),
-              visited_stops=Count(
-                  'stops',
-                  filter=Q(stops__cultural_object__visits__user=request.user),
-                  distinct=True,
-              ),
-          )
+        total_stops=Count('stops', distinct=True),
+        visited_stops=Count(
+            'stops',
+            filter=Q(stops__cultural_object__visits__user=request.user),
+            distinct=True,
+        ),
+    )
           .filter(total_stops__gt=0, visited_stops=F('total_stops'))
           .order_by('-updated_at'))
     paginator = SmallPagePagination()
@@ -2413,7 +2425,7 @@ class ObjectAudioViewSet(viewsets.ViewSet):
         # Rejected/archived narratives don't count toward the limit (mirrors photo logic),
         # so a rejection or archive frees the slot for a re-submission.
         if cultural_object.audios.exclude(
-            status__in=[ObjectAudio.Status.REJECTED, ObjectAudio.Status.ARCHIVED]
+                status__in=[ObjectAudio.Status.REJECTED, ObjectAudio.Status.ARCHIVED]
         ).count() >= MAX_AUDIOS_PER_OBJECT:
             return Response(
                 {'detail': _("Об'єкт може мати максимум 10 аудіо-наративів.")},

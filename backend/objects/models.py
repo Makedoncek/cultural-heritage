@@ -21,7 +21,6 @@ UKRAINIAN_LABEL = 'Українська'
 REJECTED_LABEL = 'Відхилено'
 ARCHIVED_LABEL = 'В архіві'
 
-
 LANGUAGE_CHOICES = [
     ('uk', UKRAINIAN_LABEL),
     ('en', 'English'),
@@ -365,7 +364,7 @@ class ObjectPhoto(models.Model):
 
 
 class ObjectAudio(models.Model):
-    """Аудіо-нарратив для культурного об'єкта (Audio Tours feature)."""
+    """Аудіонаратив для культурного об'єкта (Audio Tours feature)."""
 
     class Language(models.TextChoices):
         UK = 'uk', UKRAINIAN_LABEL
@@ -729,7 +728,8 @@ class CulturalObjectTranslation(models.Model):
         related_name='submitted_object_translations',
         verbose_name=_('Запропонував'),
     )
-    reviewer_note = models.TextField(blank=True, help_text='Нотатка адміна для рецензії/репортів.', verbose_name=_('Нотатка рецензента'))
+    reviewer_note = models.TextField(blank=True, help_text='Нотатка адміна для рецензії/репортів.',
+                                     verbose_name=_('Нотатка рецензента'))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Створено'))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Оновлено'))
 
@@ -773,7 +773,8 @@ class RouteTranslation(models.Model):
         related_name='submitted_route_translations',
         verbose_name=_('Запропонував'),
     )
-    reviewer_note = models.TextField(blank=True, help_text='Нотатка адміна для рецензії/репортів.', verbose_name=_('Нотатка рецензента'))
+    reviewer_note = models.TextField(blank=True, help_text='Нотатка адміна для рецензії/репортів.',
+                                     verbose_name=_('Нотатка рецензента'))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Створено'))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Оновлено'))
 
