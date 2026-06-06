@@ -50,3 +50,6 @@ build/
 /mobile-filters.png
 /mobile-filters-2.png
 /mobile-filters-3.png
+
+# One-off data import scripts and generated data
+backend/data/
