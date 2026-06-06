@@ -151,7 +151,8 @@ export default function HomePage() {
                     md:translate-x-0
                 `}
             >
-                <div className="p-4 pt-3">
+                {/* md: absolute inner scroller — sidebar content no longer drives page height */}
+                <div className="p-4 pt-3 md:absolute md:inset-0 md:overflow-y-auto">
                     <div className="flex items-center justify-between md:hidden mb-3">
                         <span className="text-sm font-semibold text-gray-700 dark:text-stone-200">{t('home.filtersLabel')}</span>
                         <button
