@@ -4,7 +4,7 @@ import {MapContainer, useMap} from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import ObjectMarker from './ObjectMarker';
 import ThemedTileLayer from './ThemedTileLayer';
-import type {CulturalObject} from '../../types';
+import type {MapCulturalObject} from '../../types';
 import type {LatLngBoundsExpression} from 'leaflet';
 
 const UKRAINE_BOUNDS: LatLngBoundsExpression = [
@@ -26,7 +26,7 @@ function FlyToHandler({target}: {target: FlyToTarget | null}) {
 }
 
 interface MapViewProps {
-    objects: CulturalObject[];
+    objects: MapCulturalObject[];
     flyTo?: FlyToTarget | null;
 }
 

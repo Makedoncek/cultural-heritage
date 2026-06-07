@@ -1,5 +1,5 @@
 import api from "./api";
-import type {CulturalObject, CulturalObjectDetail, CulturalObjectWithMyPhotos, CulturalObjectWrite, PaginatedResponse, FavoriteToggleResponse} from '../types';
+import type {CulturalObject, CulturalObjectDetail, CulturalObjectWithMyPhotos, CulturalObjectWrite, MapObjectRaw, PaginatedResponse, FavoriteToggleResponse} from '../types';
 
 interface ObjectFilters {
     tags?: string;
@@ -12,6 +12,10 @@ interface ObjectFilters {
 export const objectsService = {
     getAll: (params?: ObjectFilters, signal?: AbortSignal) =>
         api.get<PaginatedResponse<CulturalObject>>('/objects/', {params, signal}).then(res => res.data),
+
+    /** Полегшений список для карти: всі видимі об'єкти одним запитом, теги як id. */
+    getMap: (params?: ObjectFilters, signal?: AbortSignal) =>
+        api.get<MapObjectRaw[]>('/objects/map/', {params, signal}).then(res => res.data),
 
     getById: (id: number, lang?: string) =>
         api.get<CulturalObjectDetail>(`/objects/${id}/`, lang ? {params: {lang}} : undefined).then(res => res.data),

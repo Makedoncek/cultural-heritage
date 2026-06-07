@@ -3,7 +3,7 @@ import {Marker, Popup} from 'react-leaflet';
 import {useNavigate} from 'react-router';
 import {useTranslation} from 'react-i18next';
 import CoverImage from '../Objects/CoverImage';
-import type {CulturalObject} from '../../types';
+import type {MapCulturalObject} from '../../types';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIconGrey from '../../assets/marker-icon-grey.png';
@@ -69,7 +69,7 @@ function formatDateRange(start: string | null, end: string | null, locale: strin
 }
 
 interface ObjectMarkerProps {
-    object: CulturalObject;
+    object: MapCulturalObject;
 }
 
 export default function ObjectMarker({object}: Readonly<ObjectMarkerProps>) {

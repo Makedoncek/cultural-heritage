@@ -67,6 +67,26 @@ export interface CulturalObject {
     translation_missing: boolean;
 }
 
+/** Мінімум полів, які малює мапа; CulturalObject структурно сумісний із цим типом. */
+export interface MapCulturalObject {
+    id: number;
+    title: string;
+    latitude: string;
+    longitude: string;
+    status: 'pending' | 'approved' | 'archived';
+    object_type: 'permanent' | 'event';
+    event_start_date: string | null;
+    event_end_date: string | null;
+    tags: Tag[];
+    cover_url?: string | null;
+    is_visited?: boolean;
+}
+
+/** Відповідь /objects/map/ — полегшена: теги приходять як id. */
+export interface MapObjectRaw extends Omit<MapCulturalObject, 'tags'> {
+    tags: number[];
+}
+
 export interface FavoriteToggleResponse {
     is_favorited: boolean;
     favorites_count: number;

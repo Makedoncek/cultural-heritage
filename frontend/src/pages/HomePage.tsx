@@ -1,4 +1,4 @@
-import {useState, useEffect, useCallback, useRef} from 'react';
+import {useState, useEffect, useCallback, useMemo, useRef} from 'react';
 import {useNavigate} from 'react-router';
 import {useTranslation} from 'react-i18next';
 import {objectsService} from '../services/objects.service';
@@ -9,11 +9,12 @@ import TagFilter from '../components/Map/TagFilter';
 import TypeFilter from '../components/Map/TypeFilter';
 import EventStatusFilter from '../components/Map/EventStatusFilter';
 import ErrorBoundary from '../components/Layout/ErrorBoundary';
-import type {CulturalObject, Tag} from '../types';
+import type {MapCulturalObject, MapObjectRaw, Tag} from '../types';
 
 export default function HomePage() {
-    const [objects, setObjects] = useState<CulturalObject[]>([]);
+    const [rawObjects, setRawObjects] = useState<MapObjectRaw[]>([]);
     const [tags, setTags] = useState<Tag[]>([]);
+    const [allTags, setAllTags] = useState<Tag[]>([]);
     const [selectedTags, setSelectedTags] = useState<number[]>([]);
     const [objectType, setObjectType] = useState('all');
     const [eventStatus, setEventStatus] = useState('all');
@@ -40,6 +41,19 @@ export default function HomePage() {
         setEventStatus(prev => (objectType !== 'event' && prev !== 'all' ? 'all' : prev));
     }, [objectType, i18n.language]);
 
+    // Повний довідник тегів — щоб збагачувати полегшені map-об'єкти (tags як id)
+    useEffect(() => {
+        tagsService.getAll().then(res => setAllTags(res.results)).catch(() => {});
+    }, [i18n.language]);
+
+    const objects = useMemo<MapCulturalObject[]>(() => {
+        const byId = new Map(allTags.map(tag => [tag.id, tag]));
+        return rawObjects.map(o => ({
+            ...o,
+            tags: o.tags.map(id => byId.get(id)).filter((tag): tag is Tag => Boolean(tag)),
+        }));
+    }, [rawObjects, allTags]);
+
     useEffect(() => {
         debounceRef.current = setTimeout(() => setDebouncedSearch(search.length >= 3 ? search : ''), 1000);
         return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
@@ -62,22 +76,8 @@ export default function HomePage() {
             if (type !== 'all') params.object_type = type;
             if (type === 'event' && evStatus !== 'all') params.event_status = evStatus;
 
-            const first = await objectsService.getAll({...params, page: 1}, signal);
-            const pageSize = first.results.length || 100;
-            const totalPages = Math.ceil(first.count / pageSize);
-
-            if (totalPages <= 1) {
-                setObjects(first.results);
-                return;
-            }
-
-            const rest = await Promise.all(
-                Array.from({length: totalPages - 1}, (_, i) =>
-                    objectsService.getAll({...params, page: i + 2}, signal)
-                )
-            );
-
-            setObjects([...first.results, ...rest.flatMap(r => r.results)]);
+            // Полегшений ендпоінт: всі об'єкти одним запитом замість пагінації
+            setRawObjects(await objectsService.getMap(params, signal));
         } catch (err) {
             // Скасований запит (StrictMode-double-effect, зміна фільтрів під час loading) — мовчки ігноруємо
             if ((err as {code?: string})?.code === 'ERR_CANCELED') return;
