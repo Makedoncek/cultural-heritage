@@ -12,14 +12,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from ..filters import ObjectFilter
 from ..models import (
-    CulturalObject, CulturalObjectTranslation, Favorite, ObjectAudio, ObjectPhoto,
+    CulturalObject, CulturalObjectTranslation, Favorite, ObjectAudio, ObjectPhoto, Visit,
 )
 from ..pagination import SmallPagePagination
 from ..permissions import IsAuthorOrReadOnly
 from ..serializers import (
     CulturalObjectTranslationSerializer, ObjectAudioSerializer,
-    ObjectDetailSerializer, ObjectListSerializer, ObjectWithMyPhotosSerializer,
-    ObjectWriteSerializer,
+    ObjectDetailSerializer, ObjectListSerializer, ObjectMapSerializer,
+    ObjectWithMyPhotosSerializer, ObjectWriteSerializer,
 )
 from ._common import get_or_404, require_owner_or_staff
 from .schemas import OBJECT_VIEWSET_SCHEMA, ErrorResponse
@@ -59,7 +59,9 @@ class ObjectViewSet(viewsets.ModelViewSet):
 
         if user.is_authenticated:
             base_qs = base_qs.annotate(
-                _is_favorited=Exists(Favorite.objects.filter(user=user, cultural_object=OuterRef('pk')))
+                _is_favorited=Exists(Favorite.objects.filter(user=user, cultural_object=OuterRef('pk'))),
+                # без анотації серіалізатор робить окремий exists-запит на кожен об'єкт (N+1)
+                _is_visited=Exists(Visit.objects.filter(user=user, cultural_object=OuterRef('pk'))),
             )
 
         # Author/admin can retrieve their own archived objects; list/other actions exclude archived.
@@ -111,6 +113,18 @@ class ObjectViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         instance.archive()
         return Response({'detail': _("Об'єкт архівовано")}, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary='Полегшений список для карти',
+        description='Усі видимі об\'єкти одним запитом без пагінації; '
+                    'теги — лише id. Підтримує ті самі фільтри, що й основний список.',
+        responses=ObjectMapSerializer(many=True),
+    )
+    @action(detail=False, methods=['get'])
+    def map(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = ObjectMapSerializer(queryset, many=True, context=self.get_serializer_context())
+        return Response(serializer.data)
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def restore(self, request, pk=None):

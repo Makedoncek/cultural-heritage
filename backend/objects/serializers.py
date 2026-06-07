@@ -234,6 +234,38 @@ class ObjectListSerializer(FavoriteMixin, serializers.ModelSerializer):
         return Visit.objects.filter(user=request.user, cultural_object=obj).exists()
 
 
+class ObjectMapSerializer(serializers.ModelSerializer):
+    """Полегшений серіалізатор для маркерів карти: теги як id, без author/favorites.
+
+    Віддається весь датасет одним запитом без пагінації, тому кожен байт на об'єкт
+    множиться на тисячі — лишаємо тільки те, що реально малює MapView.
+    """
+    title = serializers.SerializerMethodField()
+    tags = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    cover_url = serializers.CharField(read_only=True, allow_null=True)
+    is_visited = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CulturalObject
+        fields = [
+            'id', 'title', 'latitude', 'longitude', 'status', 'object_type',
+            'event_start_date', 'event_end_date', 'tags', 'cover_url', 'is_visited',
+        ]
+        read_only_fields = fields
+
+    def get_title(self, obj):
+        title, _desc, _missing = _resolve_object_translation(obj, _resolve_lang(self.context))
+        return title
+
+    def get_is_visited(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        if hasattr(obj, '_is_visited'):
+            return obj._is_visited
+        return Visit.objects.filter(user=request.user, cultural_object=obj).exists()
+
+
 class ObjectDetailSerializer(FavoriteMixin, serializers.ModelSerializer):
     author = serializers.StringRelatedField(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
