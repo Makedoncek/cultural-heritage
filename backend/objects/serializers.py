@@ -242,14 +242,13 @@ class ObjectMapSerializer(serializers.ModelSerializer):
     """
     title = serializers.SerializerMethodField()
     tags = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    cover_url = serializers.CharField(read_only=True, allow_null=True)
     is_visited = serializers.SerializerMethodField()
 
     class Meta:
         model = CulturalObject
         fields = [
             'id', 'title', 'latitude', 'longitude', 'status', 'object_type',
-            'event_start_date', 'event_end_date', 'tags', 'cover_url', 'is_visited',
+            'event_start_date', 'event_end_date', 'tags', 'is_visited',
         ]
         read_only_fields = fields
 

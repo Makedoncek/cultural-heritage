@@ -9,7 +9,7 @@ from objects.models import CulturalObject, Tag, Visit
 MAP_URL = '/api/objects/map/'
 EXPECTED_FIELDS = {
     'id', 'title', 'latitude', 'longitude', 'status', 'object_type',
-    'event_start_date', 'event_end_date', 'tags', 'cover_url', 'is_visited',
+    'event_start_date', 'event_end_date', 'tags', 'is_visited',
 }
 
 

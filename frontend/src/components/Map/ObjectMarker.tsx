@@ -1,8 +1,10 @@
 import L from 'leaflet';
+import {useState} from 'react';
 import {Marker, Popup} from 'react-leaflet';
 import {useNavigate} from 'react-router';
 import {useTranslation} from 'react-i18next';
 import CoverImage from '../Objects/CoverImage';
+import {objectsService} from '../../services/objects.service';
 import type {MapCulturalObject} from '../../types';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -75,6 +77,17 @@ interface ObjectMarkerProps {
 export default function ObjectMarker({object}: Readonly<ObjectMarkerProps>) {
     const navigate = useNavigate();
     const {t, i18n} = useTranslation();
+    // map-ендпоінт не віддає cover_url — довантажуємо при відкритті попапа (один раз)
+    const [fetchedCover, setFetchedCover] = useState<string | null | undefined>(undefined);
+    const coverUrl = object.cover_url !== undefined ? object.cover_url : fetchedCover;
+
+    const handlePopupOpen = () => {
+        if (object.cover_url === undefined && fetchedCover === undefined) {
+            objectsService.getById(object.id)
+                .then(detail => setFetchedCover(detail.cover_url ?? null))
+                .catch(() => setFetchedCover(null));
+        }
+    };
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
     const isPending = object.status === 'pending';
     const isEvent = object.object_type === 'event';
@@ -92,11 +105,12 @@ export default function ObjectMarker({object}: Readonly<ObjectMarkerProps>) {
         <Marker
             position={[Number.parseFloat(object.latitude), Number.parseFloat(object.longitude)]}
             icon={icon}
+            eventHandlers={{popupopen: handlePopupOpen}}
         >
             <Popup>
                 <div className="w-48">
                     <CoverImage
-                        coverUrl={object.cover_url}
+                        coverUrl={coverUrl}
                         tags={object.tags}
                         alt={object.title}
                         className="w-full h-24 rounded mb-2"
