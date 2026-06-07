@@ -84,6 +84,22 @@ class ObjectPhotoInline(SortableTabularInline):
 class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
     inlines = [ObjectPhotoInline]
 
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        # На change-формі показуємо лише теги відповідного типу
+        # (пам'ятка -> object-теги, подія -> event-теги); на add-формі тип ще не відомий.
+        if db_field.name == 'tags':
+            object_id = request.resolver_match.kwargs.get('object_id')
+            if object_id:
+                obj = CulturalObject.objects.filter(pk=object_id).only('object_type').first()
+                if obj:
+                    tag_type = (
+                        Tag.TagType.EVENT
+                        if obj.object_type == CulturalObject.ObjectType.EVENT
+                        else Tag.TagType.OBJECT
+                    )
+                    kwargs['queryset'] = Tag.objects.filter(tag_type=tag_type)
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
     def save_formset(self, request, form, formset, change):
         # Inline ObjectPhoto: admin caption edit не активує re-moderation.
         if formset.model is ObjectPhoto:
@@ -103,6 +119,7 @@ class CulturalObjectAdmin(SortableAdminBase, admin.ModelAdmin):
         js = (
             'admin/leaflet/leaflet.js',
             'admin/js/admin_map.js',
+            'admin/js/tag_type_filter.js',
         )
 
     STATUS_COLORS = {

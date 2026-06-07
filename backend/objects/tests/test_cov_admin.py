@@ -194,3 +194,44 @@ class AdminSaveModelTests(AdminTestBase):
         })
         self.obj_tr.refresh_from_db()
         self.assertEqual(self.obj_tr.status, 'approved')
+
+
+class AdminTagFilteringTests(AdminTestBase):
+    """Change-форма обʼєкта показує лише теги відповідного tag_type."""
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        from django.utils import timezone
+        from datetime import timedelta
+        cls.obj_tag = Tag.objects.create(name='ObjOnlyTag', slug='obj-only', icon='O', tag_type='object')
+        cls.evt_tag = Tag.objects.create(name='EvtOnlyTag', slug='evt-only', icon='E', tag_type='event')
+        cls.event_obj = CulturalObject.objects.create(
+            title='Evt Obj', latitude=50.3, longitude=30.3, author=cls.author,
+            status='approved', object_type='event',
+            event_start_date=timezone.now(),
+            event_end_date=timezone.now() + timedelta(days=1),
+        )
+
+    def test_permanent_change_view_shows_only_object_tags(self):
+        url = reverse('admin:objects_culturalobject_change', args=[self.approved.pk])
+        html = self.client.get(url).content.decode()
+        self.assertIn('ObjOnlyTag', html)
+        self.assertNotIn('EvtOnlyTag', html)
+
+    def test_event_change_view_shows_only_event_tags(self):
+        url = reverse('admin:objects_culturalobject_change', args=[self.event_obj.pk])
+        html = self.client.get(url).content.decode()
+        self.assertIn('EvtOnlyTag', html)
+        self.assertNotIn('ObjOnlyTag', html)
+
+    def test_add_view_shows_all_tags(self):
+        url = reverse('admin:objects_culturalobject_add')
+        html = self.client.get(url).content.decode()
+        self.assertIn('ObjOnlyTag', html)
+        self.assertIn('EvtOnlyTag', html)
+
+    def test_change_form_includes_tag_filter_script(self):
+        url = reverse('admin:objects_culturalobject_change', args=[self.approved.pk])
+        html = self.client.get(url).content.decode()
+        self.assertIn('admin/js/tag_type_filter.js', html)
