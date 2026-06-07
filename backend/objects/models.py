@@ -273,9 +273,10 @@ class CulturalObject(models.Model):
         Використовує annotated `_cover_thumbnail_url` з ObjectViewSet.get_queryset якщо доступне,
         інакше робить окремий запит (fallback для одиночних викликів).
         """
-        annotated = getattr(self, '_cover_thumbnail_url', None)
-        if annotated is not None or self._state.fields_cache.get('_cover_thumbnail_url') is not None:
-            return annotated
+        # hasattr, а не getattr-з-None: NULL-анотація (об'єкт без фото) — теж відповідь,
+        # інакше кожен такий об'єкт у списку робить fallback-запит (N+1).
+        if hasattr(self, '_cover_thumbnail_url'):
+            return self._cover_thumbnail_url
         first = self.photos.filter(status='approved').first()
         return first.thumbnail_url if first else None
 

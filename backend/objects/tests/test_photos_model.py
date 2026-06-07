@@ -102,3 +102,32 @@ class CoverUrlPropertyTests(TestCase):
             order=0, status='rejected',
         )
         self.assertIsNone(self.obj.cover_url)
+
+    def test_cover_url_annotated_null_makes_no_query(self):
+        """NULL-анотація (об'єкт без фото) не має падати у fallback-запит — N+1 на списку."""
+        from django.db.models import OuterRef, Subquery
+        sq = ObjectPhoto.objects.filter(
+            cultural_object=OuterRef('pk'), status='approved',
+        ).values('thumbnail_url')[:1]
+        obj = CulturalObject.objects.annotate(
+            _cover_thumbnail_url=Subquery(sq)
+        ).get(pk=self.obj.pk)
+        with self.assertNumQueries(0):
+            self.assertIsNone(obj.cover_url)
+
+    def test_cover_url_annotated_value_used_without_query(self):
+        ObjectPhoto.objects.create(
+            cultural_object=self.obj, uploaded_by=self.user,
+            cloudinary_public_id='p1', image_url='x',
+            thumbnail_url='https://thumb1', is_author_photo=True,
+            order=0, status='approved',
+        )
+        from django.db.models import OuterRef, Subquery
+        sq = ObjectPhoto.objects.filter(
+            cultural_object=OuterRef('pk'), status='approved',
+        ).values('thumbnail_url')[:1]
+        obj = CulturalObject.objects.annotate(
+            _cover_thumbnail_url=Subquery(sq)
+        ).get(pk=self.obj.pk)
+        with self.assertNumQueries(0):
+            self.assertEqual(obj.cover_url, 'https://thumb1')
