@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from ..models import CulturalObject, Favorite, FavoriteAuthor
 from ..pagination import SmallPagePagination
 from ..serializers import ObjectListSerializer, UserProfileSerializer
+from ._common import toggle_membership
 from .schemas import ErrorResponse
 
 
@@ -117,9 +118,7 @@ class UserProfileViewSet(viewsets.GenericViewSet):
         if request.user == author:
             return Response({'detail': _('Не можна підписатися на себе.')}, status=status.HTTP_400_BAD_REQUEST)
 
-        fav, created = FavoriteAuthor.objects.get_or_create(user=request.user, author=author)
-        if not created:
-            fav.delete()
+        created, _fav = toggle_membership(FavoriteAuthor, user=request.user, author=author)
         return Response({
             'is_followed': created,
             'followers_count': author.followers.count(),

@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from ..models import CulturalObject, PlannedVisit, Route, Tag, Visit
 from ..pagination import SmallPagePagination
 from ..serializers import PlannedVisitSerializer, VisitMapPointSerializer, VisitSerializer
+from ._common import toggle_membership
 
 
 @api_view(['POST'])
@@ -22,11 +23,9 @@ def toggle_visit(request, object_pk):
     except CulturalObject.DoesNotExist:
         return Response({'detail': _('Об\'єкт не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
 
-    visit = Visit.objects.filter(user=request.user, cultural_object=obj).first()
-    if visit:
-        visit.delete()
+    created, visit = toggle_membership(Visit, user=request.user, cultural_object=obj)
+    if not created:
         return Response({'is_visited': False})
-    visit = Visit.objects.create(user=request.user, cultural_object=obj)
     return Response({'is_visited': True, 'visit': VisitSerializer(visit).data}, status=status.HTTP_201_CREATED)
 
 
@@ -155,11 +154,9 @@ def toggle_planned_visit(request, object_pk):
     except CulturalObject.DoesNotExist:
         return Response({'detail': _('Об\'єкт не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
 
-    planned = PlannedVisit.objects.filter(user=request.user, cultural_object=obj).first()
-    if planned:
-        planned.delete()
+    created, planned = toggle_membership(PlannedVisit, user=request.user, cultural_object=obj)
+    if not created:
         return Response({'is_planned': False})
-    planned = PlannedVisit.objects.create(user=request.user, cultural_object=obj)
     return Response(
         {'is_planned': True, 'planned': PlannedVisitSerializer(planned).data},
         status=status.HTTP_201_CREATED,

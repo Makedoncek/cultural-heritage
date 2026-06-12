@@ -21,7 +21,7 @@ from ..serializers import (
     ObjectDetailSerializer, ObjectListSerializer, ObjectMapSerializer,
     ObjectWithMyPhotosSerializer, ObjectWriteSerializer,
 )
-from ._common import get_or_404, require_owner_or_staff
+from ._common import get_or_404, require_owner_or_staff, toggle_membership
 from .schemas import OBJECT_VIEWSET_SCHEMA, ErrorResponse
 
 
@@ -299,9 +299,7 @@ class ObjectViewSet(viewsets.ModelViewSet):
                 {'detail': _('Не можна додати власний об\'єкт до обраного.')},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        fav, created = Favorite.objects.get_or_create(user=request.user, cultural_object=obj)
-        if not created:
-            fav.delete()
+        created, _fav = toggle_membership(Favorite, user=request.user, cultural_object=obj)
         return Response({
             'is_favorited': created,
             'favorites_count': obj.favorited_by.count(),

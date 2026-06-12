@@ -1,4 +1,5 @@
 """Heritage Routes: CRUD, stops management, ORS geometry/optimization, export."""
+from django.db import IntegrityError, transaction
 from django.db.models import Count, F, Max, Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -269,31 +270,41 @@ class RouteViewSet(viewsets.ModelViewSet):
     def add_stop(self, request, pk=None):
         route = self.get_object()
         require_owner_or_staff(request, route.author_id, EDIT_FOREIGN_MSG)
-        if route.stops.count() >= MAX_STOPS_PER_ROUTE:
-            return Response(
-                {'detail': _('Маршрут не може містити більше 50 зупинок.')},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
         object_id = request.data.get('cultural_object')
         try:
             cultural_object = CulturalObject.objects.get(pk=object_id)
         except CulturalObject.DoesNotExist:
             return Response({'cultural_object': [_('Об\'єкт не знайдено.')]},
                             status=status.HTTP_400_BAD_REQUEST)
-        if RouteStop.objects.filter(route=route, cultural_object=cultural_object).exists():
+        try:
+            # Row-lock the route so parallel add-stop requests serialize: the limit
+            # check, duplicate check and `order` computation all see committed state.
+            with transaction.atomic():
+                Route.objects.select_for_update().get(pk=route.pk)
+                if route.stops.count() >= MAX_STOPS_PER_ROUTE:
+                    return Response(
+                        {'detail': _('Маршрут не може містити більше 50 зупинок.')},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                if RouteStop.objects.filter(route=route, cultural_object=cultural_object).exists():
+                    return Response(
+                        {'detail': _('Цей об\'єкт уже доданий у маршрут.')},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                # max(order)+1, not count()+1 — avoids duplicate `order` when legacy
+                # data has gaps (e.g. an old delete that didn't recompact).
+                last_order = route.stops.aggregate(m=Max('order'))['m'] or 0
+                stop = RouteStop.objects.create(
+                    route=route,
+                    cultural_object=cultural_object,
+                    order=last_order + 1,
+                    note=str(request.data.get('note', ''))[:500],
+                )
+        except IntegrityError:
             return Response(
                 {'detail': _('Цей об\'єкт уже доданий у маршрут.')},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        # Use max(order)+1 instead of count()+1 to avoid duplicate `order` when
-        # legacy data has gaps (e.g. an old delete that didn't recompact).
-        last_order = route.stops.aggregate(m=Max('order'))['m'] or 0
-        stop = RouteStop.objects.create(
-            route=route,
-            cultural_object=cultural_object,
-            order=last_order + 1,
-            note=str(request.data.get('note', ''))[:500],
-        )
         return Response(RouteStopSerializer(stop).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'], url_path='reorder')
