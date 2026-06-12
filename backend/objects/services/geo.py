@@ -1,5 +1,6 @@
 """Geospatial helpers — Haversine distance for duplicate-detection."""
 from math import asin, cos, radians, sin, sqrt
+from ..models import CulturalObject
 
 EARTH_RADIUS_M = 6_371_000  # WGS-84 mean radius in meters
 
@@ -24,13 +25,12 @@ def haversine_distance_m(lat1: float, lng1: float, lat2: float, lng2: float) -> 
 def find_nearby_objects(latitude: float, longitude: float, radius_m: float = 100.0,
                         exclude_id: int | None = None):
     """Return approved CulturalObjects within `radius_m` of the given point.
-
     First filters by a rough bounding box (cheap SQL) — needed because Haversine
     is not indexable. Then refines with exact Haversine distance in Python.
     For our scale (~1000s of objects) this is sub-millisecond; PostGIS would be
     the proper choice past ~100K objects.
     """
-    from ..models import CulturalObject
+
     # 1 degree latitude ≈ 111_000 m everywhere; longitude ≈ 111_000·cos(lat)
     deg_lat = radius_m / 111_000
     deg_lng = radius_m / (111_000 * max(cos(radians(latitude)), 0.01))

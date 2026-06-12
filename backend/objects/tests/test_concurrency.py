@@ -8,14 +8,20 @@ barrier, so the inserts race on actually-committed rows. APITransactionTestCase
 visibility between threads.
 """
 import threading
+import uuid
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITransactionTestCase
 
-from objects.models import CulturalObject, PlannedVisit, Route, RouteStop, Visit
+from objects.models import CulturalObject, ObjectAudio, PlannedVisit, Route, RouteStop, Visit
+
+# Valid WAV container header so the magic-bytes audio validator accepts the upload.
+_WAV = b'RIFF\x00\x00\x00\x00WAVE\x00\x00\x00\x00'
 
 CONCURRENCY = 8
 
@@ -104,3 +110,50 @@ class AddStopConcurrencyTests(APITransactionTestCase):
         self.assertEqual(statuses.count(status.HTTP_201_CREATED), 1)
         self.assertEqual(
             RouteStop.objects.filter(route=self.route, cultural_object=self.obj).count(), 1)
+
+
+class AudioUploadConcurrencyTests(APITransactionTestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('alice', 'a@t.com', 'p')
+        self.obj = CulturalObject.objects.create(
+            title='Obj', latitude=50.0, longitude=30.0, author=self.user, status='approved',
+        )
+
+    def _make_audio(self, public_id, **kwargs):
+        defaults = dict(
+            cultural_object=self.obj, uploaded_by=self.user,
+            cloudinary_public_id=public_id, cloudinary_url='http://x/a.mp3',
+            duration_seconds=10, title='A', language='uk',
+            status='approved', copyright_confirmed=True,
+        )
+        defaults.update(kwargs)
+        return ObjectAudio.objects.create(**defaults)
+
+    def test_concurrent_uploads_respect_object_limit(self):
+        # One slot below a (patched) limit of 3; many simultaneous uploads must not overshoot.
+        self._make_audio('pre0')
+        self._make_audio('pre1')
+        url = f'/api/objects/{self.obj.pk}/audios/'
+
+        def fake_upload(file, object_id, uploader_id):
+            pid = f'cult/{uuid.uuid4().hex}'
+            return {'public_id': pid, 'url': f'http://x/{pid}.mp3', 'duration_seconds': 5}
+
+        def make_request():
+            client = APIClient(raise_request_exception=False)
+            client.force_authenticate(self.user)
+            audio = SimpleUploadedFile('a.mp3', _WAV, content_type='audio/mpeg')
+            return client.post(url, {
+                'audio': audio, 'language': 'uk', 'title': 't', 'copyright_confirmed': 'true',
+            }, format='multipart').status_code
+
+        with patch('objects.views.audio.MAX_AUDIOS_PER_OBJECT', 3), \
+                patch('objects.views.audio.cloudinary_audio_service.upload_audio',
+                      side_effect=fake_upload):
+            statuses = _hammer(make_request)
+
+        self.assertNotIn(status.HTTP_500_INTERNAL_SERVER_ERROR, statuses)
+        active = ObjectAudio.objects.filter(cultural_object=self.obj).exclude(
+            status__in=['rejected', 'archived']).count()
+        self.assertEqual(active, 3)
+        self.assertEqual(statuses.count(status.HTTP_201_CREATED), 1)

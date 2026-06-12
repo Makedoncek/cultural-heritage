@@ -10,7 +10,7 @@ from .models import (
     InaccuracyReport, Visit, PlannedVisit,
     CulturalObjectTranslation, RouteTranslation, LANGUAGE_CHOICES, TranslationStatus,
 )
-from .validators import validate_coordinates_within_ukraine
+from .validators import validate_audio_format, validate_coordinates_within_ukraine
 
 LAT_SOURCE = 'cultural_object.latitude'
 LNG_SOURCE = 'cultural_object.longitude'
@@ -539,17 +539,15 @@ class AudioUploadSerializer(serializers.Serializer):
     narrator_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
     copyright_confirmed = serializers.BooleanField()
 
-    ALLOWED_MIMES = (
-        'audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/webm',
-        'audio/ogg', 'audio/wav', 'audio/x-m4a', 'audio/x-wav',
-    )
     MAX_SIZE_BYTES = 10 * 1024 * 1024
 
     def validate_audio(self, value):
         if value.size > self.MAX_SIZE_BYTES:
             raise serializers.ValidationError('Файл більший за 10 МБ')
-        if value.content_type and value.content_type not in self.ALLOWED_MIMES:
-            raise serializers.ValidationError(f'Непідтримуваний формат: {value.content_type}')
+        try:
+            validate_audio_format(value)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(e.messages[0] if e.messages else 'Непідтримуваний формат аудіо.')
         return value
 
     def validate_copyright_confirmed(self, value):

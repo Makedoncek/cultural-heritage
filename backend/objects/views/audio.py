@@ -1,4 +1,5 @@
 """Audio narratives для культурного об'єкта (nested під /api/objects/<obj_pk>/audios/)."""
+from django.db import transaction
 from django.db.models import F, Q
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext as _
@@ -16,6 +17,10 @@ from ._common import require_owner_or_staff
 MAX_AUDIOS_PER_OBJECT = 10
 
 OWNER_ONLY_MSG = 'Дозволено лише автору або адміністратору.'
+
+
+class _AudioLimitExceeded(Exception):
+    """Internal: roll back an upload whose row would exceed the per-object limit."""
 
 
 class ObjectAudioViewSet(viewsets.ViewSet):
@@ -70,35 +75,56 @@ class ObjectAudioViewSet(viewsets.ViewSet):
                 return Response({'detail': _('Не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
         return Response(ObjectAudioSerializer(audio).data)
 
-    def create(self, request, obj_pk=None):
-        cultural_object = self._get_object(obj_pk)
+    @staticmethod
+    def _active_audio_count(cultural_object):
         # Rejected/archived narratives don't count toward the limit (mirrors photo logic),
         # so a rejection or archive frees the slot for a re-submission.
-        if cultural_object.audios.exclude(
-                status__in=[ObjectAudio.Status.REJECTED, ObjectAudio.Status.ARCHIVED]
-        ).count() >= MAX_AUDIOS_PER_OBJECT:
+        return cultural_object.audios.exclude(
+            status__in=[ObjectAudio.Status.REJECTED, ObjectAudio.Status.ARCHIVED]
+        ).count()
+
+    def create(self, request, obj_pk=None):
+        cultural_object = self._get_object(obj_pk)
+        serializer = AudioUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # Cheap pre-check before the slow upload; the authoritative re-check is under the lock.
+        if self._active_audio_count(cultural_object) >= MAX_AUDIOS_PER_OBJECT:
             return Response(
                 {'detail': _("Об'єкт може мати максимум 10 аудіо-наративів.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        serializer = AudioUploadSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
         uploaded = cloudinary_audio_service.upload_audio(
             serializer.validated_data['audio'],
             object_id=cultural_object.id,
             uploader_id=request.user.id,
         )
-        audio = ObjectAudio.objects.create(
-            cultural_object=cultural_object,
-            uploaded_by=request.user,
-            cloudinary_public_id=uploaded['public_id'],
-            cloudinary_url=uploaded['url'],
-            duration_seconds=uploaded['duration_seconds'],
-            language=serializer.validated_data['language'],
-            title=serializer.validated_data['title'],
-            narrator_name=serializer.validated_data.get('narrator_name', ''),
-            copyright_confirmed=True,
-        )
+        try:
+            # Row-lock the parent so parallel uploads can't bypass the per-object limit.
+            with transaction.atomic():
+                CulturalObject.objects.select_for_update().get(pk=cultural_object.pk)
+                if self._active_audio_count(cultural_object) >= MAX_AUDIOS_PER_OBJECT:
+                    raise _AudioLimitExceeded()
+                audio = ObjectAudio.objects.create(
+                    cultural_object=cultural_object,
+                    uploaded_by=request.user,
+                    cloudinary_public_id=uploaded['public_id'],
+                    cloudinary_url=uploaded['url'],
+                    duration_seconds=uploaded['duration_seconds'],
+                    language=serializer.validated_data['language'],
+                    title=serializer.validated_data['title'],
+                    narrator_name=serializer.validated_data.get('narrator_name', ''),
+                    copyright_confirmed=True,
+                )
+        except _AudioLimitExceeded:
+            # No row created → pre_delete-signal won't fire; remove the orphan upload.
+            try:
+                cloudinary_audio_service.delete_audio(uploaded['public_id'])
+            except Exception:
+                pass
+            return Response(
+                {'detail': _("Об'єкт може мати максимум 10 аудіо-наративів.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return Response(ObjectAudioSerializer(audio).data, status=status.HTTP_201_CREATED)
 
     def partial_update(self, request, obj_pk=None, pk=None):

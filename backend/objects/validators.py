@@ -55,3 +55,31 @@ def validate_image_format(file):
                 'allowed': ', '.join(settings.PHOTO_ALLOWED_FORMATS),
             }
         )
+
+
+def _looks_like_audio(header: bytes) -> bool:
+    """Match a container signature for one of the allowed audio formats."""
+    if len(header) < 12:
+        return False
+    if header[:4] == b'RIFF' and header[8:12] == b'WAVE':   # WAV
+        return True
+    if header[:4] == b'OggS':                                # OGG / Opus
+        return True
+    if header[:4] == b'\x1a\x45\xdf\xa3':                    # WebM / Matroska (EBML)
+        return True
+    if header[4:8] == b'ftyp':                               # MP4 / M4A (ISO-BMFF)
+        return True
+    if header[:3] == b'ID3':                                 # MP3 with ID3 tag
+        return True
+    if header[0] == 0xFF and (header[1] & 0xE0) == 0xE0:     # MP3 frame sync
+        return True
+    return False
+
+
+def validate_audio_format(file):
+    """Перевіряє реальний контейнер аудіо за magic-bytes. НЕ довіряємо Content-Type клієнта."""
+    file.seek(0)
+    header = file.read(12)
+    file.seek(0)
+    if not _looks_like_audio(header):
+        raise ValidationError(_('Файл не є підтримуваним аудіо (mp3, m4a, ogg, wav, webm).'))

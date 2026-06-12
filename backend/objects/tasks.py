@@ -6,9 +6,10 @@ from django.utils import timezone
 from datetime import timedelta
 
 from . import cloudinary_service
-from .models import CulturalObject, InaccuracyReport, ObjectPhoto
+from .models import CulturalObject, InaccuracyReport, ObjectAudio, ObjectPhoto
 
 INACCURACY_REPORT_RETENTION_DAYS = 30
+AUDIO_REJECTED_RETENTION_DAYS = 30
 
 logger = logging.getLogger(__name__)
 
@@ -95,3 +96,26 @@ def archive_expired_events():
         archived_count += 1
     logger.info(f'archive_expired_events: archived {archived_count} events')
     return archived_count
+
+
+@shared_task
+def cleanup_rejected_audios():
+    """Видаляє аудіонаративи, відхилені понад AUDIO_REJECTED_RETENTION_DAYS днів тому.
+
+    Cloudinary-файл прибирає pre_delete-signal у objects/signals.py (синхронно).
+    """
+    cutoff = timezone.now() - timedelta(days=AUDIO_REJECTED_RETENTION_DAYS)
+    expired = ObjectAudio.objects.filter(
+        status=ObjectAudio.Status.REJECTED,
+        moderated_at__lte=cutoff,
+    )
+    deleted_count = 0
+    for audio in expired:
+        try:
+            audio.delete()
+        except Exception:
+            logger.exception('Failed to delete audio %s', audio.cloudinary_public_id)
+            continue
+        deleted_count += 1
+    logger.info(f'cleanup_rejected_audios: deleted {deleted_count} audios')
+    return deleted_count
