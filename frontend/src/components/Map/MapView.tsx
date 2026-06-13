@@ -1,5 +1,5 @@
 import '../../utils/leaflet-fix';
-import {useEffect} from 'react';
+import {memo, useEffect} from 'react';
 import {MapContainer, useMap} from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import ObjectMarker from './ObjectMarker';
@@ -30,7 +30,10 @@ interface MapViewProps {
     flyTo?: FlyToTarget | null;
 }
 
-export default function MapView({objects, flyTo = null}: Readonly<MapViewProps>) {
+// Memoized: the map subtree (~1000s of markers) is expensive, and HomePage
+// re-renders on every search keystroke. `objects`/`flyTo` are referentially
+// stable while typing, so memo skips these re-renders and keeps the input snappy.
+function MapView({objects, flyTo = null}: Readonly<MapViewProps>) {
     return (
         <MapContainer
             center={[49, 32]}
@@ -51,3 +54,5 @@ export default function MapView({objects, flyTo = null}: Readonly<MapViewProps>)
         </MapContainer>
     );
 }
+
+export default memo(MapView);

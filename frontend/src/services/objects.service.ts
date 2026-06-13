@@ -7,6 +7,7 @@ interface ObjectFilters {
     page?: number;
     object_type?: string;
     event_status?: string;
+    author?: string;
 }
 
 export const objectsService = {

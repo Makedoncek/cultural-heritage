@@ -241,17 +241,33 @@ class UserProfileViewTests(APITestCase):
             self.client.get('/api/users/nosuchuser/objects/').status_code,
             status.HTTP_404_NOT_FOUND,
         )
-        # guest sees approved only
+        # guest sees approved only (paginated shape)
         resp = self.client.get(url)
-        self.assertEqual(len(resp.data), 1)
+        self.assertEqual(resp.data['count'], 1)
+        self.assertEqual(len(resp.data['results']), 1)
         # other authenticated user sees approved only (+ is_favorited annotation)
         self.client.force_authenticate(self.viewer)
         resp = self.client.get(url)
-        self.assertEqual(len(resp.data), 1)
+        self.assertEqual(resp.data['count'], 1)
         # own profile shows pending too
         self.client.force_authenticate(self.author)
         resp = self.client.get(url)
-        self.assertEqual(len(resp.data), 2)
+        self.assertEqual(resp.data['count'], 2)
+
+    def test_author_objects_paginated(self):
+        # author already has 1 approved + 1 pending; add 19 more approved → 21 total
+        for i in range(19):
+            CulturalObject.objects.create(
+                title=f'Extra {i}', latitude=50.0, longitude=30.0,
+                author=self.author, status='approved')
+        url = f'/api/users/{self.author.username}/objects/'
+        self.client.force_authenticate(self.author)
+        resp = self.client.get(url)
+        self.assertEqual(resp.data['count'], 21)
+        self.assertEqual(len(resp.data['results']), 20)  # SmallPagePagination page size
+        self.assertIsNotNone(resp.data['next'])
+        resp2 = self.client.get(url, {'page': 2})
+        self.assertEqual(len(resp2.data['results']), 1)
 
     def test_follow_branches(self):
         self.client.force_authenticate(self.viewer)

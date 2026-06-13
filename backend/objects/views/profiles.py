@@ -96,8 +96,10 @@ class UserProfileViewSet(viewsets.GenericViewSet):
         else:
             qs = qs.filter(status='approved')
 
-        serializer = ObjectListSerializer(qs, many=True, context={'request': request})
-        return Response(serializer.data)
+        paginator = SmallPagePagination()
+        page = paginator.paginate_queryset(qs, request, view=self)
+        serializer = ObjectListSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
         tags=['Users'],

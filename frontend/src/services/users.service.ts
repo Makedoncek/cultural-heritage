@@ -1,12 +1,15 @@
 import api from './api';
-import type {AuthorProfile, CulturalObject, FollowToggleResponse} from '../types';
+import type {AuthorProfile, CulturalObject, FollowToggleResponse, PaginatedResponse} from '../types';
 
 export const usersService = {
     getProfile: (username: string) =>
         api.get<AuthorProfile>(`/users/${username}/`).then(res => res.data),
 
-    getObjects: (username: string) =>
-        api.get<CulturalObject[]>(`/users/${username}/objects/`).then(res => res.data),
+    getObjects: (username: string, params?: {page?: number; page_size?: number}) =>
+        api.get<PaginatedResponse<CulturalObject>>(`/users/${username}/objects/`, {params}).then(res => res.data),
+
+    getObjectsByUrl: (url: string) =>
+        api.get<PaginatedResponse<CulturalObject>>(url).then(res => res.data),
 
     toggleFollow: (username: string) =>
         api.post<FollowToggleResponse>(`/users/${username}/follow/`).then(res => res.data),

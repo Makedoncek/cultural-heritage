@@ -1,11 +1,14 @@
-import {useCallback, useEffect, useState, type ReactNode} from 'react';
+import {useCallback, useEffect, useMemo, useState, type ReactNode} from 'react';
 import {useParams, useSearchParams} from 'react-router';
 import {useTranslation} from 'react-i18next';
 import {usersService} from '../services/users.service';
+import {objectsService} from '../services/objects.service';
+import {tagsService} from '../services/tags.service';
+import {usePaginatedList} from '../hooks/usePaginatedList';
 import {useAuth} from '../context/AuthContext';
 import AuthorObjectsTab from '../components/Author/AuthorObjectsTab';
 import AuthorVisitsTab from '../components/Author/AuthorVisitsTab';
-import type {AuthorProfile, CulturalObject} from '../types';
+import type {AuthorProfile, CulturalObject, MapCulturalObject, MapObjectRaw, Tag} from '../types';
 import '../utils/leaflet-fix';
 
 type Tab = 'objects' | 'visits';
@@ -16,8 +19,9 @@ export default function AuthorProfilePage() {
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
     const {user, isAuthenticated} = useAuth();
     const [profile, setProfile] = useState<AuthorProfile | null>(null);
-    const [objects, setObjects] = useState<CulturalObject[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [mapRaw, setMapRaw] = useState<MapObjectRaw[]>([]);
+    const [allTags, setAllTags] = useState<Tag[]>([]);
+    const [profileLoading, setProfileLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [visitCount, setVisitCount] = useState<number | null>(null);
 
@@ -27,22 +31,42 @@ export default function AuthorProfilePage() {
 
     const isOwnProfile = user?.username === username;
 
+    // List of the author's objects — paginated with a "Load more" button.
+    const {items: listObjects, count: objectsCount, nextUrl, loading: listLoading, loadingMore, loadMore} =
+        usePaginatedList<CulturalObject>({
+            initialFetch: () => usersService.getObjects(username!),
+            fetchByUrl: (url) => usersService.getObjectsByUrl(url),
+            deps: [username, i18n.language],
+        });
+
+    // Profile + ALL map points (one lightweight request) + tag dictionary for enrichment.
     useEffect(() => {
         if (!username) return;
-        setLoading(true);
+        setProfileLoading(true);
         setError(null);
 
         Promise.all([
             usersService.getProfile(username),
-            usersService.getObjects(username),
+            objectsService.getMap({author: username}),
+            tagsService.getAll(),
         ])
-            .then(([profileData, objectsData]) => {
+            .then(([profileData, mapData, tagsData]) => {
                 setProfile(profileData);
-                setObjects(objectsData);
+                setMapRaw(mapData);
+                setAllTags(tagsData.results);
             })
             .catch(() => setError(t('profile.userNotFound')))
-            .finally(() => setLoading(false));
+            .finally(() => setProfileLoading(false));
     }, [username, t]);
+
+    // Lightweight map objects carry tags as ids; enrich them from the tag dictionary.
+    const mapObjects = useMemo<MapCulturalObject[]>(() => {
+        const byId = new Map(allTags.map(tag => [tag.id, tag]));
+        return mapRaw.map(o => ({
+            ...o,
+            tags: o.tags.map(id => byId.get(id)).filter((tag): tag is Tag => Boolean(tag)),
+        }));
+    }, [mapRaw, allTags]);
 
     const handleFollow = async () => {
         if (!username || !profile) return;
@@ -57,7 +81,7 @@ export default function AuthorProfilePage() {
 
     const onVisitsCount = useCallback((n: number) => setVisitCount(n), []);
 
-    if (loading) {
+    if (profileLoading || listLoading) {
         return (
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
@@ -127,7 +151,7 @@ export default function AuthorProfilePage() {
 
                 {/* Tabs */}
                 <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-stone-700">
-                    <TabBtn active={tab === 'objects'} onClick={() => handleTabChange('objects')} count={objects.length}>
+                    <TabBtn active={tab === 'objects'} onClick={() => handleTabChange('objects')} count={objectsCount}>
                         🗺 {t('profile.authorObjects')}
                     </TabBtn>
                     <TabBtn active={tab === 'visits'} onClick={() => handleTabChange('visits')} count={visitCount}>
@@ -136,7 +160,14 @@ export default function AuthorProfilePage() {
                 </div>
 
                 {tab === 'objects'
-                    ? <AuthorObjectsTab objects={objects} isAuthenticated={isAuthenticated}/>
+                    ? <AuthorObjectsTab
+                        mapObjects={mapObjects}
+                        listObjects={listObjects}
+                        isAuthenticated={isAuthenticated}
+                        nextUrl={nextUrl}
+                        loadingMore={loadingMore}
+                        totalCount={objectsCount}
+                        onLoadMore={loadMore}/>
                     : <AuthorVisitsTab username={profile.username} onCountChange={onVisitsCount}/>}
             </div>
         </div>

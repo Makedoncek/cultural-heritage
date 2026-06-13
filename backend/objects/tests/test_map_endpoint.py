@@ -97,3 +97,19 @@ class MapEndpointTests(APITestCase):
     def test_is_visited_false_for_anonymous(self):
         response = self.client.get(MAP_URL)
         self.assertFalse(any(o['is_visited'] for o in response.data))
+
+    def test_author_filter_scopes_results_to_that_author(self):
+        other_approved = CulturalObject.objects.create(
+            title='Other Approved', latitude=49.5, longitude=31.5,
+            author=self.other, status='approved',
+        )
+        other_approved.tags.add(self.tag)
+        titles = {o['title'] for o in self.client.get(MAP_URL, {'author': self.user.username}).data}
+        self.assertEqual(titles, {'Approved Castle', 'Event One'})  # excludes the other author
+        titles = {o['title'] for o in self.client.get(MAP_URL, {'author': self.other.username}).data}
+        self.assertEqual(titles, {'Other Approved'})
+
+    def test_author_filter_includes_own_pending_on_own_profile(self):
+        self.client.force_authenticate(self.user)
+        titles = {o['title'] for o in self.client.get(MAP_URL, {'author': self.user.username}).data}
+        self.assertEqual(titles, {'Approved Castle', 'Event One', 'Own Pending'})  # pending yes, archived no

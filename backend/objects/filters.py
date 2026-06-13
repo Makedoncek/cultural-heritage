@@ -21,7 +21,8 @@ class ObjectFilter(filters.FilterSet):
     tags = filters.BaseInFilter(field_name='tags__id', lookup_expr='in')
     object_type = filters.ChoiceFilter(choices=CulturalObject.ObjectType.choices)
     event_status = EventStatusFilter()
+    author = filters.CharFilter(field_name='author__username')
 
     class Meta:
         model = CulturalObject
-        fields = ['tags', 'object_type', 'event_status']
+        fields = ['tags', 'object_type', 'event_status', 'author']
