@@ -40,7 +40,7 @@ export default function Header() {
 
                 {!loading && (
                     <>
-                        <nav className="hidden md:flex items-center gap-3 lg:gap-4">
+                        <nav className="hidden xl:flex items-center gap-3 lg:gap-4">
                             {isAuthenticated ? (
                                 <>
                                     <NavLink to="/" end className={linkClass}>{t('nav.map')}</NavLink>
@@ -89,7 +89,7 @@ export default function Header() {
 
                         <button
                             onClick={() => setMenuOpen(!menuOpen)}
-                            className="md:hidden p-2 text-gray-600 dark:text-stone-300 hover:text-amber-700 dark:hover:text-amber-400"
+                            className="xl:hidden p-2 text-gray-600 dark:text-stone-300 hover:text-amber-700 dark:hover:text-amber-400"
                             aria-label={t('nav.menu')}
                         >
                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -107,7 +107,7 @@ export default function Header() {
             </div>
 
             {!loading && menuOpen && (
-                <nav className="md:hidden border-t border-gray-100 dark:border-stone-700 px-4 py-3 flex flex-col gap-3 bg-white dark:bg-stone-900">
+                <nav className="xl:hidden border-t border-gray-100 dark:border-stone-700 px-4 py-3 flex flex-col gap-3 bg-white dark:bg-stone-900">
                     {isAuthenticated ? (
                         <>
                             <NavLink to="/" end className={linkClass}
