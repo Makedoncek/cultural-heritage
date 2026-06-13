@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from datetime import timedelta
 
-from . import cloudinary_service
+from . import cloudinary_audio_service, cloudinary_service
 from .models import CulturalObject, InaccuracyReport, ObjectAudio, ObjectPhoto
 
 INACCURACY_REPORT_RETENTION_DAYS = 30
@@ -36,6 +36,17 @@ def delete_cloudinary_file(public_id: str) -> None:
     """
     cloudinary_service.delete_photo(public_id)
     logger.info(f'Cloudinary file deleted: {public_id}')
+
+
+@shared_task(**CLOUDINARY_DELETE_RETRY_KWARGS)
+def delete_cloudinary_audio(public_id: str) -> None:
+    """Видаляє аудіо з Cloudinary з retry-логікою (resource_type='video').
+
+    Викликається з pre_delete-signal на ObjectAudio — ті самі мотиви, що й для
+    фото: не блокувати request-цикл і пережити тимчасові збої Cloudinary API.
+    """
+    cloudinary_audio_service.delete_audio(public_id)
+    logger.info(f'Cloudinary audio deleted: {public_id}')
 
 
 @shared_task

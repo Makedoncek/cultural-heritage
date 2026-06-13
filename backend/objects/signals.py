@@ -1,14 +1,10 @@
 """Signal handlers for status transitions and cascading cleanup."""
-import logging
-
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models.signals import pre_save, post_save, pre_delete
 from django.dispatch import receiver
 
 from .models import CulturalObject, ObjectPhoto, ObjectAudio, UserPreference
-
-logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=User)
@@ -92,15 +88,14 @@ def _reset_photo_status_on_caption_change(sender, instance, **kwargs):
 @receiver(pre_delete, sender=ObjectAudio)
 def _cleanup_cloudinary_on_audio_delete(sender, instance, **kwargs):
     """Видаляє Cloudinary-аудіо при будь-якому видаленні ObjectAudio.
-    Виконується синхронно — аудіо file rate теж невеликий.
+
+    Асинхронно через Celery-task з retry — щоб HTTP-call до Cloudinary не
+    блокував request і пережив тимчасові збої API (як і для фото).
     """
     if not instance.cloudinary_public_id:
         return
-    try:
-        from . import cloudinary_audio_service
-        cloudinary_audio_service.delete_audio(instance.cloudinary_public_id)
-    except Exception:
-        logger.exception('Failed to delete Cloudinary audio %s', instance.cloudinary_public_id)
+    from .tasks import delete_cloudinary_audio
+    delete_cloudinary_audio.delay(instance.cloudinary_public_id)
 
 
 @receiver(pre_delete, sender=ObjectPhoto)

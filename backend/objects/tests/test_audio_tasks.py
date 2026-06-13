@@ -1,4 +1,4 @@
-"""Periodic cleanup of rejected audio narratives (mirrors cleanup_rejected_photos)."""
+"""Rejected-audio retention cleanup + async Cloudinary deletion with retries."""
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -7,7 +7,9 @@ from django.test import TestCase
 from django.utils import timezone
 
 from objects.models import CulturalObject, ObjectAudio
-from objects.tasks import AUDIO_REJECTED_RETENTION_DAYS, cleanup_rejected_audios
+from objects.tasks import (
+    AUDIO_REJECTED_RETENTION_DAYS, cleanup_rejected_audios, delete_cloudinary_audio,
+)
 
 
 class CleanupRejectedAudiosTests(TestCase):
@@ -26,29 +28,36 @@ class CleanupRejectedAudiosTests(TestCase):
         defaults.update(kwargs)
         return ObjectAudio.objects.create(**defaults)
 
-    @patch('objects.cloudinary_audio_service.delete_audio')
-    def test_deletes_expired_rejected(self, mock_delete):
+    @patch('objects.tasks.delete_cloudinary_audio.delay')
+    def test_deletes_expired_rejected(self, mock_delay):
         a = self._audio(
             'exp', status='rejected',
             moderated_at=timezone.now() - timedelta(days=AUDIO_REJECTED_RETENTION_DAYS + 1),
         )
         cleanup_rejected_audios()
         self.assertFalse(ObjectAudio.objects.filter(id=a.id).exists())
-        mock_delete.assert_called_once_with('exp')
+        mock_delay.assert_called_once_with('exp')  # Cloudinary cleanup is deferred to Celery
 
-    @patch('objects.cloudinary_audio_service.delete_audio')
-    def test_keeps_recently_rejected(self, mock_delete):
+    @patch('objects.tasks.delete_cloudinary_audio.delay')
+    def test_keeps_recently_rejected(self, mock_delay):
         self._audio('recent', status='rejected', moderated_at=timezone.now())
         cleanup_rejected_audios()
         self.assertEqual(ObjectAudio.objects.count(), 1)
-        mock_delete.assert_not_called()
+        mock_delay.assert_not_called()
 
-    @patch('objects.cloudinary_audio_service.delete_audio')
-    def test_keeps_approved(self, mock_delete):
+    @patch('objects.tasks.delete_cloudinary_audio.delay')
+    def test_keeps_approved(self, mock_delay):
         self._audio(
             'appr', status='approved',
             moderated_at=timezone.now() - timedelta(days=AUDIO_REJECTED_RETENTION_DAYS + 5),
         )
         cleanup_rejected_audios()
         self.assertEqual(ObjectAudio.objects.count(), 1)
-        mock_delete.assert_not_called()
+        mock_delay.assert_not_called()
+
+
+class DeleteCloudinaryAudioTaskTests(TestCase):
+    @patch('objects.tasks.cloudinary_audio_service.delete_audio')
+    def test_task_deletes_from_cloudinary(self, mock_delete):
+        delete_cloudinary_audio('cult/aud1')
+        mock_delete.assert_called_once_with('cult/aud1')

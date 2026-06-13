@@ -65,7 +65,7 @@ class AdminTestBase(TestCase):
             'objects.email.send_inaccuracy_outcome_email.delay',
             'objects.email.send_translation_outcome_email.delay',
             'objects.tasks.delete_cloudinary_file.delay',
-            'objects.cloudinary_audio_service.delete_audio',
+            'objects.tasks.delete_cloudinary_audio.delay',
         ):
             p = patch(target)
             p.start()

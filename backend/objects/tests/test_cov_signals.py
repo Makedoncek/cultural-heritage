@@ -45,14 +45,14 @@ class SignalTests(TestCase):
         photo.refresh_from_db()
         self.assertEqual(photo.status, 'pending')
 
-    @patch('objects.cloudinary_audio_service.delete_audio')
-    def test_audio_delete_triggers_cloudinary_cleanup(self, mock_delete):
+    @patch('objects.tasks.delete_cloudinary_audio.delay')
+    def test_audio_delete_triggers_cloudinary_cleanup(self, mock_delay):
         obj = self._object('approved')
         audio = ObjectAudio.objects.create(
             cultural_object=obj, uploaded_by=self.user, cloudinary_public_id='aud1',
             cloudinary_url='http://x/a.mp3', duration_seconds=12, title='Narrative')
         audio.delete()
-        mock_delete.assert_called_once_with('aud1')
+        mock_delay.assert_called_once_with('aud1')
 
     @patch('objects.tasks.delete_cloudinary_file.delay')
     def test_photo_delete_triggers_cloudinary_cleanup(self, mock_delay):

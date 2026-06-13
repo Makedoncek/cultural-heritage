@@ -169,8 +169,8 @@ class AudioEditDeleteTests(AudioTestBase):
         audio.refresh_from_db()
         self.assertEqual(audio.status, 'approved')
 
-    @patch('objects.signals.cloudinary_audio_service', create=True)
-    def test_destroy_branches(self, _mock_signal):
+    @patch('objects.tasks.delete_cloudinary_audio.delay')
+    def test_destroy_branches(self, _mock_delay):
         audio = self._audio('del1')
         url = f'{self.base_url}{audio.pk}/'
         self.client.force_authenticate(self.other)
