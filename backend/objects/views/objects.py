@@ -181,7 +181,8 @@ class ObjectViewSet(viewsets.ModelViewSet):
     @extend_schema(
         tags=['Objects'],
         summary='My objects',
-        description='List of current user\'s objects (excluding archived). Requires authentication.',
+        description='List of current user\'s objects. Optional `status` (pending/approved/archived) '
+                    'and `search` (title/description) filters. Requires authentication.',
         responses={200: ObjectListSerializer(many=True), 401: ErrorResponse},
     )
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
@@ -191,6 +192,12 @@ class ObjectViewSet(viewsets.ModelViewSet):
                    .prefetch_related('tags')
                    .filter(author=request.user)
                    .order_by('-created_at'))
+        status_filter = request.query_params.get('status')
+        if status_filter in {'pending', 'approved', 'archived'}:
+            objects = objects.filter(status=status_filter)
+        search = request.query_params.get('search', '').strip()
+        if search:
+            objects = objects.filter(Q(title__icontains=search) | Q(description__icontains=search))
         paginator = SmallPagePagination()
         page = paginator.paginate_queryset(objects, request, view=self)
         serializer = ObjectListSerializer(page, many=True)

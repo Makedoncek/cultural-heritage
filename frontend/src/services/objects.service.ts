@@ -42,7 +42,7 @@ export const objectsService = {
     hardDelete: (id: number) =>
         api.delete(`/objects/${id}/hard-delete/`).then(res => res.data),
 
-    getMy: (params?: {page?: number; page_size?: number}) =>
+    getMy: (params?: {page?: number; page_size?: number; status?: string; search?: string}) =>
         api.get<PaginatedResponse<CulturalObject>>('/objects/my/', {params}).then(res => res.data),
 
     getMyByUrl: (url: string) =>

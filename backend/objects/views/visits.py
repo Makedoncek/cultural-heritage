@@ -26,6 +26,8 @@ def toggle_visit(request, object_pk):
     created, visit = toggle_membership(Visit, user=request.user, cultural_object=obj)
     if not created:
         return Response({'is_visited': False})
+    # Visiting supersedes planning — a visited object can't stay in planned visits.
+    PlannedVisit.objects.filter(user=request.user, cultural_object=obj).delete()
     return Response({'is_visited': True, 'visit': VisitSerializer(visit).data}, status=status.HTTP_201_CREATED)
 
 
@@ -153,6 +155,14 @@ def toggle_planned_visit(request, object_pk):
         obj = CulturalObject.objects.get(pk=object_pk)
     except CulturalObject.DoesNotExist:
         return Response({'detail': _('Об\'єкт не знайдено.')}, status=status.HTTP_404_NOT_FOUND)
+
+    # Can't plan a visit to an object already marked as visited (unless we're removing the plan).
+    already_planned = PlannedVisit.objects.filter(user=request.user, cultural_object=obj).exists()
+    if not already_planned and Visit.objects.filter(user=request.user, cultural_object=obj).exists():
+        return Response(
+            {'detail': _('Об\'єкт уже відвідано — його не можна додати до запланованих.')},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     created, planned = toggle_membership(PlannedVisit, user=request.user, cultural_object=obj)
     if not created:

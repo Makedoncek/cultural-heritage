@@ -112,6 +112,37 @@ class VisitFlowTests(APITestCase):
         self.assertFalse(r2.data['is_planned'])
         self.assertEqual(PlannedVisit.objects.count(), 0)
 
+    def test_marking_visited_removes_existing_plan(self):
+        """Visiting supersedes planning: a planned visit is dropped when the object is visited."""
+        PlannedVisit.objects.create(user=self.user, cultural_object=self.obj)
+        self.client.force_authenticate(self.user)
+        r = self.client.post(self._toggle_url())
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(r.data['is_visited'])
+        self.assertFalse(PlannedVisit.objects.filter(user=self.user, cultural_object=self.obj).exists())
+
+    def test_cannot_plan_already_visited_object(self):
+        """Planning a visit is rejected when the object is already marked as visited."""
+        Visit.objects.create(user=self.user, cultural_object=self.obj)
+        self.client.force_authenticate(self.user)
+        url = reverse('objects:toggle_planned_visit', kwargs={'object_pk': self.obj.pk})
+        r = self.client.post(url)
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(PlannedVisit.objects.count(), 0)
+
+    def test_author_can_plan_and_visit_own_object(self):
+        """Authors are allowed to add their own objects to visited / planned."""
+        self.client.force_authenticate(self.other)  # other is the object's author
+        plan_url = reverse('objects:toggle_planned_visit', kwargs={'object_pk': self.obj.pk})
+        r = self.client.post(plan_url)
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(r.data['is_planned'])
+
+        r2 = self.client.post(self._toggle_url())
+        self.assertEqual(r2.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(r2.data['is_visited'])
+        self.assertFalse(PlannedVisit.objects.filter(user=self.other, cultural_object=self.obj).exists())
+
     def test_convert_planned_to_visit_removes_plan_creates_visit(self):
         planned = PlannedVisit.objects.create(
             user=self.user, cultural_object=self.obj,

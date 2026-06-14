@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router';
 import toast from 'react-hot-toast';
 import {useTranslation} from 'react-i18next';
@@ -13,15 +13,31 @@ const STATUS_COLORS: Record<string, string> = {
     archived: 'bg-gray-100 text-gray-600 dark:bg-stone-800 dark:text-stone-400',
 };
 
+const STATUS_OPTIONS = ['pending', 'approved', 'archived'] as const;
+
 export default function MyObjectsPage() {
     const {t, i18n} = useTranslation();
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
+    const [statusFilter, setStatusFilter] = useState('');
+    const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+    useEffect(() => {
+        debounceRef.current = setTimeout(() => setDebouncedSearch(search.trim()), 400);
+        return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    }, [search]);
+
     const {items: objects, setItems: setObjects, count: totalCount, nextUrl, loading, loadingMore, loadMore, error} = usePaginatedList<CulturalObject>({
-        initialFetch: () => objectsService.getMy(),
+        initialFetch: () => objectsService.getMy({
+            status: statusFilter || undefined,
+            search: debouncedSearch || undefined,
+        }),
         fetchByUrl: (url) => objectsService.getMyByUrl(url),
         onError: () => toast.error(t('common.loadMoreError')),
-        deps: [],
+        deps: [statusFilter, debouncedSearch],
     });
+    const filtersActive = statusFilter !== '' || debouncedSearch !== '';
     const [deletingId, setDeletingId] = useState<number | null>(null);
 
     const handleDelete = async (id: number) => {
@@ -66,7 +82,7 @@ export default function MyObjectsPage() {
     };
 
 
-    if (loading) {
+    if (loading && !filtersActive && objects.length === 0) {
         return (
             <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
@@ -88,16 +104,10 @@ export default function MyObjectsPage() {
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6">
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">{t('myObjects.title')}</h1>
-                    <Link
-                        to="/objects/add"
-                        className="px-4 py-2 bg-amber-600 dark:bg-amber-500 hover:bg-amber-700 dark:hover:bg-amber-400 text-white dark:text-stone-900 text-sm rounded-lg"
-                    >
-                        {t('myObjects.addNew')}
-                    </Link>
                 </div>
-                <div className="flex flex-wrap gap-2 mb-6">
+                <div className="flex flex-wrap items-center gap-2 mb-6">
                     <Link
                         to="/passport"
                         className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-amber-300 dark:border-stone-600 bg-amber-50 dark:bg-stone-800 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-stone-700 hover:border-amber-400 dark:hover:border-amber-500 transition-colors"
@@ -112,17 +122,53 @@ export default function MyObjectsPage() {
                         <span className="text-base">⚠</span>
                         {t('reports.title')}
                     </Link>
+                    <Link
+                        to="/objects/add"
+                        className="ml-auto px-4 py-2 bg-amber-600 dark:bg-amber-500 hover:bg-amber-700 dark:hover:bg-amber-400 text-white dark:text-stone-900 text-sm rounded-lg"
+                    >
+                        {t('myObjects.addNew')}
+                    </Link>
                 </div>
 
-                {objects.length === 0 ? (
+                <div className="flex flex-col sm:flex-row gap-2 mb-6">
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder={t('myObjects.searchPlaceholder')}
+                        className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-stone-600 bg-white dark:bg-stone-900 text-gray-900 dark:text-stone-100 placeholder-gray-400 dark:placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    />
+                    <select
+                        value={statusFilter}
+                        onChange={e => setStatusFilter(e.target.value)}
+                        className="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-stone-600 bg-white dark:bg-stone-900 text-gray-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+                    >
+                        <option value="">{t('myObjects.statusAll')}</option>
+                        {STATUS_OPTIONS.map(s => (
+                            <option key={s} value={s}>{t(`object.moderationStatus.${s}`)}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {loading ? (
+                    <div className="flex justify-center py-12">
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"/>
+                    </div>
+                ) : objects.length === 0 ? (
                     <div className="text-center py-12">
-                        <p className="text-gray-500 dark:text-stone-400 mb-4">{t('myObjects.empty')}</p>
-                        <Link
-                            to="/objects/add"
-                            className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 underline"
-                        >
-                            {t('myObjects.addFirst')}
-                        </Link>
+                        {filtersActive ? (
+                            <p className="text-gray-500 dark:text-stone-400">{t('myObjects.noResults')}</p>
+                        ) : (
+                            <>
+                                <p className="text-gray-500 dark:text-stone-400 mb-4">{t('myObjects.empty')}</p>
+                                <Link
+                                    to="/objects/add"
+                                    className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 underline"
+                                >
+                                    {t('myObjects.addFirst')}
+                                </Link>
+                            </>
+                        )}
                     </div>
                 ) : (
                     <div className="space-y-3">

@@ -280,6 +280,26 @@ class ObjectCRUDTest(APITestCase):
         response = self.client.get('/api/objects/my/')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_my_objects_status_filter(self):
+        CulturalObject.objects.create(title="Approved one", latitude=50.0, longitude=30.0,
+                                      author=self.user, status='approved')
+        CulturalObject.objects.create(title="Pending one", latitude=50.0, longitude=30.0,
+                                      author=self.user, status='pending')
+        response = self.client.get('/api/objects/my/', {'status': 'pending'})
+        titles = [o['title'] for o in response.data['results']]
+        self.assertEqual(titles, ['Pending one'])
+
+    def test_my_objects_search_matches_title_and_description(self):
+        CulturalObject.objects.create(title="Старий замок", description="фортеця на горі",
+                                      latitude=50.0, longitude=30.0, author=self.user, status='approved')
+        CulturalObject.objects.create(title="Музей історії", description="експозиція про замок",
+                                      latitude=50.0, longitude=30.0, author=self.user, status='approved')
+        CulturalObject.objects.create(title="Парк", description="зелена зона",
+                                      latitude=50.0, longitude=30.0, author=self.user, status='approved')
+        response = self.client.get('/api/objects/my/', {'search': 'замок'})
+        titles = sorted(o['title'] for o in response.data['results'])
+        self.assertEqual(titles, ['Музей історії', 'Старий замок'])
+
 
 class EventObjectTest(APITestCase):
 

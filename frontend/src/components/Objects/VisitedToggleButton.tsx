@@ -6,13 +6,12 @@ import type {Visit} from '../../types/visits';
 
 interface Props {
     objectId: number;
-    initialVisited: boolean;
-    onChange?: (isVisited: boolean, visit?: Visit) => void;
+    isVisited: boolean;
+    onChange: (isVisited: boolean, visit?: Visit) => void;
 }
 
-export default function VisitedToggleButton({objectId, initialVisited, onChange}: Readonly<Props>) {
+export default function VisitedToggleButton({objectId, isVisited, onChange}: Readonly<Props>) {
     const {isAuthenticated} = useAuth();
-    const [isVisited, setIsVisited] = useState(initialVisited);
     const [loading, setLoading] = useState(false);
 
     if (!isAuthenticated) return null;
@@ -21,8 +20,7 @@ export default function VisitedToggleButton({objectId, initialVisited, onChange}
         setLoading(true);
         try {
             const result = await visitsService.toggle(objectId);
-            setIsVisited(result.is_visited);
-            onChange?.(result.is_visited, result.visit);
+            onChange(result.is_visited, result.visit);
             toast.success(result.is_visited ? '✓ Додано до відвіданих' : 'Прибрано з відвіданих');
         } catch {
             toast.error('Не вдалося оновити статус візиту');

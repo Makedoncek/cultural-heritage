@@ -315,7 +315,10 @@
     "empty": "You haven't added any objects yet",
     "addFirst": "Add your first object",
     "view": "View",
-    "addNew": "Add"
+    "addNew": "Add",
+    "searchPlaceholder": "Search by name or description...",
+    "statusAll": "All statuses",
+    "noResults": "Nothing found for your query"
   },
   "myPhotos": {
     "title": "My photos",

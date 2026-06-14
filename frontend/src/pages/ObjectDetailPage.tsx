@@ -44,8 +44,21 @@ export default function ObjectDetailPage() {
     const [showContribUploader, setShowContribUploader] = useState(false);
     const [showTranslationModal, setShowTranslationModal] = useState(false);
     const [contentLang, setContentLang] = useState<ContentLanguage | null>(null);
+    const [isVisited, setIsVisited] = useState(false);
+    const [isPlanned, setIsPlanned] = useState(false);
 
     const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA';
+
+    useEffect(() => {
+        setIsVisited(object?.is_visited ?? false);
+        setIsPlanned(object?.is_planned ?? false);
+    }, [object]);
+
+    // Visiting supersedes planning — the two states are mutually exclusive.
+    const handleVisitedChange = (visited: boolean) => {
+        setIsVisited(visited);
+        if (visited) setIsPlanned(false);
+    };
 
     useEffect(() => {
         if (!id) return;
@@ -200,16 +213,20 @@ export default function ObjectDetailPage() {
                                         initialCount={object.favorites_count ?? 0}
                                     />
                                 )}
-                                {!isAuthor && object.status === 'approved' && (
+                                {object.status === 'approved' && (
                                     <>
                                         <VisitedToggleButton
                                             objectId={object.id}
-                                            initialVisited={object.is_visited ?? false}
+                                            isVisited={isVisited}
+                                            onChange={handleVisitedChange}
                                         />
-                                        <PlanVisitToggleButton
-                                            objectId={object.id}
-                                            initialPlanned={object.is_planned ?? false}
-                                        />
+                                        {!isVisited && (
+                                            <PlanVisitToggleButton
+                                                objectId={object.id}
+                                                isPlanned={isPlanned}
+                                                onChange={setIsPlanned}
+                                            />
+                                        )}
                                     </>
                                 )}
                                 {(object.status === 'approved' || isAuthor) && object.status !== 'archived' && (

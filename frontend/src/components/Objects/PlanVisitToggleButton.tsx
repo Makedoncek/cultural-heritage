@@ -5,13 +5,12 @@ import {useAuth} from '../../context/AuthContext';
 
 interface Props {
     objectId: number;
-    initialPlanned: boolean;
-    onChange?: (isPlanned: boolean) => void;
+    isPlanned: boolean;
+    onChange: (isPlanned: boolean) => void;
 }
 
-export default function PlanVisitToggleButton({objectId, initialPlanned, onChange}: Readonly<Props>) {
+export default function PlanVisitToggleButton({objectId, isPlanned, onChange}: Readonly<Props>) {
     const {isAuthenticated} = useAuth();
-    const [isPlanned, setIsPlanned] = useState(initialPlanned);
     const [loading, setLoading] = useState(false);
 
     if (!isAuthenticated) return null;
@@ -20,8 +19,7 @@ export default function PlanVisitToggleButton({objectId, initialPlanned, onChang
         setLoading(true);
         try {
             const result = await plannedVisitsService.toggle(objectId);
-            setIsPlanned(result.is_planned);
-            onChange?.(result.is_planned);
+            onChange(result.is_planned);
             toast.success(result.is_planned ? '📌 Додано в плани' : 'Прибрано з планів');
         } catch {
             toast.error('Не вдалося оновити план');
