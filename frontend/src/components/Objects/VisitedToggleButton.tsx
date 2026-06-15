@@ -41,7 +41,7 @@ export default function VisitedToggleButton({objectId, isVisited, onChange}: Rea
             }`}
         >
             <span className="text-base">{isVisited ? '✓' : '📍'}</span>
-            {isVisited ? 'Я тут був' : 'Я тут був?'}
+            {isVisited ? 'Відвідано' : 'Я тут був'}
         </button>
     );
 }
