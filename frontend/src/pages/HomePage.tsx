@@ -11,6 +11,9 @@ import EventStatusFilter from '../components/Map/EventStatusFilter';
 import ErrorBoundary from '../components/Layout/ErrorBoundary';
 import type {MapCulturalObject, MapObjectRaw, Tag} from '../types';
 
+// object_type («permanent»/«event») → tag_type («object»/«event»); «all» → усі теги
+const TAG_TYPE_BY_OBJECT_TYPE: Record<string, string | undefined> = {permanent: 'object', event: 'event'};
+
 export default function HomePage() {
     const [rawObjects, setRawObjects] = useState<MapObjectRaw[]>([]);
     const [tags, setTags] = useState<Tag[]>([]);
@@ -31,7 +34,7 @@ export default function HomePage() {
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const tagType = objectType === 'all' ? undefined : objectType;
+        const tagType = TAG_TYPE_BY_OBJECT_TYPE[objectType];
         tagsService.getAll(tagType).then(res => {
             setTags(res.results);
             // Зберігаємо ту саму array-reference коли список і так порожній,
