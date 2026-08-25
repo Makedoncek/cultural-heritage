@@ -7,13 +7,6 @@ A web platform for mapping Ukrainian cultural heritage and tourist sites. Regist
 reviewed by administrators before appearing publicly. The interface is bilingual (Ukrainian / English) with
 light and dark themes.
 
-## Live Demo
-
-|             | URL                                                                                  |
-|:------------|:-------------------------------------------------------------------------------------|
-| Frontend    | [cultural-heritage.vercel.app](https://cultural-heritage.vercel.app)                 |
-| Backend API | [culturemap-backend.onrender.com/api/](https://culturemap-backend.onrender.com/api/) |
-
 ## Features
 
 - **Interactive map** of Ukraine with clustered markers (Leaflet) — light/dark themes (OpenStreetMap tiles for
