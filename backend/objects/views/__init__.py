@@ -4,7 +4,7 @@ from .auth import (
     password_reset_confirm, password_reset_request, register,
     resend_verification, verify_email,
 )
-from .system import health_check, user_preference
+from .system import health_check, maintenance, user_preference
 from .tags import TagViewSet
 from .objects import ObjectViewSet
 from .profiles import UserProfileViewSet
@@ -28,7 +28,7 @@ __all__ = [
     'register', 'verify_email', 'password_reset_request', 'password_reset_confirm',
     'resend_verification',
     # system
-    'health_check', 'user_preference',
+    'health_check', 'maintenance', 'user_preference',
     # viewsets
     'TagViewSet', 'ObjectViewSet', 'UserProfileViewSet',
     'ObjectPhotoViewSet', 'ObjectAudioViewSet', 'RouteViewSet',

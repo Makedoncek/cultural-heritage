@@ -13,12 +13,14 @@ from django.contrib.auth.models import User
 
 # Параметри retry для всіх email-task-ів: експоненційний backoff
 # (1s → 2s → 4s → 8s → 16s, max 600s) з jitter — захист від SMTP flapping.
+# У eager-режимі (без воркера) Celery ігнорує backoff і повторює одразу в межах
+# HTTP-запиту — тому там retry вимкнено, щоб не множити таймаути.
 EMAIL_RETRY_KWARGS = {
     'autoretry_for': (SMTPException, ConnectionError, OSError, TimeoutError),
     'retry_backoff': True,
     'retry_backoff_max': 600,
     'retry_jitter': True,
-    'max_retries': 5,
+    'max_retries': 0 if settings.CELERY_TASK_ALWAYS_EAGER else 5,
 }
 
 signer = TimestampSigner()

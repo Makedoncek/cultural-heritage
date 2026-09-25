@@ -1,11 +1,16 @@
-"""System endpoints: health check and per-user interface preferences."""
+"""System endpoints: health check, scheduled maintenance and per-user interface preferences."""
+import hmac
+
+from django.conf import settings
 from django.utils.translation import gettext as _
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from drf_spectacular.utils import extend_schema
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from ..models import UserPreference
+from ..tasks import run_maintenance
 from .schemas import HEALTH_SCHEMA
 
 
@@ -14,6 +19,24 @@ from .schemas import HEALTH_SCHEMA
 @permission_classes([AllowAny])
 def health_check(request):
     return Response({'status': 'ok', 'message': 'API is running'})
+
+
+@extend_schema(exclude=True)
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def maintenance(request):
+    """Run the celery-beat periodic tasks synchronously (for hosts without a beat process).
+
+    Guarded by the X-Maintenance-Token header; disabled (404) when MAINTENANCE_TOKEN is unset.
+    """
+    expected = settings.MAINTENANCE_TOKEN
+    if not expected:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    provided = request.headers.get('X-Maintenance-Token', '')
+    if not hmac.compare_digest(provided.encode(), expected.encode()):
+        return Response(status=status.HTTP_403_FORBIDDEN)
+    return Response(run_maintenance())
 
 
 @api_view(['GET', 'PATCH'])

@@ -1,0 +1,30 @@
+name: Maintenance
+
+# Replaces celery-beat on hosts without a scheduler process (Render free tier):
+# calls the backend's maintenance endpoint once a day.
+# Requires repo secrets BACKEND_URL (e.g. https://culturemap-backend.onrender.com)
+# and MAINTENANCE_TOKEN (same value as on the backend).
+
+on:
+  schedule:
+    - cron: "0 2 * * *"  # 02:00 UTC daily
+  workflow_dispatch:
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run periodic tasks
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          MAINTENANCE_TOKEN: ${{ secrets.MAINTENANCE_TOKEN }}
+        run: |
+          if [ -z "$BACKEND_URL" ] || [ -z "$MAINTENANCE_TOKEN" ]; then
+            echo "::warning::BACKEND_URL / MAINTENANCE_TOKEN secrets are not set — skipping."
+            exit 0
+          fi
+          # Retries cover the ~1 min cold start of a spun-down free instance.
+          curl --fail --silent --show-error \
+            --retry 5 --retry-delay 20 --retry-all-errors --max-time 150 \
+            -X POST -H "X-Maintenance-Token: $MAINTENANCE_TOKEN" \
+            "${BACKEND_URL%/}/api/internal/maintenance/"

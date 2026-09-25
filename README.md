@@ -238,6 +238,32 @@ To seed data:
 docker compose -f docker-compose.prod.yml exec backend python manage.py seed_data
 ```
 
+## Backend on Render (free tier)
+
+The free tier has no Redis worker, cron jobs, shell access or outbound SMTP, so `render.yaml`
+runs the backend without them:
+
+- **Celery tasks run in-request** (`CELERY_TASK_ALWAYS_EAGER=True`) — no broker or worker needed.
+- **Email goes through the Brevo HTTP API** (`BREVO_API_KEY`) instead of SMTP. `DEFAULT_FROM_EMAIL`
+  must be a sender address verified in Brevo.
+- **Periodic tasks** (archiving expired events, cleanups) are triggered daily by
+  `.github/workflows/maintenance.yml`, which calls `POST /api/internal/maintenance/` with the
+  `X-Maintenance-Token` header.
+- **Migrations and the admin account** run on every start (`migrate` + `ensure_superuser`, which creates
+  `DJANGO_SUPERUSER_USERNAME` once and never changes it afterwards).
+- **Database**: Render's free Postgres expires after 30 days — use an external one (e.g. Neon) via `DATABASE_URL`.
+
+Setup:
+
+1. Render → **New → Blueprint** → select this repository and fill in the prompted variables
+   (or create a Web Service manually with the same build/start commands and variables).
+2. In Brevo, verify the sender address and create an API key.
+3. In GitHub → Settings → Secrets → Actions, add `BACKEND_URL` (the `https://….onrender.com` URL)
+   and `MAINTENANCE_TOKEN` (copy the value Render generated).
+4. On Vercel, set `VITE_API_URL=https://….onrender.com/api` and redeploy.
+
+A free instance spins down after 15 minutes without traffic; the first request afterwards takes about a minute.
+
 ## Development Commands
 
 ### Backend

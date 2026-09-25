@@ -24,6 +24,7 @@ urlpatterns = [
     path('auth/password-reset/confirm/', views.password_reset_confirm, name='password_reset_confirm'),
     path('auth/resend-verification/', views.resend_verification, name='resend_verification'),
     path('health/', views.health_check, name='health_check'),
+    path('internal/maintenance/', views.maintenance, name='maintenance'),
     path('me/preference/', views.user_preference, name='user_preference'),
 
     # Reports (polymorphic — any content)

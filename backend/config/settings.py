@@ -27,6 +27,11 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
+# Render sets this automatically to the service's public hostname (xxx.onrender.com).
+RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default='')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -74,6 +79,8 @@ CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',
     default='http://localhost:8000,http://127.0.0.1:8000'
 ).split(',')
+if RENDER_EXTERNAL_HOSTNAME:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{RENDER_EXTERNAL_HOSTNAME}')  # Django admin login
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -181,7 +188,9 @@ database_url = config('DATABASE_URL', default='')
 
 if database_url:
     DATABASES = {
-        'default': dj_database_url.config(default=database_url, conn_max_age=500)
+        # Health checks drop connections the provider closed while idle
+        # (e.g. Neon suspends compute after a few minutes without queries).
+        'default': dj_database_url.config(default=database_url, conn_max_age=500, conn_health_checks=True)
     }
 else:
     DATABASES = {
@@ -247,13 +256,45 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='CultureMap <noreply@culturemap.ua>')
+# Seconds; without it a blocked SMTP port hangs the request (emails are sent in-request in eager mode).
+EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=10, cast=int)
+
+# Brevo HTTP API instead of SMTP — for hosts that block outbound SMTP ports (Render free tier).
+# DEFAULT_FROM_EMAIL must be a sender address verified in Brevo.
+BREVO_API_KEY = config('BREVO_API_KEY', default='')
+if BREVO_API_KEY:
+    EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
+    ANYMAIL = {
+        'BREVO_API_KEY': BREVO_API_KEY,
+        'REQUESTS_TIMEOUT': EMAIL_TIMEOUT,
+    }
 
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 
 # Celery
 CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+# True = run tasks synchronously inside the request; no broker/worker needed (Render free tier).
 CELERY_TASK_ALWAYS_EAGER = config('CELERY_TASK_ALWAYS_EAGER', default=False, cast=bool)
+
+# Send task and app warnings/errors to stdout (visible in Render / docker logs). Without this,
+# a failed eager task (e.g. rejected email) is swallowed silently: Celery's loggers have no handler.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler'},
+    },
+    'loggers': {
+        'celery': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+        'objects': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+    },
+}
+
+# Shared secret for POST /api/internal/maintenance/ — replaces celery-beat where no
+# scheduler process is available (called daily by .github/workflows/maintenance.yml).
+# Empty = endpoint disabled.
+MAINTENANCE_TOKEN = config('MAINTENANCE_TOKEN', default='')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

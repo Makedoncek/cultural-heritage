@@ -1,6 +1,7 @@
 """Celery tasks для photo gallery (наприклад, cleanup rejected фото)."""
 import logging
 from celery import shared_task
+from django.conf import settings
 from django.utils import timezone
 
 from datetime import timedelta
@@ -17,12 +18,13 @@ logger = logging.getLogger(__name__)
 # Параметри retry для Cloudinary-delete: експоненційний backoff
 # (1s → 2s → 4s → 8s → 16s → 32s..., max 1 година) з jitter.
 # 7 спроб ≈ покриває ~2 години переривчастого Cloudinary-uptime.
+# У eager-режимі retry вимкнено: без воркера спроби йдуть одразу, без пауз.
 CLOUDINARY_DELETE_RETRY_KWARGS = {
     'autoretry_for': (Exception,),
     'retry_backoff': True,
     'retry_backoff_max': 3600,
     'retry_jitter': True,
-    'max_retries': 7,
+    'max_retries': 0 if settings.CELERY_TASK_ALWAYS_EAGER else 7,
 }
 
 
@@ -130,3 +132,18 @@ def cleanup_rejected_audios():
         deleted_count += 1
     logger.info(f'cleanup_rejected_audios: deleted {deleted_count} audios')
     return deleted_count
+
+
+def run_maintenance():
+    """Синхронно виконує всі періодичні задачі beat-розкладу.
+
+    Для хостингу без celery-beat (Render free): викликається щоденно через
+    POST /api/internal/maintenance/. Усі задачі ідемпотентні, тож щоденний
+    запуск щотижневої чистки репортів безпечний.
+    """
+    return {
+        'archived_events': archive_expired_events(),
+        'deleted_photos': cleanup_rejected_photos(),
+        'deleted_audios': cleanup_rejected_audios(),
+        'deleted_reports': cleanup_processed_inaccuracy_reports(),
+    }
