@@ -46,10 +46,11 @@ class ViewEndpointSmokeTests(APITestCase):
 
     def test_visit_and_plan_toggles(self):
         self.client.force_authenticate(self.user)
-        r_visit = self.client.post(f'/api/objects/{self.obj.id}/visit/')
-        self.assertIn(r_visit.status_code, (status.HTTP_200_OK, status.HTTP_201_CREATED))
+        # Plan first: planning an already-visited object is rejected.
         r_plan = self.client.post(f'/api/objects/{self.obj.id}/plan-visit/')
         self.assertIn(r_plan.status_code, (status.HTTP_200_OK, status.HTTP_201_CREATED))
+        r_visit = self.client.post(f'/api/objects/{self.obj.id}/visit/')
+        self.assertIn(r_visit.status_code, (status.HTTP_200_OK, status.HTTP_201_CREATED))
         self.assertEqual(
             self.client.get(f'/api/objects/{self.obj.id}/visits-count/').status_code,
             status.HTTP_200_OK,
