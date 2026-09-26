@@ -1,0 +1,169 @@
+{
+  "tags": [
+    {
+      "name": "Замок",
+      "slug": "zamok",
+      "icon": "🏰",
+      "tag_type": "object",
+      "translations": {
+        "en": "Castle",
+        "pl": "Zamek",
+        "de": "Burg"
+      }
+    },
+    {
+      "name": "Церква",
+      "slug": "tserkva",
+      "icon": "⛪",
+      "tag_type": "object",
+      "translations": {
+        "en": "Church",
+        "pl": "Kościół",
+        "de": "Kirche"
+      }
+    },
+    {
+      "name": "Музей",
+      "slug": "muzey",
+      "icon": "🏛️",
+      "tag_type": "object",
+      "translations": {
+        "en": "Museum",
+        "pl": "Muzeum",
+        "de": "Museum"
+      }
+    },
+    {
+      "name": "Пам'ятник",
+      "slug": "pamyatnyk",
+      "icon": "🗿",
+      "tag_type": "object",
+      "translations": {
+        "en": "Monument",
+        "pl": "Pomnik",
+        "de": "Denkmal"
+      }
+    },
+    {
+      "name": "Парк",
+      "slug": "park",
+      "icon": "🌳",
+      "tag_type": "object",
+      "translations": {
+        "en": "Park",
+        "pl": "Park",
+        "de": "Park"
+      }
+    },
+    {
+      "name": "Палац",
+      "slug": "palats",
+      "icon": "👑",
+      "tag_type": "object",
+      "translations": {
+        "en": "Palace",
+        "pl": "Pałac",
+        "de": "Palast"
+      }
+    },
+    {
+      "name": "Фортеця",
+      "slug": "fortetsya",
+      "icon": "🛡️",
+      "tag_type": "object",
+      "translations": {
+        "en": "Fortress",
+        "pl": "Twierdza",
+        "de": "Festung"
+      }
+    },
+    {
+      "name": "Театр",
+      "slug": "teatr",
+      "icon": "🎭",
+      "tag_type": "object",
+      "translations": {
+        "en": "Theatre",
+        "pl": "Teatr",
+        "de": "Theater"
+      }
+    },
+    {
+      "name": "Собор",
+      "slug": "sobor",
+      "icon": "⛪",
+      "tag_type": "object",
+      "translations": {
+        "en": "Cathedral",
+        "pl": "Katedra",
+        "de": "Kathedrale"
+      }
+    },
+    {
+      "name": "UNESCO",
+      "slug": "unesco",
+      "icon": "🌍",
+      "tag_type": "object",
+      "translations": {
+        "en": "UNESCO",
+        "pl": "UNESCO",
+        "de": "UNESCO"
+      }
+    },
+    {
+      "name": "Фестиваль",
+      "slug": "festyval",
+      "icon": "🎉",
+      "tag_type": "event",
+      "translations": {
+        "en": "Festival",
+        "pl": "Festiwal",
+        "de": "Festival"
+      }
+    },
+    {
+      "name": "Виставка",
+      "slug": "vystavka",
+      "icon": "🖼️",
+      "tag_type": "event",
+      "translations": {
+        "en": "Exhibition",
+        "pl": "Wystawa",
+        "de": "Ausstellung"
+      }
+    },
+    {
+      "name": "Ярмарок",
+      "slug": "yarmarok",
+      "icon": "🎪",
+      "tag_type": "event",
+      "translations": {
+        "en": "Fair",
+        "pl": "Jarmark",
+        "de": "Jahrmarkt"
+      }
+    },
+    {
+      "name": "Концерт",
+      "slug": "kontsert",
+      "icon": "🎵",
+      "tag_type": "event",
+      "translations": {
+        "en": "Concert",
+        "pl": "Koncert",
+        "de": "Konzert"
+      }
+    },
+    {
+      "name": "Конференція",
+      "slug": "konferentsiya",
+      "icon": "🎤",
+      "tag_type": "event",
+      "translations": {
+        "en": "Conference",
+        "pl": "Konferencja",
+        "de": "Konferenz"
+      }
+    }
+  ]
+}
