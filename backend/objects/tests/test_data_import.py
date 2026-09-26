@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from objects.management.commands.fetch_wiki_objects import Command as FetchCommand
 from objects.models import CulturalObject, CulturalObjectTranslation, ObjectPhoto, Tag
@@ -175,3 +175,73 @@ class FetchWikiHelpersTest(TestCase):
         self.assertEqual(FetchCommand._tags('Софійський собор (Київ)', '', ['unesco']), ['sobor', 'unesco'])
         self.assertEqual(FetchCommand._tags('Антонієві печери', '', ['tserkva']), ['tserkva'])
         self.assertEqual(FetchCommand._tags('Щось', 'без ключових слів', []), ['pamyatnyk'])
+
+
+class LoadRoutesTest(TestCase):
+    def setUp(self):
+        self.author = User.objects.create_user('importer', password='pass')
+        Tag.objects.create(name='Замок', slug='zamok', icon='🏰')
+        for title, lat in (('Олеський замок', 49.968), ('Підгорецький замок', 49.943)):
+            CulturalObject.objects.create(title=title, author=self.author, status='approved',
+                                          latitude=lat, longitude=24.9)
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
+    def _route(self, **extra):
+        return {
+            'title': 'Золота підкова', 'description': 'Опис', 'tags': ['zamok'], 'is_featured': True,
+            'estimated_duration_minutes': 480, 'profile': 'driving-car',
+            'stops': [{'object_title': 'Олеський замок'}, {'object_title': 'Підгорецький замок'}],
+            'translations': {'en': {'title': 'Golden Horseshoe', 'description': 'Description'}},
+            **extra,
+        }
+
+    def _run(self, routes, *args):
+        path = Path(self.tmp.name) / 'routes.json'
+        path.write_text(json.dumps({'routes': routes}, ensure_ascii=False), encoding='utf-8')
+        out = StringIO()
+        call_command('load_routes', str(path), '--username', 'importer', *args, stdout=out)
+        return out.getvalue()
+
+    def test_creates_public_approved_route_with_stops_and_translation(self):
+        from objects.models import Route, RouteTranslation
+        self._run([self._route()])
+        route = Route.objects.get()
+        self.assertEqual((route.status, route.visibility, route.is_featured), ('approved', 'public', True))
+        self.assertEqual([s.cultural_object.title for s in route.stops.order_by('order')],
+                         ['Олеський замок', 'Підгорецький замок'])
+        tr = RouteTranslation.objects.get(route=route)
+        self.assertEqual((tr.language, tr.title, tr.status), ('en', 'Golden Horseshoe', 'approved'))
+        self.assertIsNone(route.route_geometry)
+
+    def test_too_few_resolved_stops_skipped(self):
+        from objects.models import Route
+        output = self._run([self._route(stops=[{'object_title': 'Олеський замок'}, {'object_title': 'Немає такого'}])])
+        self.assertFalse(Route.objects.exists())
+        self.assertIn('замало знайдених зупинок', output)
+
+    @override_settings(ORS_API_KEY='')
+    def test_with_geometry_requires_ors_key(self):
+        with self.assertRaises(CommandError):
+            self._run([self._route()], '--with-geometry')
+
+    @override_settings(ORS_API_KEY='key')
+    @patch('objects.management.commands.load_routes.get_directions')
+    def test_with_geometry_uses_profile_and_stores_result(self, mock_directions):
+        from objects.models import Route
+        mock_directions.return_value = {'geometry': [[24.9, 49.968], [24.9, 49.943]], 'distance_m': 7000, 'duration_s': 600}
+        self._run([self._route()], '--with-geometry')
+        route = Route.objects.get()
+        self.assertEqual(mock_directions.call_args.kwargs['profile'], 'driving-car')
+        self.assertEqual((route.route_distance_m, route.route_duration_s), (7000, 600))
+        self.assertIsNotNone(route.geometry_updated_at)
+
+    @override_settings(ORS_API_KEY='key')
+    @patch('objects.management.commands.load_routes.get_directions')
+    def test_geometry_failure_keeps_route(self, mock_directions):
+        from objects.models import Route
+        from objects.services.ors import ORSError
+        mock_directions.side_effect = ORSError('quota exceeded')
+        output = self._run([self._route()], '--with-geometry')
+        self.assertTrue(Route.objects.exists())
+        self.assertIn('геометрію не розраховано', output)

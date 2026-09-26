@@ -1,0 +1,422 @@
+{
+  "routes": [
+    {
+      "title": "Княжий Київ: від Золотих воріт до Андріївської церкви",
+      "description": "Пішохідна прогулянка Старим Києвом — містом Ярослава Мудрого. Маршрут починається біля Золотих воріт, парадної брами давнього міста, і веде до Софійського собору — пам'ятки XI століття, внесеної до Списку всесвітньої спадщини ЮНЕСКО. Далі — Михайлівська площа із Золотоверхим монастирем, Старокиївська гора з Національним музеєм історії України та Андріївська церква Бартоломео Растреллі над Андріївським узвозом. Зупинки розташовані близько одна до одної, тож маршрут зручно пройти за пів дня.",
+      "tags": ["sobor", "tserkva", "unesco"],
+      "estimated_duration_minutes": 180,
+      "is_featured": true,
+      "profile": "foot-walking",
+      "stops": [
+        {"object_title": "Золоті ворота (Київ)"},
+        {"object_title": "Софійський собор (Київ)"},
+        {"object_title": "Михайлівський Золотоверхий монастир"},
+        {"object_title": "Національний музей історії України"},
+        {"object_title": "Андріївська церква"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Princely Kyiv: from the Golden Gate to St Andrew's Church",
+          "description": "A walk through Old Kyiv, the city of Yaroslav the Wise. The route starts at the Golden Gate, the ceremonial entrance to the ancient city, and leads to St Sophia's Cathedral, an 11th-century monument inscribed on the UNESCO World Heritage List. It continues to Mykhailivska Square with St Michael's Golden-Domed Monastery, Starokyivska Hill with the National Museum of the History of Ukraine, and Bartolomeo Rastrelli's St Andrew's Church above Andriivskyi Descent. The stops are close together, so the route is easy to walk in half a day."
+        }
+      }
+    },
+    {
+      "title": "Печерськ: від Будинку з химерами до Видубицького монастиря",
+      "description": "Маршрут пагорбами Печерська над Дніпром. Він починається біля Будинку з химерами Владислава Городецького — одного з найвідоміших модернових будинків Києва, минає бароковий Маріїнський палац і веде до Києво-Печерської лаври, заснованої 1051 року, з її печерами та Великою лаврською дзвіницею. Далі — монумент «Батьківщина-Мати», частина Національного музею історії України у Другій світовій війні, і давній Видубицький монастир на схилі над Дніпром. Зручне взуття обов'язкове: маршрут пролягає пагорбами.",
+      "tags": ["tserkva", "palats", "unesco"],
+      "estimated_duration_minutes": 240,
+      "is_featured": false,
+      "profile": "foot-walking",
+      "stops": [
+        {"object_title": "Будинок із химерами"},
+        {"object_title": "Маріїнський палац"},
+        {"object_title": "Києво-Печерська лавра"},
+        {"object_title": "Батьківщина-Мати (Київ)"},
+        {"object_title": "Видубицький монастир"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Pechersk: from the House with Chimaeras to Vydubychi Monastery",
+          "description": "A route across the Pechersk hills above the Dnipro. It starts at Vladyslav Horodetskyi's House with Chimaeras, one of Kyiv's best-known Art Nouveau buildings, passes the Baroque Mariinskyi Palace and leads to the Kyiv Pechersk Lavra, founded in 1051, with its caves and Great Lavra Bell Tower. Next come the Motherland monument, part of the National Museum of the History of Ukraine in the Second World War, and the ancient Vydubychi Monastery on the slope above the Dnipro. Comfortable shoes are a must: the route runs over hills."
+        }
+      }
+    },
+    {
+      "title": "Київ: Володимирський собор, Опера і фунікулер",
+      "description": "Коротка прогулянка центром Києва. Володимирський собор, завершений наприкінці XIX століття, славиться розписами Віктора Васнецова та Михайла Нестерова. Поруч — Національна опера України імені Тараса Шевченка, одна з найбільших оперних сцен країни. Повз Золоті ворота маршрут веде до Михайлівської площі й завершується біля фунікулера, що з 1905 року сполучає Верхнє місто з Подолом.",
+      "tags": ["sobor", "teatr"],
+      "estimated_duration_minutes": 150,
+      "is_featured": false,
+      "profile": "foot-walking",
+      "stops": [
+        {"object_title": "Володимирський собор (Київ)"},
+        {"object_title": "Національний академічний театр опери та балету України імені Тараса Шевченка"},
+        {"object_title": "Золоті ворота (Київ)"},
+        {"object_title": "Київський фунікулер"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Kyiv: St Volodymyr's Cathedral, the Opera and the Funicular",
+          "description": "A short walk through central Kyiv. St Volodymyr's Cathedral, completed in the late 19th century, is famous for its murals by Viktor Vasnetsov and Mykhailo Nesterov. Nearby stands the Taras Shevchenko National Opera of Ukraine, one of the country's largest opera stages. Passing the Golden Gate, the route leads to Mykhailivska Square and ends at the funicular that has linked the Upper Town with Podil since 1905."
+        }
+      }
+    },
+    {
+      "title": "Середмістя Львова: ансамбль ЮНЕСКО",
+      "description": "Історичний центр Львова внесено до Списку всесвітньої спадщини ЮНЕСКО, і цей маршрут проходить його головними пам'ятками. Від Львівського оперного театру — до Латинського катедрального собору, далі на площу Ринок із ратушею та кам'яницями різних епох. Звідти вузькими вуличками маршрут веде до Вірменського собору з його самобутніми розписами і до костелу та монастиря домініканців. Усі зупинки розташовані в межах кількох кварталів.",
+      "tags": ["unesco", "sobor", "teatr"],
+      "estimated_duration_minutes": 150,
+      "is_featured": true,
+      "profile": "foot-walking",
+      "stops": [
+        {"object_title": "Львівський національний академічний театр опери та балету імені Соломії Крушельницької"},
+        {"object_title": "Латинський катедральний собор (Львів)"},
+        {"object_title": "Площа Ринок (Львів)"},
+        {"object_title": "Львівська ратуша"},
+        {"object_title": "Вірменський собор (Львів)"},
+        {"object_title": "Костел і монастир домініканців (Львів)"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Lviv Old Town: the UNESCO ensemble",
+          "description": "The historic centre of Lviv is a UNESCO World Heritage Site, and this route takes in its main landmarks. From the Lviv Opera House to the Latin Cathedral, then on to Rynok Square with the Town Hall and townhouses from different eras. From there, narrow streets lead to the Armenian Cathedral with its distinctive murals and to the Dominican Church and Monastery. All the stops are within a few blocks of each other."
+        }
+      }
+    },
+    {
+      "title": "Львів: від Святого Юра до Личакова",
+      "description": "Маршрут для тих, хто вже бачив площу Ринок. Він починається біля собору Святого Юра — барокової святині на пагорбі, одного з головних храмів Української греко-католицької церкви. Далі — через центр міста до Високого замку: з пагорба відкривається найкраща панорама Львова. Завершується прогулянка на Личаківському цвинтарі — одному з найстаріших некрополів Європи, який діє як музей просто неба.",
+      "tags": ["sobor", "zamok", "muzey"],
+      "estimated_duration_minutes": 210,
+      "is_featured": false,
+      "profile": "foot-walking",
+      "stops": [
+        {"object_title": "Собор Святого Юра"},
+        {"object_title": "Високий замок"},
+        {"object_title": "Личаківський цвинтар"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Lviv: from St George's to Lychakiv",
+          "description": "A route for those who have already seen Rynok Square. It starts at St George's Cathedral, a Baroque sanctuary on a hill and one of the principal churches of the Ukrainian Greek Catholic Church. It then crosses the city centre to the High Castle, whose hill offers the best panorama of Lviv. The walk ends at Lychakiv Cemetery, one of the oldest necropolises in Europe, which operates as an open-air museum."
+        }
+      }
+    },
+    {
+      "title": "Золота підкова Львівщини",
+      "description": "Класичний автомобільний маршрут замками Львівщини на один день. Олеський замок — один із найдавніших в Україні, нині музей із багатою колекцією мистецтва. Підгорецький замок — ренесансна палацова резиденція XVII століття з терасами й парком. Золочівський замок XVII століття з Китайським палацом завершує коло. Відстані між замками невеликі, тож усі три можна оглянути неквапом.",
+      "tags": ["zamok", "muzey"],
+      "estimated_duration_minutes": 480,
+      "is_featured": true,
+      "profile": "driving-car",
+      "stops": [
+        {"object_title": "Олеський замок"},
+        {"object_title": "Підгорецький замок"},
+        {"object_title": "Золочівський замок"}
+      ],
+      "translations": {
+        "en": {
+          "title": "The Golden Horseshoe of Lviv Oblast",
+          "description": "A classic one-day driving route through the castles of Lviv Oblast. Olesko Castle is one of the oldest in Ukraine and now a museum with a rich art collection. Pidhirtsi Castle is a 17th-century Renaissance palace residence with terraces and a park. Zolochiv Castle, also from the 17th century, with its Chinese Palace completes the circuit. The castles are close to one another, so all three can be seen at a leisurely pace."
+        }
+      }
+    },
+    {
+      "title": "Замки Тернопілля",
+      "description": "Тернопільщина — один із найбагатших на замки регіонів України. Маршрут починається у Вишнівецькому палаці, колишній магнатській резиденції, і веде до Збаразького замку — фортеці бастіонного типу XVII століття. Далі — Скалатський і Теребовлянський замки, що колись захищали Поділля від нападів, та Бережанський замок, родова резиденція Синявських. Маршрут розрахований на повний день на автомобілі.",
+      "tags": ["zamok", "palats"],
+      "estimated_duration_minutes": 600,
+      "is_featured": false,
+      "profile": "driving-car",
+      "stops": [
+        {"object_title": "Вишнівецький палац"},
+        {"object_title": "Збаразький замок"},
+        {"object_title": "Скалатський замок"},
+        {"object_title": "Теребовлянський замок"},
+        {"object_title": "Бережанський замок"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Castles of Ternopil Oblast",
+          "description": "Ternopil Oblast is one of the regions of Ukraine richest in castles. The route starts at Vyshnivets Palace, a former magnate residence, and leads to Zbarazh Castle, a 17th-century bastion fortress. Next come the castles of Skalat and Terebovlia, which once defended Podillia against raids, and Berezhany Castle, the family seat of the Sieniawski family. The route takes a full day by car."
+        }
+      }
+    },
+    {
+      "title": "Фортеці Поділля: від Меджибожа до Хотина",
+      "description": "Маршрут середньовічними фортецями на межі колишніх держав та імперій. Меджибізький замок стоїть при злитті Південного Бугу й Бужка. Кам'янець-Подільська фортеця на скелястому острові, оточеному каньйоном Смотрича, — один із символів України; поруч — кафедральний костел Святих Апостолів Петра і Павла з мінаретом, що нагадує про османські часи. Завершує маршрут Хотинська фортеця на березі Дністра. Розрахований на один-два дні.",
+      "tags": ["fortetsya", "zamok"],
+      "estimated_duration_minutes": 600,
+      "is_featured": true,
+      "profile": "driving-car",
+      "stops": [
+        {"object_title": "Меджибізький замок"},
+        {"object_title": "Кам'янець-Подільська фортеця"},
+        {"object_title": "Кафедральний костел Святих Апостолів Петра і Павла (Кам'янець-Подільський)"},
+        {"object_title": "Хотинська фортеця"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Fortresses of Podillia: from Medzhybizh to Khotyn",
+          "description": "A route through medieval fortresses on the border of former states and empires. Medzhybizh Castle stands at the confluence of the Southern Buh and Buzhok rivers. Kamianets-Podilskyi Fortress, on a rocky island surrounded by the Smotrych canyon, is one of the symbols of Ukraine; nearby is the Cathedral of Sts Peter and Paul with a minaret that recalls the Ottoman period. The route ends at Khotyn Fortress on the bank of the Dniester. Allow one to two days."
+        }
+      }
+    },
+    {
+      "title": "Буковинська спадщина: Чернівці та Хотин",
+      "description": "Маршрут починається в Чернівцях у Резиденції митрополитів Буковини і Далмації — ансамблі XIX століття, внесеному до Списку всесвітньої спадщини ЮНЕСКО, де нині працює Чернівецький університет. Поруч — театр імені Ольги Кобилянської, зведений за проєктом віденських архітекторів Фельнера і Гельмера. Далі маршрут веде до Хотинської фортеці над Дністром, приблизно за годину їзди від міста.",
+      "tags": ["unesco", "palats", "fortetsya"],
+      "estimated_duration_minutes": 360,
+      "is_featured": false,
+      "profile": "driving-car",
+      "stops": [
+        {"object_title": "Резиденція митрополитів Буковини і Далмації"},
+        {"object_title": "Чернівецький музично-драматичний театр імені Ольги Кобилянської"},
+        {"object_title": "Хотинська фортеця"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Bukovinian heritage: Chernivtsi and Khotyn",
+          "description": "The route starts in Chernivtsi at the Residence of Bukovinian and Dalmatian Metropolitans, a 19th-century ensemble on the UNESCO World Heritage List that now houses Chernivtsi University. Nearby is the Olha Kobylianska Theatre, designed by the Viennese architects Fellner and Helmer. The route then leads to Khotyn Fortress above the Dniester, about an hour's drive from the city."
+        }
+      }
+    },
+    {
+      "title": "Дерев'яні церкви Карпатського регіону",
+      "description": "Дерев'яні церкви Карпатського регіону Польщі та України внесено до Списку всесвітньої спадщини ЮНЕСКО у 2013 році. Маршрут об'єднує п'ять українських храмів із цього списку — у Потеличі, Жовкві, Дрогобичі, Рогатині та Нижньому Вербіжі — і Жовківський замок, повз який він проходить. Це храми XVI–XIX століть, збудовані місцевими майстрами, з іконостасами та настінними розписами. Відстані значні, тож маршрут краще розділити на два дні.",
+      "tags": ["tserkva", "unesco"],
+      "estimated_duration_minutes": 960,
+      "is_featured": false,
+      "profile": "driving-car",
+      "stops": [
+        {"object_title": "Церква Зіслання Святого Духа (Потелич)"},
+        {"object_title": "Церква Святої Трійці (Жовква)"},
+        {"object_title": "Жовківський замок"},
+        {"object_title": "Церква Святого Юра (Дрогобич)"},
+        {"object_title": "Церква Святого Духа (Рогатин)"},
+        {"object_title": "Церква Різдва Пресвятої Богородиці (Нижній Вербіж)"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Wooden Tserkvas of the Carpathian Region",
+          "description": "The wooden tserkvas of the Carpathian region in Poland and Ukraine were inscribed on the UNESCO World Heritage List in 2013. This route links five Ukrainian churches from the list, in Potelych, Zhovkva, Drohobych, Rohatyn and Nyzhnii Verbizh, together with Zhovkva Castle, which lies along the way. The churches date from the 16th to the 19th centuries and were built by local craftsmen, with iconostases and wall paintings. The distances are considerable, so it is best to split the route over two days."
+        }
+      }
+    },
+    {
+      "title": "Прикарпаття: Галич, Івано-Франківськ і Манявський скит",
+      "description": "Маршрут від давньої столиці Галицького князівства до Карпат. Галицький замок височіє над Дністром у місті, що дало назву всій Галичині. В Івано-Франківську — ратуша в самому центрі міста, нинішню будівлю якої зведено в 1930-х роках на місці давнішої. Завершує маршрут Манявський скит — православний монастир XVII століття в передгір'ях Карпат.",
+      "tags": ["zamok", "tserkva"],
+      "estimated_duration_minutes": 420,
+      "is_featured": false,
+      "profile": "driving-car",
+      "stops": [
+        {"object_title": "Галицький замок"},
+        {"object_title": "Івано-Франківська ратуша"},
+        {"object_title": "Манявський скит"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Prykarpattia: Halych, Ivano-Frankivsk and Maniava Skete",
+          "description": "A route from the ancient capital of the Principality of Halych to the Carpathians. Halych Castle rises above the Dniester in the town that gave its name to the whole of Halychyna (Galicia). In Ivano-Frankivsk, the Town Hall stands in the very centre of the city; the current building was erected in the 1930s on the site of an earlier one. The route ends at Maniava Skete, a 17th-century Orthodox monastery in the Carpathian foothills."
+        }
+      }
+    },
+    {
+      "title": "Замки Закарпаття",
+      "description": "Маршрут фортецями Закарпаття, що століттями охороняли шляхи через Карпати. Невицький замок — романтичні руїни на лісистому пагорбі над Ужем. Ужгородський замок — фортеця в центрі обласного центру з краєзнавчим музеєм. Мукачівський замок «Паланок» на вулканічній горі — найвідоміша твердиня краю. Завершує маршрут замок Сент-Міклош у Чинадієві. Усі зупинки можна відвідати за день.",
+      "tags": ["zamok"],
+      "estimated_duration_minutes": 480,
+      "is_featured": false,
+      "profile": "driving-car",
+      "stops": [
+        {"object_title": "Невицький замок"},
+        {"object_title": "Ужгородський замок"},
+        {"object_title": "Замок Паланок"},
+        {"object_title": "Чинадіївський замок"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Castles of Zakarpattia",
+          "description": "A route through the fortresses of Zakarpattia that for centuries guarded the roads across the Carpathians. Nevytske Castle is a romantic ruin on a wooded hill above the Uzh river. Uzhhorod Castle is a fortress in the centre of the regional capital with a local history museum. Palanok Castle in Mukachevo, on a volcanic hill, is the region's best-known stronghold. The route ends at Szentmiklós Castle in Chynadiievo. All the stops can be visited in one day."
+        }
+      }
+    },
+    {
+      "title": "Волинь і Рівненщина: замки та монастирі",
+      "description": "Маршрут історичною Волинню. Він починається у Зимненському монастирі — одній із найдавніших обителей краю, продовжується в Луцьку біля замку Любарта, а далі веде до Дубенського замку з палацом князів Острозьких і Любомирських, до Острозького замку — родового гнізда князів Острозьких — та до Межиріцького монастиря-фортеці поблизу Острога. Розрахований на один-два дні.",
+      "tags": ["zamok", "tserkva"],
+      "estimated_duration_minutes": 600,
+      "is_featured": false,
+      "profile": "driving-car",
+      "stops": [
+        {"object_title": "Зимненський монастир"},
+        {"object_title": "Луцький замок"},
+        {"object_title": "Дубенський замок"},
+        {"object_title": "Острозький замок"},
+        {"object_title": "Межиріцький монастир"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Volhynia and Rivne Oblast: castles and monasteries",
+          "description": "A route through historic Volhynia. It starts at Zymne Monastery, one of the oldest monasteries in the region, continues in Lutsk at Lubart's Castle, and then leads to Dubno Castle with the palace of the Ostrozky and Lubomirski princes, to Ostroh Castle, the ancestral seat of the Ostrozky princes, and to the fortified Mezhyrich Monastery near Ostroh. Allow one to two days."
+        }
+      }
+    },
+    {
+      "title": "Давній Чернігів",
+      "description": "Пішохідний маршрут княжим Черніговом — одним із найдавніших міст України. На Валу поруч стоять Спасо-Преображенський собор XI століття, одна з найстаріших збережених церков Київської Русі, і собор Бориса й Гліба XII століття. Далі — П'ятницька церква, відбудована після Другої світової війни, і Антонієві печери на Болдиних горах — підземний монастир, заснований, за переказом, Антонієм Печерським.",
+      "tags": ["sobor", "tserkva"],
+      "estimated_duration_minutes": 180,
+      "is_featured": false,
+      "profile": "foot-walking",
+      "stops": [
+        {"object_title": "Спасо-Преображенський собор (Чернігів)"},
+        {"object_title": "Собор Бориса й Гліба (Чернігів)"},
+        {"object_title": "П'ятницька церква (Чернігів)"},
+        {"object_title": "Антонієві печери (Чернігів)"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Ancient Chernihiv",
+          "description": "A walking route through princely Chernihiv, one of the oldest cities in Ukraine. On the Val (the old ramparts), the 11th-century Transfiguration Cathedral, one of the oldest surviving churches of Kyivan Rus', stands next to the 12th-century Cathedral of Sts Borys and Hlib. Next comes the Piatnytska Church, rebuilt after the Second World War, and St Anthony's Caves on the Boldyni Hills, an underground monastery founded, according to tradition, by Anthony of the Caves."
+        }
+      }
+    },
+    {
+      "title": "Гетьманська Чернігівщина: Батурин і Качанівка",
+      "description": "Маршрут садибами Лівобережжя. У Батурині, колишній гетьманській столиці, стоїть палац останнього гетьмана Кирила Розумовського, зведений на зламі XVIII–XIX століть. Далі — Качанівка, одна з найбільших садиб України з палацом і пейзажним парком, яку відвідували Тарас Шевченко, Микола Гоголь і Михайло Глинка.",
+      "tags": ["palats", "muzey"],
+      "estimated_duration_minutes": 360,
+      "is_featured": false,
+      "profile": "driving-car",
+      "stops": [
+        {"object_title": "Палац Розумовського (Батурин)"},
+        {"object_title": "Національний історико-культурний заповідник «Качанівка»"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Hetman Chernihiv Region: Baturyn and Kachanivka",
+          "description": "A route through the estates of Left-Bank Ukraine. In Baturyn, the former hetman capital, stands the palace of the last hetman, Kyrylo Rozumovskyi, built at the turn of the 18th and 19th centuries. Next is Kachanivka, one of the largest estates in Ukraine, with a palace and a landscape park, once visited by Taras Shevchenko, Mykola Gogol and Mikhail Glinka."
+        }
+      }
+    },
+    {
+      "title": "Одеса: від Опери до Потьомкінських сходів",
+      "description": "Коротка прогулянка центром Одеси. Одеський оперний театр, збудований у 1880-х роках за проєктом віденських архітекторів Фельнера і Гельмера, вважають одним із найкрасивіших у Європі. Далі маршрут веде до Пасажу — розкішної торговельної галереї кінця XIX століття, до Воронцовського палацу з колонадою над морем і завершується на Потьомкінських сходах, що спускаються до порту.",
+      "tags": ["teatr", "palats", "pamyatnyk"],
+      "estimated_duration_minutes": 120,
+      "is_featured": false,
+      "profile": "foot-walking",
+      "stops": [
+        {"object_title": "Одеський національний академічний театр опери та балету"},
+        {"object_title": "Пасаж (Одеса)"},
+        {"object_title": "Воронцовський палац (Одеса)"},
+        {"object_title": "Потьомкінські сходи"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Odesa: from the Opera to the Potemkin Stairs",
+          "description": "A short walk through central Odesa. The Odesa Opera House, built in the 1880s to a design by the Viennese architects Fellner and Helmer, is considered one of the most beautiful in Europe. The route then leads to the Passage, a lavish late-19th-century shopping arcade, to the Vorontsov Palace with its colonnade above the sea, and ends at the Potemkin Stairs, which descend to the port."
+        }
+      }
+    },
+    {
+      "title": "Харків: Держпром і собори",
+      "description": "Прогулянка центром Харкова від конструктивізму до храмів. Держпром на майдані Свободи — перший радянський хмарочос і символ архітектури 1920-х років. Звідти маршрут веде до Свято-Успенського собору на Університетській гірці, дзвіниця якого — одна з висотних домінант міста, і до Свято-Благовіщенського кафедрального собору з високою дзвіницею над річкою Харків.",
+      "tags": ["pamyatnyk", "sobor"],
+      "estimated_duration_minutes": 150,
+      "is_featured": false,
+      "profile": "foot-walking",
+      "stops": [
+        {"object_title": "Держпром"},
+        {"object_title": "Свято-Успенський собор (Харків)"},
+        {"object_title": "Свято-Благовіщенський кафедральний собор (Харків)"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Kharkiv: Derzhprom and the cathedrals",
+          "description": "A walk through central Kharkiv from Constructivism to churches. Derzhprom on Freedom Square is the first Soviet skyscraper and a symbol of 1920s architecture. From there the route leads to the Dormition Cathedral on University Hill, whose bell tower is one of the city's tallest landmarks, and to the Annunciation Cathedral with its tall bell tower above the Kharkiv river."
+        }
+      }
+    },
+    {
+      "title": "Садиби Слобожанщини: Шарівка і Наталіївка",
+      "description": "Маршрут двома садибами Харківщини XIX — початку XX століття. Шарівський палац із казковими вежами оточений великим пейзажним парком. Неподалік — Наталіївка, колишня садиба цукрозаводчика Павла Харитоненка з парком і храмом, зведеним за проєктом Олексія Щусєва.",
+      "tags": ["palats", "park"],
+      "estimated_duration_minutes": 300,
+      "is_featured": false,
+      "profile": "driving-car",
+      "stops": [
+        {"object_title": "Шарівський палац"},
+        {"object_title": "Наталіївський парк"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Estates of Slobozhanshchyna: Sharivka and Nataliivka",
+          "description": "A route through two estates of Kharkiv Oblast dating from the 19th and early 20th centuries. Sharivka Palace, with its fairy-tale towers, is surrounded by a large landscape park. Nearby is Nataliivka, the former estate of the sugar industrialist Pavlo Kharytonenko, with a park and a church designed by Oleksii Shchusiev."
+        }
+      }
+    },
+    {
+      "title": "Полтава: від Круглої площі до Хрестовоздвиженського монастиря",
+      "description": "Прогулянка історичним центром Полтави. Кругла площа — ансамбль класицизму початку XIX століття з Монументом Слави посередині. Поруч — будинок краєзнавчого музею, зведений у 1903–1908 роках за проєктом Василя Кричевського в стилі українського модерну. Біла альтанка на Івановій горі відкриває вид на Ворсклу, а завершує маршрут Хрестовоздвиженський монастир XVIII століття з рідкісним семибанним собором.",
+      "tags": ["muzey", "tserkva", "pamyatnyk"],
+      "estimated_duration_minutes": 180,
+      "is_featured": false,
+      "profile": "foot-walking",
+      "stops": [
+        {"object_title": "Кругла площа (Полтава)"},
+        {"object_title": "Полтавський краєзнавчий музей"},
+        {"object_title": "Біла альтанка"},
+        {"object_title": "Хрестовоздвиженський жіночий монастир (Полтава)"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Poltava: from Round Square to the Holy Cross Monastery",
+          "description": "A walk through the historic centre of Poltava. Round Square is an early-19th-century Classicist ensemble with the Monument of Glory in the middle. Nearby is the local history museum building, erected in 1903–1908 to a design by Vasyl Krychevskyi in the Ukrainian Art Nouveau style. The White Gazebo on Ivanova Hill offers a view of the Vorskla river, and the route ends at the 18th-century Holy Cross Exaltation Monastery with its rare seven-domed cathedral."
+        }
+      }
+    },
+    {
+      "title": "Черкащина: Софіївка, Суботів і Канів",
+      "description": "Маршрут Черкащиною. В Умані — дендропарк «Софіївка», пейзажний парк кінця XVIII століття з гротами, водоспадами та ставками. Далі — Суботів, родовий хутір Богдана Хмельницького, де збереглася Іллінська церква 1653 року, у якій, за переказом, його поховано. Завершує маршрут Шевченківський національний заповідник на Чернечій (Тарасовій) горі в Каневі — місце поховання Тараса Шевченка. Відстані великі, тож варто закласти повний день.",
+      "tags": ["park", "tserkva", "muzey"],
+      "estimated_duration_minutes": 600,
+      "is_featured": false,
+      "profile": "driving-car",
+      "stops": [
+        {"object_title": "Національний дендрологічний парк «Софіївка»"},
+        {"object_title": "Іллінська церква (Суботів)"},
+        {"object_title": "Шевченківський національний заповідник"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Cherkasy Region: Sofiyivka, Subotiv and Kaniv",
+          "description": "A route through Cherkasy Oblast. In Uman is the Sofiyivka Arboretum, a late-18th-century landscape park with grottoes, waterfalls and ponds. Next is Subotiv, the family homestead of Bohdan Khmelnytskyi, where the St Elijah Church of 1653 survives; according to tradition, he was buried there. The route ends at the Shevchenko National Reserve on Chernecha (Taras) Hill in Kaniv, the burial place of Taras Shevchenko. The distances are long, so allow a full day."
+        }
+      }
+    },
+    {
+      "title": "Бердичів, Вінниця і Тульчин",
+      "description": "Маршрут починається в Бердичеві біля монастиря кармелітів босих — фортеці-святині XVII–XVIII століть. У Вінниці — водонапірна вежа початку XX століття, один із символів міста, і музей-садиба Миколи Пирогова, де видатний хірург прожив останні роки життя. Завершує маршрут палац Потоцьких у Тульчині — класицистична резиденція кінця XVIII століття, яку називають «подільським Версалем».",
+      "tags": ["palats", "muzey", "tserkva"],
+      "estimated_duration_minutes": 600,
+      "is_featured": false,
+      "profile": "driving-car",
+      "stops": [
+        {"object_title": "Монастир кармелітів босих (Бердичів)"},
+        {"object_title": "Водонапірна вежа (Вінниця)"},
+        {"object_title": "Національний музей-садиба М. І. Пирогова"},
+        {"object_title": "Палац Потоцьких (Тульчин)"}
+      ],
+      "translations": {
+        "en": {
+          "title": "Berdychiv, Vinnytsia and Tulchyn",
+          "description": "The route starts in Berdychiv at the Discalced Carmelite Monastery, a 17th–18th-century fortified shrine. In Vinnytsia there is the early-20th-century water tower, one of the city's symbols, and the Mykola Pyrohov Estate Museum, where the eminent surgeon spent the last years of his life. The route ends at the Potocki Palace in Tulchyn, a late-18th-century Classicist residence known as the 'Versailles of Podillia'."
+        }
+      }
+    }
+  ]
+}
