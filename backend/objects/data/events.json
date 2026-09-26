@@ -1,0 +1,958 @@
+{
+  "objects": [
+    {
+      "title": "Осінні замкові вечори в Олеську",
+      "description": "Щосуботи й щонеділі замок відкритий до пізнього вечора: екскурсії при свічках, камерна музика в залах і майстер-класи з давніх ремесел у замковому парку.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.968336,
+      "longitude": 24.900556,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-09-19T10:00:00+03:00",
+      "event_end_date": "2026-10-04T20:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Autumn Castle Evenings in Olesko",
+          "description": "Every Saturday and Sunday the castle stays open late into the evening, with candlelit tours, chamber music in the halls and workshops in historic crafts in the castle park.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Виставка «Мозаїки Київської Русі»",
+      "description": "Експозиція присвячена техніці смальтової мозаїки XI–XII століть: копії фрагментів, реконструкції палітри та розповідь про те, як майстри працювали з золотим тлом.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 50.452778,
+      "longitude": 30.514444,
+      "tags": [
+        "vystavka"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-09-01T10:00:00+03:00",
+      "event_end_date": "2026-11-30T18:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Exhibition \"Mosaics of Kyivan Rus'\"",
+          "description": "The exhibition is devoted to the technique of 11th–12th-century smalt mosaics, with copies of fragments, reconstructions of the palette and an account of how craftsmen worked with gold backgrounds.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Ярмарок народних ремесел на площі Ринок",
+      "description": "Майстри з різних областей представлять кераміку, різьблення, ткацтво та ковальські вироби. Для відвідувачів — демонстрації роботи на гончарному крузі й ткацькому верстаті.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.841466,
+      "longitude": 24.031265,
+      "tags": [
+        "yarmarok"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-09-25T10:00:00+03:00",
+      "event_end_date": "2026-09-28T20:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Folk Crafts Fair on Rynok Square",
+          "description": "Craftspeople from different regions will present ceramics, woodcarving, weaving and blacksmith work. Visitors can watch demonstrations on a potter's wheel and a loom.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Фотовиставка «Дерев'яні храми Карпат»",
+      "description": "Понад сто світлин дерев'яних церков Прикарпаття, Закарпаття й Галичини — від храмів зі списку ЮНЕСКО до маловідомих сільських церков.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 48.922778,
+      "longitude": 24.710472,
+      "tags": [
+        "vystavka"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-09-15T10:00:00+03:00",
+      "event_end_date": "2026-10-25T18:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Photo Exhibition \"Wooden Churches of the Carpathians\"",
+          "description": "Over a hundred photographs of wooden churches in Prykarpattia, Zakarpattia and Galicia, from UNESCO-listed churches to little-known village churches.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Осінній музичний цикл в Одеській опері",
+      "description": "Цикл вечірніх концертів класичної музики: симфонічні програми, оперні арії та вечір української камерної музики.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 46.4855,
+      "longitude": 30.7413,
+      "tags": [
+        "kontsert"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-09-20T19:00:00+03:00",
+      "event_end_date": "2026-10-11T22:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Autumn Music Series at the Odesa Opera",
+          "description": "A series of evening classical concerts featuring symphonic programmes, opera arias and an evening of Ukrainian chamber music.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Виставка «Львівський модерн»",
+      "description": "Архівні креслення, фотографії та елементи декору будинків початку XX століття розповідають про розквіт стилю модерн у Львові.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.841861,
+      "longitude": 24.031333,
+      "tags": [
+        "vystavka"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-09-10T10:00:00+03:00",
+      "event_end_date": "2026-12-15T18:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Exhibition \"Lviv Art Nouveau\"",
+          "description": "Archival drawings, photographs and decorative elements from early-20th-century buildings tell the story of the Art Nouveau boom in Lviv.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Гончарний ярмарок у Полтаві",
+      "description": "Ярмарок полтавської кераміки: посуд, іграшки та декоративні вироби від гончарів краю, майстер-класи для дітей і дорослих.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.589444,
+      "longitude": 34.551389,
+      "tags": [
+        "yarmarok"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-09-24T10:00:00+03:00",
+      "event_end_date": "2026-09-27T19:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Pottery Fair in Poltava",
+          "description": "A fair of Poltava ceramics with tableware, toys and decorative pieces by the region's potters, plus workshops for children and adults.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Виставка ікон XVII–XVIII століть",
+      "description": "Добірка ікон українських іконописних шкіл доби бароко з розповіддю про іконографію, техніку та реставрацію.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 50.458333,
+      "longitude": 30.516111,
+      "tags": [
+        "vystavka"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-09-05T10:00:00+03:00",
+      "event_end_date": "2026-11-15T18:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Exhibition of 17th–18th-Century Icons",
+          "description": "A selection of icons from Ukrainian Baroque-era schools of icon painting, with an introduction to their iconography, technique and restoration.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Фестиваль вуличного театру в Чернівцях",
+      "description": "Вистави просто неба на площі перед театром та вулицями старого міста: пантоміма, лялькові покази й музичні перформанси.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 48.29176,
+      "longitude": 25.93085,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-09-24T12:00:00+03:00",
+      "event_end_date": "2026-09-30T21:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Street Theatre Festival in Chernivtsi",
+          "description": "Open-air performances on the square in front of the theatre and in the streets of the old town, including mime, puppet shows and musical performances.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Виставка «Вінниця на старих листівках»",
+      "description": "Колекція поштових листівок кінця XIX — початку XX століття з видами Вінниці та розповіддю про те, як змінювалося місто.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.234969,
+      "longitude": 28.469658,
+      "tags": [
+        "vystavka"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-09-12T10:00:00+03:00",
+      "event_end_date": "2026-10-31T18:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Exhibition \"Vinnytsia on Old Postcards\"",
+          "description": "A collection of late-19th- and early-20th-century postcards showing views of Vinnytsia and how the city has changed.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Конференція «Збереження дерев'яної сакральної архітектури»",
+      "description": "Науково-практична конференція для реставраторів, архітекторів і музейників: доповіді про обстеження, консервацію та догляд за дерев'яними храмами.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.352,
+      "longitude": 23.5037,
+      "tags": [
+        "konferentsiya"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-10-08T10:00:00+03:00",
+      "event_end_date": "2026-10-09T17:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Conference \"Preserving Wooden Sacred Architecture\"",
+          "description": "A conference for restorers, architects and museum professionals, with papers on surveying, conserving and maintaining wooden churches.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Вечір органної музики в Кам'янці-Подільському",
+      "description": "Концерт органної та камерної музики епохи бароко: твори Баха, Букстегуде й Пахельбеля.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 48.676803,
+      "longitude": 26.571964,
+      "tags": [
+        "kontsert"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-10-10T19:00:00+03:00",
+      "event_end_date": "2026-10-10T21:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "An Evening of Organ Music in Kamianets-Podilskyi",
+          "description": "A concert of Baroque organ and chamber music, with works by Bach, Buxtehude and Pachelbel.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Фестиваль «Осінь у Софіївці»",
+      "description": "Прогулянки осіннім парком з екскурсоводами, пленер для художників, концерти біля ставків і ярмарок осінніх дарів.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 48.763056,
+      "longitude": 30.2225,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-10-17T10:00:00+03:00",
+      "event_end_date": "2026-10-18T18:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Festival \"Autumn in Sofiyivka\"",
+          "description": "Guided walks through the autumn park, an open-air painting session, concerts by the ponds and a harvest fair.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Ярмарок меду та осінніх смаколиків",
+      "description": "Пасічники з усієї України представлять мед різних сортів, продукти бджільництва та осінню випічку. Дегустації й лекції про традиції бортництва.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 50.4501,
+      "longitude": 30.5234,
+      "tags": [
+        "yarmarok"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-10-16T10:00:00+03:00",
+      "event_end_date": "2026-10-18T20:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Honey and Autumn Treats Fair",
+          "description": "Beekeepers from across Ukraine will present many varieties of honey, bee products and autumn baking, with tastings and talks on traditional forest beekeeping.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Лекторій «Замки Поділля: історія та реставрація»",
+      "description": "День лекцій істориків і реставраторів про фортифікації Поділля з екскурсією реставраційними ділянками фортеці.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 48.673333,
+      "longitude": 26.5625,
+      "tags": [
+        "konferentsiya"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-10-22T11:00:00+03:00",
+      "event_end_date": "2026-10-22T17:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Lectures \"Castles of Podillia: History and Restoration\"",
+          "description": "A day of lectures by historians and restorers on the fortifications of Podillia, with a tour of the fortress's restoration areas.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Ніч у замку Любарта",
+      "description": "Нічні екскурсії замком, реконструкція середньовічного побуту, лучники й музика давніх інструментів у світлі смолоскипів.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 50.738889,
+      "longitude": 25.323333,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-10-31T18:00:00+02:00",
+      "event_end_date": "2026-11-01T01:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "A Night at Lubart's Castle",
+          "description": "Night tours of the castle, re-enactments of medieval daily life, archers and music on early instruments by torchlight.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Виставка «Скарби Батурина»",
+      "description": "Археологічні знахідки з розкопок гетьманської столиці: кахлі, прикраси, зброя та предмети побуту XVII–XVIII століть.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 51.337778,
+      "longitude": 32.888611,
+      "tags": [
+        "vystavka"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-11-05T10:00:00+02:00",
+      "event_end_date": "2027-01-31T17:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Exhibition \"Treasures of Baturyn\"",
+          "description": "Archaeological finds from excavations of the hetman capital: tiles, jewellery, weapons and household objects from the 17th and 18th centuries.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Конференція «Спадщина під загрозою: захист культурних цінностей під час війни»",
+      "description": "Фахівці з музейної справи, права та реставрації обговорять документування пошкоджень, евакуацію колекцій і відновлення пам'яток.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 50.4501,
+      "longitude": 30.5234,
+      "tags": [
+        "konferentsiya"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-11-12T10:00:00+02:00",
+      "event_end_date": "2026-11-13T18:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Conference \"Heritage at Risk: Protecting Cultural Property in Wartime\"",
+          "description": "Experts in museum work, law and restoration will discuss documenting damage, evacuating collections and restoring monuments.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Камерний концерт у Вишнівецькому палаці",
+      "description": "Струнний квартет виконає твори класиків і українських композиторів у парадних залах палацу.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.899167,
+      "longitude": 25.738611,
+      "tags": [
+        "kontsert"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-11-14T18:00:00+02:00",
+      "event_end_date": "2026-11-14T20:30:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Chamber Concert at Vyshnivets Palace",
+          "description": "A string quartet will perform classical works and pieces by Ukrainian composers in the palace's state rooms.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Фестиваль документального кіно про спадщину",
+      "description": "Покази документальних фільмів про архітектуру, музеї та людей, які рятують пам'ятки, з обговореннями після сеансів.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.8397,
+      "longitude": 24.0297,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-11-19T12:00:00+02:00",
+      "event_end_date": "2026-11-22T21:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Heritage Documentary Film Festival",
+          "description": "Screenings of documentaries about architecture, museums and the people who save monuments, followed by discussions.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Виставка «Ікона Волині»",
+      "description": "Волинські ікони XV–XVIII століть з музейних фондів, серед них роботи, що експонуються вперше після реставрації.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 50.7472,
+      "longitude": 25.3254,
+      "tags": [
+        "vystavka"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-11-20T10:00:00+02:00",
+      "event_end_date": "2027-02-28T18:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Exhibition \"Icons of Volhynia\"",
+          "description": "Volhynian icons of the 15th–18th centuries from museum collections, including works shown for the first time after restoration.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Концерт духовної музики в Андріївській церкві",
+      "description": "Хоровий концерт української духовної музики від давніх партесних співів до творів Бортнянського та Веделя.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 50.458889,
+      "longitude": 30.518056,
+      "tags": [
+        "kontsert"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-11-29T18:00:00+02:00",
+      "event_end_date": "2026-11-29T20:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Sacred Music Concert at St Andrew's Church",
+          "description": "A choral concert of Ukrainian sacred music, from early part-singing to works by Bortniansky and Vedel.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Різдвяний ярмарок на площі Ринок",
+      "description": "Святкові будиночки з подарунками ручної роботи, глінтвейном і пряниками, вертепи та колядки біля ратуші.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.841466,
+      "longitude": 24.031265,
+      "tags": [
+        "yarmarok"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-12-12T10:00:00+02:00",
+      "event_end_date": "2027-01-07T22:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Christmas Market on Rynok Square",
+          "description": "Festive stalls with handmade gifts, mulled wine and gingerbread, plus nativity plays and carols by the Town Hall.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Різдвяний ярмарок на Софійській площі",
+      "description": "Святковий ярмарок біля Софійського собору: вироби майстрів, традиційні страви, дитяча програма й вечірні концерти.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 50.452778,
+      "longitude": 30.514444,
+      "tags": [
+        "yarmarok"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-12-13T10:00:00+02:00",
+      "event_end_date": "2027-01-07T22:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Christmas Market on Sofiiska Square",
+          "description": "A festive market by St Sophia's Cathedral with crafts, traditional food, a children's programme and evening concerts.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Виставка «Вертеп: традиція і сучасність»",
+      "description": "Історичні та сучасні вертепні скрині, ляльки й костюми, а щовихідних — вистави вертепних гуртів.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 50.354539,
+      "longitude": 30.512231,
+      "tags": [
+        "vystavka"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-12-18T10:00:00+02:00",
+      "event_end_date": "2027-01-19T17:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Exhibition \"Vertep: Tradition and Today\"",
+          "description": "Historical and contemporary vertep (nativity puppet theatre) boxes, puppets and costumes, with performances by vertep troupes every weekend.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Новорічний концерт у Львівській опері",
+      "description": "Святкова програма: увертюри, вальси, оперні арії та улюблені мелодії у виконанні оркестру й солістів.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.844167,
+      "longitude": 24.026389,
+      "tags": [
+        "kontsert"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-12-30T19:00:00+02:00",
+      "event_end_date": "2026-12-30T22:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "New Year Concert at the Lviv Opera",
+          "description": "A festive programme of overtures, waltzes, opera arias and popular melodies performed by the orchestra and soloists.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Фестиваль колядок і щедрівок",
+      "description": "Хорові та фольклорні колективи з Буковини й інших регіонів виконають колядки та щедрівки різних місцевостей.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 48.29176,
+      "longitude": 25.93085,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-01-06T12:00:00+02:00",
+      "event_end_date": "2027-01-08T20:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Festival of Carols and Shchedrivky",
+          "description": "Choirs and folk ensembles from Bukovyna and other regions will perform carols and shchedrivky from different localities.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Маланка в скансені",
+      "description": "Відтворення традиційного святкування Маланки: ряджені, обхід садиб, народні ігри та частування.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 50.354539,
+      "longitude": 30.512231,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-01-13T12:00:00+02:00",
+      "event_end_date": "2027-01-14T18:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Malanka at the Open-Air Museum",
+          "description": "A recreation of the traditional Malanka celebration, with mummers, visits to the homesteads, folk games and treats.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Зимовий етнофестиваль у Коломиї",
+      "description": "Гуцульська музика, виступи троїстих музик, виставка писанок і майстер-класи з різьблення та вишивки.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 48.531,
+      "longitude": 25.0364,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-01-23T11:00:00+02:00",
+      "event_end_date": "2027-01-24T19:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Winter Ethno Festival in Kolomyia",
+          "description": "Hutsul music, performances by traditional folk trios, a pysanka exhibition and workshops in woodcarving and embroidery.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Конференція «Цифрові технології в музейній справі»",
+      "description": "Доповіді та практикуми про 3D-сканування, онлайн-колекції, віртуальні тури й цифрове збереження пам'яток.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.8397,
+      "longitude": 24.0297,
+      "tags": [
+        "konferentsiya"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-02-11T10:00:00+02:00",
+      "event_end_date": "2027-02-12T17:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Conference \"Digital Technologies in Museums\"",
+          "description": "Papers and practical sessions on 3D scanning, online collections, virtual tours and digital preservation of heritage.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Виставка «Княжий Чернігів: археологічні знахідки»",
+      "description": "Знахідки з розкопок давнього Чернігова: прикраси, знаряддя, кераміка та реконструкції вбрання княжої доби.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 51.4982,
+      "longitude": 31.2893,
+      "tags": [
+        "vystavka"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-02-15T10:00:00+02:00",
+      "event_end_date": "2027-04-30T18:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Exhibition \"Princely Chernihiv: Archaeological Finds\"",
+          "description": "Finds from excavations of ancient Chernihiv: jewellery, tools, pottery and reconstructions of princely-era dress.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Концерт бандуристів у Полтаві",
+      "description": "Ансамбль бандуристів виконає думи, історичні пісні та обробки народних мелодій.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.5835,
+      "longitude": 34.561444,
+      "tags": [
+        "kontsert"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-02-21T17:00:00+02:00",
+      "event_end_date": "2027-02-21T19:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Bandura Concert in Poltava",
+          "description": "A bandura ensemble will perform dumy (epic ballads), historical songs and folk melody arrangements.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Шевченківські дні в Каневі",
+      "description": "Літературні читання, концерти та екскурсії заповідником з нагоди дня народження Тараса Шевченка.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.733055,
+      "longitude": 31.514723,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-03-09T10:00:00+02:00",
+      "event_end_date": "2027-03-10T18:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Shevchenko Days in Kaniv",
+          "description": "Literary readings, concerts and tours of the reserve to mark Taras Shevchenko's birthday.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Конференція «Історичні сади і парки України»",
+      "description": "Дендрологи, ландшафтні архітектори й історики обговорять відновлення історичних парків і садибних ландшафтів.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 48.763056,
+      "longitude": 30.2225,
+      "tags": [
+        "konferentsiya"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-03-25T10:00:00+02:00",
+      "event_end_date": "2027-03-26T17:00:00+02:00",
+      "translations": {
+        "en": {
+          "title": "Conference \"Historic Gardens and Parks of Ukraine\"",
+          "description": "Dendrologists, landscape architects and historians will discuss restoring historic parks and estate landscapes.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Виставка «Вишиті рушники Полтавщини»",
+      "description": "Рушники XIX–XX століть із характерною полтавською вишивкою білим по білому та розповідь про їхню символіку.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.5835,
+      "longitude": 34.561444,
+      "tags": [
+        "vystavka"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-04-01T10:00:00+03:00",
+      "event_end_date": "2027-06-30T17:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Exhibition \"Embroidered Rushnyky of the Poltava Region\"",
+          "description": "Rushnyky (ritual towels) of the 19th–20th centuries with the characteristic Poltava white-on-white embroidery and an explanation of their symbolism.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Джазовий вечір в одеському Пасажі",
+      "description": "Концерт джазових стандартів і авторських композицій під склепінням історичної галереї.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 46.483917,
+      "longitude": 30.733164,
+      "tags": [
+        "kontsert"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-04-17T19:00:00+03:00",
+      "event_end_date": "2027-04-17T22:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Jazz Evening in the Odesa Passage",
+          "description": "A concert of jazz standards and original compositions beneath the vault of the historic arcade.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Весняний ярмарок писанок",
+      "description": "Писанкарі з Прикарпаття й Покуття представлять свої роботи та навчать розписувати писанки воском.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 48.922778,
+      "longitude": 24.710472,
+      "tags": [
+        "yarmarok"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-04-24T10:00:00+03:00",
+      "event_end_date": "2027-04-25T18:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Spring Pysanka Fair",
+          "description": "Pysanka makers from Prykarpattia and Pokuttia will show their work and teach wax-resist egg decorating.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Ніч у Національному музеї історії України",
+      "description": "Вечірня програма в музеї: тематичні екскурсії, лекції кураторів, музика й квести для дітей.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 50.458333,
+      "longitude": 30.516111,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-05-15T18:00:00+03:00",
+      "event_end_date": "2027-05-16T00:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "A Night at the National Museum of the History of Ukraine",
+          "description": "An evening programme at the museum with themed tours, curator talks, music and quests for children.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "День вишиванки в Полтаві",
+      "description": "Хода у вишиванках, виставка старовинних сорочок і майстер-класи з вишивки для всіх охочих.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.589444,
+      "longitude": 34.551389,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-05-20T10:00:00+03:00",
+      "event_end_date": "2027-05-20T18:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Vyshyvanka Day in Poltava",
+          "description": "A procession in embroidered shirts, an exhibition of antique shirts and embroidery workshops for everyone.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Фестиваль середньовічної культури в Кам'янці",
+      "description": "Реконструктори, лицарські бої, стрільба з лука, ремісничі майстерні та середньовічна музика на подвір'ї фортеці.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 48.673333,
+      "longitude": 26.5625,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-05-22T10:00:00+03:00",
+      "event_end_date": "2027-05-23T20:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Medieval Culture Festival in Kamianets",
+          "description": "Re-enactors, knightly combat, archery, craft workshops and medieval music in the fortress courtyard.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Фестиваль старовинної музики в Підгірцях",
+      "description": "Концерти ренесансної та барокової музики на автентичних інструментах у замку й на терасах парку.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.9431,
+      "longitude": 24.983511,
+      "tags": [
+        "kontsert"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-05-29T16:00:00+03:00",
+      "event_end_date": "2027-05-30T21:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Early Music Festival in Pidhirtsi",
+          "description": "Concerts of Renaissance and Baroque music on period instruments in the castle and on the park terraces.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Конференція «Архітектура модерну Центральної Європи»",
+      "description": "Міжнародна наукова конференція про архітектуру межі XIX–XX століть з екскурсіями історичним центром Чернівців.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 48.296642,
+      "longitude": 25.924906,
+      "tags": [
+        "konferentsiya"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-06-03T10:00:00+03:00",
+      "event_end_date": "2027-06-05T17:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Conference \"Art Nouveau Architecture of Central Europe\"",
+          "description": "An international academic conference on architecture at the turn of the 19th and 20th centuries, with tours of Chernivtsi's historic centre.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Концерт просто неба біля Хотинської фортеці",
+      "description": "Вечірній концерт симфонічного оркестру на березі Дністра з підсвіченою фортецею як декорацією.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 48.521944,
+      "longitude": 26.498333,
+      "tags": [
+        "kontsert"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-06-12T19:00:00+03:00",
+      "event_end_date": "2027-06-12T23:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Open-Air Concert at Khotyn Fortress",
+          "description": "An evening symphony orchestra concert on the bank of the Dniester, with the illuminated fortress as a backdrop.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Лицарський турнір у Меджибожі",
+      "description": "Турнір клубів історичної реконструкції: піші та кінні поєдинки, стрілецькі змагання й табір середньовічних ремесел.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.436543,
+      "longitude": 27.412108,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-06-19T10:00:00+03:00",
+      "event_end_date": "2027-06-20T19:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Knights' Tournament in Medzhybizh",
+          "description": "A tournament of historical re-enactment clubs with foot and mounted duels, archery contests and a camp of medieval crafts.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Ярмарок гончарства в Суботові",
+      "description": "Гончарі Черкащини та сусідніх областей представлять кераміку, а історики розкажуть про гетьманський Суботів.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.094361,
+      "longitude": 32.555,
+      "tags": [
+        "yarmarok"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-06-26T10:00:00+03:00",
+      "event_end_date": "2027-06-27T18:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Pottery Fair in Subotiv",
+          "description": "Potters from Cherkasy Oblast and neighbouring regions will present ceramics, and historians will talk about Subotiv in the hetman era.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Літнє етносвято в скансені",
+      "description": "Народні обряди, пісні та танці різних регіонів, ремісничі майстерні й традиційна кухня серед історичних садиб.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 50.354539,
+      "longitude": 30.512231,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-07-10T11:00:00+03:00",
+      "event_end_date": "2027-07-11T22:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Summer Ethno Celebration at the Open-Air Museum",
+          "description": "Folk rituals, songs and dances from different regions, craft workshops and traditional food among the historic homesteads.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Фестиваль класичної музики в Тульчині",
+      "description": "Три вечори камерної та симфонічної музики в палаці й парку, зокрема твори, пов'язані з історією садиби.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 48.68,
+      "longitude": 28.87,
+      "tags": [
+        "kontsert"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-07-16T18:00:00+03:00",
+      "event_end_date": "2027-07-18T22:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Classical Music Festival in Tulchyn",
+          "description": "Three evenings of chamber and symphonic music in the palace and park, including works connected with the estate's history.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Літня школа реставрації в Збаразькому замку",
+      "description": "Двотижнева школа для студентів-архітекторів і реставраторів: лекції, обміри та практика під керівництвом фахівців.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.663364,
+      "longitude": 25.785361,
+      "tags": [
+        "konferentsiya"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-07-19T09:00:00+03:00",
+      "event_end_date": "2027-07-30T17:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Summer Restoration School at Zbarazh Castle",
+          "description": "A two-week school for architecture and restoration students with lectures, measured surveys and supervised practical work.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Фестиваль «Замки Закарпаття» в Мукачеві",
+      "description": "Історичні реконструкції, екскурсії замком, концерти та гастрономічний ярмарок закарпатської кухні.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 48.431506,
+      "longitude": 22.687797,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-08-14T10:00:00+03:00",
+      "event_end_date": "2027-08-15T21:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Festival \"Castles of Zakarpattia\" in Mukachevo",
+          "description": "Historical re-enactments, castle tours, concerts and a food fair of Zakarpattian cuisine.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Ярмарок до Дня Незалежності",
+      "description": "Святковий ярмарок українських виробників і майстрів: одяг, прикраси, кераміка та продукти з усіх регіонів.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 50.4501,
+      "longitude": 30.5234,
+      "tags": [
+        "yarmarok"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-08-22T10:00:00+03:00",
+      "event_end_date": "2027-08-24T20:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Independence Day Fair",
+          "description": "A festive fair of Ukrainian makers and craftspeople with clothing, jewellery, ceramics and food from every region.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Виставка «Ужгородський замок крізь століття»",
+      "description": "Макети, гравюри й документи про перебудови замку від середньовічної твердині до музею.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 48.621668,
+      "longitude": 22.306687,
+      "tags": [
+        "vystavka"
+      ],
+      "object_type": "event",
+      "event_start_date": "2026-10-03T10:00:00+03:00",
+      "event_end_date": "2027-03-31T17:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Exhibition \"Uzhhorod Castle through the Centuries\"",
+          "description": "Models, engravings and documents on the castle's rebuilding, from medieval stronghold to museum.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Вечір поезії біля Білої альтанки",
+      "description": "Поетичні читання просто неба на Івановій горі з видом на Ворсклу та виступами бардів.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 49.581575,
+      "longitude": 34.569491,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-06-05T18:00:00+03:00",
+      "event_end_date": "2027-06-05T21:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Poetry Evening at the White Gazebo",
+          "description": "Open-air poetry readings on Ivanova Hill overlooking the Vorskla, with performances by singer-songwriters.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    },
+    {
+      "title": "Екскурсійний марафон «Чернігів княжий»",
+      "description": "Два дні безкоштовних екскурсій храмами Валу, Болдиними горами й Антонієвими печерами з істориками міста.\n\nДемонстраційна подія: дату та програму вигадано для наповнення сайту.",
+      "latitude": 51.489028,
+      "longitude": 31.307778,
+      "tags": [
+        "festyval"
+      ],
+      "object_type": "event",
+      "event_start_date": "2027-05-08T10:00:00+03:00",
+      "event_end_date": "2027-05-09T18:00:00+03:00",
+      "translations": {
+        "en": {
+          "title": "Tour Marathon \"Princely Chernihiv\"",
+          "description": "Two days of free tours of the churches on the Val, the Boldyni Hills and St Anthony's Caves led by local historians.\n\nDemo event: the date and programme are fictional, created to populate the site."
+        }
+      }
+    }
+  ]
+}
